@@ -23,6 +23,8 @@ function makeSettings(overrides: Partial<Settings> = {}): Settings {
     r2_bucket: "",
     r2_custom_domain: "",
     github_pat: "",
+    openai_image_quality: "low",
+    openai_image_quality_overrides: {},
     ...overrides,
   };
 }
@@ -54,6 +56,24 @@ describe("promptLlm", () => {
       openrouter_api_key: "openrouter-key",
     });
 
+    expect(getPromptLlmConfigurationError(settings)).toBeNull();
+    expect(hasPromptLlmConfigured(settings)).toBe(true);
+  });
+
+  it("requires the configured OpenAI key", () => {
+    const settings = makeSettings({
+      prompt_llm_provider: "openai",
+      deepinfra_api_key: "deepinfra-key",
+    });
+    expect(getPromptLlmConfigurationError(settings)).toBe("OpenAI API key not configured. Set it in Settings.");
+    expect(hasPromptLlmConfigured(settings)).toBe(false);
+  });
+
+  it("accepts a configured OpenAI key", () => {
+    const settings = makeSettings({
+      prompt_llm_provider: "openai",
+      openai_api_key: "openai-key",
+    });
     expect(getPromptLlmConfigurationError(settings)).toBeNull();
     expect(hasPromptLlmConfigured(settings)).toBe(true);
   });

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::LazyLock;
 use tauri::{AppHandle, Manager};
@@ -79,6 +80,16 @@ pub struct Settings {
     /// APIs. The hub enforces model allowlist and per-user quotas.
     #[serde(default)]
     pub use_hub_ai: bool,
+    /// Default quality tier for OpenAI image generation ("low" | "medium" | "high" | "auto").
+    /// Project-level setting. Per-call `quality` arg still wins; otherwise the
+    /// per-asset-type override below, then this default, then the hardcoded
+    /// "low" fallback. The hub proxy forces "low" regardless.
+    #[serde(default = "default_openai_image_quality")]
+    pub openai_image_quality: String,
+    /// Optional per-AssetType quality overrides (e.g. `{"player_sprite": "high"}`).
+    /// Allows expensive tiers for hero assets while bulk asset types stay cheap.
+    #[serde(default)]
+    pub openai_image_quality_overrides: HashMap<String, String>,
 }
 
 fn default_image_model() -> String {
@@ -113,6 +124,10 @@ fn default_bg_removal_provider() -> String {
     "local".to_string()
 }
 
+fn default_openai_image_quality() -> String {
+    "low".to_string()
+}
+
 impl Default for Settings {
     fn default() -> Self {
         Self {
@@ -140,6 +155,8 @@ impl Default for Settings {
             hub_api_url: String::new(),
             hub_api_key: String::new(),
             use_hub_ai: false,
+            openai_image_quality: default_openai_image_quality(),
+            openai_image_quality_overrides: HashMap::new(),
         }
     }
 }
@@ -221,6 +238,12 @@ pub async fn get_settings(app: AppHandle) -> Result<Settings, String> {
                 r2_secret_access_key: ps.r2_secret_access_key,
                 r2_bucket: ps.r2_bucket,
                 r2_custom_domain: ps.r2_custom_domain,
+                openai_image_quality: if ps.openai_image_quality.is_empty() {
+                    default_openai_image_quality()
+                } else {
+                    ps.openai_image_quality
+                },
+                openai_image_quality_overrides: ps.openai_image_quality_overrides,
             });
         }
     }
@@ -285,6 +308,12 @@ pub async fn get_merged_settings(
             r2_secret_access_key: ps.r2_secret_access_key,
             r2_bucket: ps.r2_bucket,
             r2_custom_domain: ps.r2_custom_domain,
+            openai_image_quality: if ps.openai_image_quality.is_empty() {
+                default_openai_image_quality()
+            } else {
+                ps.openai_image_quality
+            },
+            openai_image_quality_overrides: ps.openai_image_quality_overrides,
         }),
         None => Ok(user),
     }

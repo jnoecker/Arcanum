@@ -67,6 +67,50 @@ const LLM_PROVIDERS = [
   { id: "deepinfra", label: "DeepInfra", keyField: "deepinfra_api_key" as const },
   { id: "anthropic", label: "Anthropic (Claude)", keyField: "anthropic_api_key" as const },
   { id: "openrouter", label: "OpenRouter", keyField: "openrouter_api_key" as const },
+  { id: "openai", label: "OpenAI", keyField: "openai_api_key" as const },
+];
+
+const OPENAI_QUALITY_OPTIONS = [
+  { id: "low", label: "Low", hint: "Cheapest, still strong for most game assets." },
+  { id: "medium", label: "Medium", hint: "Sharper detail, ~3x tokens." },
+  { id: "high", label: "High", hint: "Hero shots, ~10x tokens." },
+  { id: "auto", label: "Auto", hint: "Lets OpenAI pick based on prompt complexity." },
+];
+
+// AssetTypes a user is likely to want a quality override for. Visible in the
+// override picker. Keep in sync with the AssetType union in types/assets.ts —
+// adding a new entry here makes it pickable as an override target.
+const OVERRIDABLE_ASSET_TYPES: { id: string; label: string }[] = [
+  { id: "player_sprite", label: "Player sprite" },
+  { id: "entity_portrait", label: "Entity portrait" },
+  { id: "race_portrait", label: "Race portrait" },
+  { id: "class_portrait", label: "Class portrait" },
+  { id: "lore_character", label: "Lore character" },
+  { id: "lore_location", label: "Lore location" },
+  { id: "lore_organization", label: "Lore organization" },
+  { id: "lore_species", label: "Lore species" },
+  { id: "lore_item", label: "Lore item" },
+  { id: "lore_event", label: "Lore event" },
+  { id: "lore_map", label: "Lore map" },
+  { id: "splash_hero", label: "Splash hero" },
+  { id: "showcase_banner", label: "Showcase banner" },
+  { id: "mob", label: "Mob" },
+  { id: "pet", label: "Pet" },
+  { id: "item", label: "Item" },
+  { id: "room", label: "Room background" },
+  { id: "ability_icon", label: "Ability icon" },
+  { id: "ability_sprite", label: "Ability sprite" },
+  { id: "status_effect_icon", label: "Status effect icon" },
+  { id: "zone_map", label: "Zone map" },
+  { id: "background", label: "Background" },
+  { id: "ornament", label: "Ornament" },
+  { id: "panel_header", label: "Panel header" },
+  { id: "faction_emblem", label: "Faction emblem" },
+  { id: "gathering_node", label: "Gathering node" },
+  { id: "status_art", label: "Status art" },
+  { id: "empty_state", label: "Empty state" },
+  { id: "loading_vignette", label: "Loading vignette" },
+  { id: "showcase_favicon", label: "Showcase favicon" },
 ];
 
 const IMAGE_PROVIDERS = [
@@ -90,7 +134,20 @@ const PROJECT_FIELDS = [
   "auto_enhance_prompts",
   "auto_remove_bg",
   "bg_removal_provider",
+  "openai_image_quality",
 ] as const satisfies readonly (keyof ProjectSettings)[];
+
+/**
+ * Stable JSON serialization for deep-comparing the openai quality override
+ * map. The shallow `!==` in `PROJECT_FIELDS` misses mutations of the inner
+ * object, so the dirty check has to compare contents.
+ */
+function stableStringify(obj: Record<string, string> | undefined): string {
+  if (!obj) return "{}";
+  const sorted: Record<string, string> = {};
+  for (const k of Object.keys(obj).sort()) sorted[k] = obj[k] ?? "";
+  return JSON.stringify(sorted);
+}
 
 const BG_REMOVAL_PROVIDERS = [
   {
@@ -139,7 +196,9 @@ export function ApiSettingsPanel() {
     !settings || ACCOUNT_KEY_FIELDS.some((k) => draft[k] !== settings[k]);
   const projectDirty =
     !!(projectSettings && projectDraft) &&
-    PROJECT_FIELDS.some((k) => projectDraft[k] !== projectSettings[k]);
+    (PROJECT_FIELDS.some((k) => projectDraft[k] !== projectSettings[k]) ||
+      stableStringify(projectDraft.openai_image_quality_overrides) !==
+        stableStringify(projectSettings.openai_image_quality_overrides));
 
   const hasPendingChanges = accountDirty || projectDirty;
 
@@ -369,6 +428,13 @@ export function ApiSettingsPanel() {
                     );
                   })}
                 </div>
+
+                {projectDraft.image_provider === "openai" && (
+                  <OpenAiQualitySection
+                    projectDraft={projectDraft}
+                    setProjectDraft={setProjectDraft}
+                  />
+                )}
               </div>
             </div>
           )}
@@ -506,6 +572,149 @@ export function ApiSettingsPanel() {
           )}
           {error && <span className="text-xs text-status-error">{error}</span>}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── OpenAI quality controls ───────────────────────────────────────
+// Surfaced only when image_provider === "openai". The hub proxy forces
+// "low" regardless, so this UI is meaningless in hub mode (covered by
+// the hub-mode banner at the top of the panel).
+
+interface OpenAiQualitySectionProps {
+  projectDraft: ProjectSettings;
+  setProjectDraft: (next: ProjectSettings) => void;
+}
+
+function OpenAiQualitySection({
+  projectDraft,
+  setProjectDraft,
+}: OpenAiQualitySectionProps) {
+  const overrides = projectDraft.openai_image_quality_overrides ?? {};
+  const overrideEntries = Object.entries(overrides);
+  const overriddenIds = new Set(overrideEntries.map(([id]) => id));
+  const availableAssets = OVERRIDABLE_ASSET_TYPES.filter(
+    (a) => !overriddenIds.has(a.id),
+  );
+
+  const setDefault = (quality: string) => {
+    setProjectDraft({ ...projectDraft, openai_image_quality: quality });
+  };
+
+  const setOverride = (assetType: string, quality: string) => {
+    setProjectDraft({
+      ...projectDraft,
+      openai_image_quality_overrides: { ...overrides, [assetType]: quality },
+    });
+  };
+
+  const removeOverride = (assetType: string) => {
+    const next = { ...overrides };
+    delete next[assetType];
+    setProjectDraft({ ...projectDraft, openai_image_quality_overrides: next });
+  };
+
+  return (
+    <div className="mt-4 border-t border-border-muted pt-3">
+      <h4 className="mb-2 text-2xs uppercase tracking-wider text-text-muted">
+        Image quality
+      </h4>
+      <p className="mb-3 text-3xs text-text-muted/70">
+        Higher quality means more output tokens — and OpenAI bills per token. Use the per-asset
+        overrides to keep bulk types (icons, ornaments) cheap while heroes (sprites, portraits)
+        render at full quality.
+      </p>
+
+      <div className="flex items-center gap-2">
+        <label htmlFor="openai-default-quality" className="text-2xs uppercase tracking-wider text-text-muted">
+          Default
+        </label>
+        <select
+          id="openai-default-quality"
+          value={projectDraft.openai_image_quality || "low"}
+          onChange={(e) => setDefault(e.target.value)}
+          className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+        >
+          {OPENAI_QUALITY_OPTIONS.map((q) => (
+            <option key={q.id} value={q.id}>
+              {q.label}
+            </option>
+          ))}
+        </select>
+        <span className="text-3xs text-text-muted/70">
+          {OPENAI_QUALITY_OPTIONS.find((q) => q.id === (projectDraft.openai_image_quality || "low"))?.hint}
+        </span>
+      </div>
+
+      <div className="mt-3">
+        <div className="mb-1 text-2xs uppercase tracking-wider text-text-muted">
+          Per-asset overrides
+        </div>
+        {overrideEntries.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-3 py-2 text-3xs italic text-text-muted/70">
+            No overrides — every asset type renders at the default quality above.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-1.5">
+            {overrideEntries.map(([assetType, quality]) => {
+              const meta = OVERRIDABLE_ASSET_TYPES.find((a) => a.id === assetType);
+              return (
+                <li
+                  key={assetType}
+                  className="flex items-center gap-2 rounded border border-border-default bg-bg-primary px-2 py-1.5"
+                >
+                  <span className="flex-1 truncate text-xs text-text-primary">
+                    {meta?.label ?? assetType}
+                    {!meta && (
+                      <span className="ml-1 font-mono text-3xs text-text-muted/60">({assetType})</span>
+                    )}
+                  </span>
+                  <select
+                    value={quality}
+                    onChange={(e) => setOverride(assetType, e.target.value)}
+                    className="rounded border border-border-default bg-bg-primary px-2 py-0.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+                  >
+                    {OPENAI_QUALITY_OPTIONS.map((q) => (
+                      <option key={q.id} value={q.id}>
+                        {q.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => removeOverride(assetType)}
+                    aria-label={`Remove override for ${meta?.label ?? assetType}`}
+                    className="focus-ring inline-flex h-6 w-6 items-center justify-center rounded border border-border-default font-mono text-xs text-text-muted transition hover:bg-status-error/10 hover:text-status-error"
+                  >
+                    ×
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {availableAssets.length > 0 && (
+          <div className="mt-2 flex items-center gap-2">
+            <select
+              value=""
+              onChange={(e) => {
+                const id = e.target.value;
+                if (id) setOverride(id, "high");
+              }}
+              className="rounded border border-border-default bg-bg-primary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+            >
+              <option value="">+ Add override...</option>
+              {availableAssets.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+            <span className="text-3xs text-text-muted/60">New overrides start at High — tune as needed.</span>
+          </div>
+        )}
       </div>
     </div>
   );

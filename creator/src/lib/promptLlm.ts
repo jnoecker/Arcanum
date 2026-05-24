@@ -12,6 +12,10 @@ export function getPromptLlmConfigurationError(settings: Settings | null | undef
       return settings.openrouter_api_key.trim()
         ? null
         : "OpenRouter API key not configured. Set it in Settings.";
+    case "openai":
+      return settings.openai_api_key.trim()
+        ? null
+        : "OpenAI API key not configured. Set it in Settings.";
     case "deepinfra":
     default:
       return settings.deepinfra_api_key.trim()

@@ -2,6 +2,54 @@ use tauri::AppHandle;
 
 use crate::{anthropic, openrouter, settings, settings::Settings};
 
+const OPENAI_CHAT_URL: &str = "https://api.openai.com/v1/chat/completions";
+
+/// Heuristic to detect OpenAI-shaped model ids (gpt-*, o1-*, o3-*, o4-*, chatgpt-*).
+/// Keeps the user from accidentally sending a Claude or Qwen id to OpenAI.
+fn is_openai_model_id(model: &str) -> bool {
+    let m = model.trim().to_ascii_lowercase();
+    m.starts_with("gpt-")
+        || m.starts_with("chatgpt-")
+        || m.starts_with("o1")
+        || m.starts_with("o3")
+        || m.starts_with("o4")
+}
+
+async fn openai_complete(
+    api_key: &str,
+    model: &str,
+    system_prompt: &str,
+    user_prompt: &str,
+    max_tokens: u32,
+) -> Result<String, String> {
+    let body = serde_json::json!({
+        "model": model,
+        "messages": [
+            { "role": "system", "content": system_prompt },
+            { "role": "user", "content": user_prompt },
+        ],
+        "max_tokens": max_tokens,
+        "temperature": 0.7,
+    });
+    let client = crate::http::shared_client();
+    let response = client
+        .post(OPENAI_CHAT_URL)
+        .header("Authorization", crate::http::bearer_header(api_key))
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("OpenAI API request failed: {e}"))?;
+    let response = crate::http::check_response(response).await?;
+    let resp: serde_json::Value = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse OpenAI response: {e}"))?;
+    resp["choices"][0]["message"]["content"]
+        .as_str()
+        .map(|s| s.to_string())
+        .ok_or_else(|| "No response content from OpenAI".to_string())
+}
+
 /// Strip `<think>...</think>` reasoning blocks that some models emit.
 fn strip_think_tags(text: &str) -> String {
     let result = text;
@@ -57,6 +105,27 @@ pub async fn complete_from_settings(
             openrouter::complete(
                 &s.openrouter_api_key,
                 &s.enhance_model,
+                system_prompt,
+                user_prompt,
+                max_tokens,
+            )
+            .await?
+        }
+        "openai" => {
+            if s.openai_api_key.is_empty() {
+                return Err("OpenAI API key not configured. Set it in Settings.".to_string());
+            }
+            // Fall back to a small, capable default when the configured
+            // enhance_model doesn't look like an OpenAI model id (e.g. the
+            // user just switched providers but left the previous default).
+            let model = if s.enhance_model.is_empty() || !is_openai_model_id(&s.enhance_model) {
+                "gpt-4.1-mini"
+            } else {
+                &s.enhance_model
+            };
+            openai_complete(
+                &s.openai_api_key,
+                model,
                 system_prompt,
                 user_prompt,
                 max_tokens,

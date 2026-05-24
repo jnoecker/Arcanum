@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use tokio::sync::RwLock;
@@ -27,6 +28,10 @@ fn default_snapshot_interval_minutes() -> u32 {
 
 fn default_snapshot_keep_count() -> u32 {
     10
+}
+
+fn default_openai_image_quality() -> String {
+    "low".to_string()
 }
 
 /// Cached project settings — keyed by project_dir to avoid re-reading from disk.
@@ -85,6 +90,10 @@ pub struct ProjectSettings {
     pub snapshot_keep_count: u32,
     #[serde(default)]
     pub snapshot_include_assets: bool,
+    #[serde(default = "default_openai_image_quality")]
+    pub openai_image_quality: String,
+    #[serde(default)]
+    pub openai_image_quality_overrides: HashMap<String, String>,
 }
 
 pub fn project_settings_path(project_dir: &str) -> PathBuf {
@@ -177,6 +186,12 @@ pub async fn seed_project_settings(
         snapshot_interval_minutes: default_snapshot_interval_minutes(),
         snapshot_keep_count: default_snapshot_keep_count(),
         snapshot_include_assets: false,
+        openai_image_quality: if user_settings.openai_image_quality.is_empty() {
+            default_openai_image_quality()
+        } else {
+            user_settings.openai_image_quality
+        },
+        openai_image_quality_overrides: user_settings.openai_image_quality_overrides,
     };
     save_project_settings(project_dir, ps.clone()).await?;
     Ok(ps)

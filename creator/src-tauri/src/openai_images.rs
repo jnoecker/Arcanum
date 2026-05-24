@@ -110,17 +110,19 @@ pub async fn openai_generate_image(
     // OpenAI only supports specific sizes — snap to the closest valid option
     let size = snap_to_openai_size(w, h);
 
+    let resolved_quality = quality
+        .or_else(|| resolve_quality_from_settings(&settings, asset_type.as_deref()))
+        .unwrap_or_else(|| "low".to_string());
+
     let body = OpenAIImageRequest {
         model: model_id.clone(),
         prompt: final_prompt.clone(),
         n: 1,
         size,
-        // Default to "low" to match the Runware path in runware.rs and
-        // the hub proxy in hub_ai — all three now agree. Arcanum's
-        // workflow generates a lot of images and low-quality GPT Image
-        // is still visually strong for game assets while keeping
-        // token cost bounded.
-        quality: quality.or_else(|| Some("low".to_string())),
+        // Resolution order: explicit per-call `quality` arg → per-asset-type
+        // override in project settings → project default → "low" fallback.
+        // Hub proxy forces "low" regardless and short-circuits above.
+        quality: Some(resolved_quality),
         background: if behavior.transparent_background {
             Some("transparent".to_string())
         } else {
@@ -176,6 +178,29 @@ pub async fn openai_generate_image(
         behavior.output_format,
     )
     .await
+}
+
+/// Resolve the OpenAI image quality from project settings, honoring an
+/// optional per-AssetType override before falling back to the project default.
+/// Returns None when neither is set, so the caller can apply its own fallback.
+fn resolve_quality_from_settings(
+    s: &settings::Settings,
+    asset_type: Option<&str>,
+) -> Option<String> {
+    if let Some(at) = asset_type {
+        if let Some(q) = s.openai_image_quality_overrides.get(at) {
+            let trimmed = q.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
+            }
+        }
+    }
+    let trimmed = s.openai_image_quality.trim();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
+    }
 }
 
 /// Snap arbitrary dimensions to the nearest supported OpenAI image size.

@@ -102,6 +102,8 @@ export interface Settings {
   hub_api_key: string;
   use_hub_ai: boolean;
   voyage_api_key?: string;
+  openai_image_quality: string;
+  openai_image_quality_overrides: Record<string, string>;
 }
 
 /** Project-level settings stored in <project_dir>/.arcanum/settings.json */
@@ -130,6 +132,8 @@ export interface ProjectSettings {
   snapshot_interval_minutes: number;
   snapshot_keep_count: number;
   snapshot_include_assets: boolean;
+  openai_image_quality: string;
+  openai_image_quality_overrides: Record<string, string>;
 }
 
 /** Mirrors the Rust HubPublishRequest struct */

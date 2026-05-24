@@ -1,6 +1,10 @@
 import { useCallback, useMemo } from "react";
 import type { ConfigPanelProps } from "./types";
-import type { StatusEffectDefinitionConfig } from "@/types/config";
+import type {
+  StatBindings,
+  StatusEffectDefinitionConfig,
+  StatusEffectTypeDefinition,
+} from "@/types/config";
 import type { StatMap } from "@/types/world";
 import { useStatMods } from "@/lib/useStatMods";
 import {
@@ -13,6 +17,13 @@ import {
 import { RegistryPanel } from "./RegistryPanel";
 import { renameStatusEffectInConfig } from "@/lib/refactorId";
 import { BulkImportButton } from "./BulkImportButton";
+import {
+  authoredTickAnchor,
+  scaledTickAnchor,
+  tickKindFor,
+  tickScalingStat,
+  type TickKind,
+} from "@/lib/dotHotPacing";
 
 const FALLBACK_EFFECT_TYPES = [
   { value: "dot", label: "Damage Over Time" },
@@ -123,6 +134,8 @@ export function StatusEffectsPanel({ config, onChange }: ConfigPanelProps) {
             statIds={statIds}
             effectTypeOptions={effectTypeOptions}
             stackBehaviorOptions={stackBehaviorOptions}
+            bindings={config.stats.bindings}
+            effectTypeDefs={config.statusEffectTypes}
           />
         )}
       />
@@ -136,15 +149,25 @@ export function StatusEffectDetail({
   statIds,
   effectTypeOptions,
   stackBehaviorOptions,
+  bindings,
+  effectTypeDefs,
 }: {
   effect: StatusEffectDefinitionConfig;
   patch: (p: Partial<StatusEffectDefinitionConfig>) => void;
   statIds: string[];
   effectTypeOptions: { value: string; label: string }[];
   stackBehaviorOptions: { value: string; label: string }[];
+  bindings?: StatBindings;
+  effectTypeDefs?: Record<string, StatusEffectTypeDefinition>;
 }) {
   const et = effect.effectType?.toUpperCase();
-  const showTick = et === "DOT" || et === "HOT";
+  // Mirror the server's data-driven check on EffectTypesConfig — the legacy
+  // "DOT" / "HOT" id check is the fallback for configs that don't define
+  // ticksDamage / ticksHealing on the effect type yet.
+  const tickKind: TickKind = effectTypeDefs
+    ? tickKindFor(effect.effectType, effectTypeDefs)
+    : null;
+  const showTick = tickKind !== null || et === "DOT" || et === "HOT";
   const showStatMods = et === "STAT_BUFF" || et === "STAT_DEBUFF";
 
   return (
@@ -202,14 +225,28 @@ export function StatusEffectDetail({
               min={100}
             />
           </FieldRow>
-          <FieldRow label="Tick Min Value" hint="Minimum damage/heal per tick. Actual value is rolled between min and max.">
+          <FieldRow
+            label="Tick Min Value"
+            hint={
+              tickKind
+                ? `L1 base-stat anchor — scales with caster level and ${tickScalingStat(tickKind, bindings!) ?? "stat"} at runtime, same as direct ${tickKind === "damage" ? "spell damage" : "heals"}.`
+                : "Minimum damage/heal per tick. Actual value is rolled between min and max."
+            }
+          >
             <NumberInput
               value={effect.tickMinValue ?? 0}
               onCommit={(v) => patch({ tickMinValue: v ?? 0 })}
               min={0}
             />
           </FieldRow>
-          <FieldRow label="Tick Max Value" hint="Maximum damage/heal per tick.">
+          <FieldRow
+            label="Tick Max Value"
+            hint={
+              tickKind
+                ? "L1 base-stat anchor for the upper end. Variance is rolled per tick around the scaled midpoint."
+                : "Maximum damage/heal per tick."
+            }
+          >
             <NumberInput
               value={effect.tickMaxValue ?? 0}
               onCommit={(v) => patch({ tickMaxValue: v ?? 0 })}
@@ -223,6 +260,7 @@ export function StatusEffectDetail({
               min={0}
             />
           </FieldRow>
+          {tickKind && bindings && <ScaledTickPreview effect={effect} kind={tickKind} bindings={bindings} />}
         </>
       )}
 
@@ -290,6 +328,54 @@ export function StatusEffectDetail({
         />
       )}
     </>
+  );
+}
+
+/**
+ * Read-only preview of a DOT/HOT's scaled per-tick value at representative
+ * caster levels, using a base-stat caster (no stat bonus). Mirrors the
+ * server's `StatusEffectSystem.computeTickAnchor` so authors can see what
+ * their L1 anchor turns into at later levels without running the MUD.
+ *
+ * Per-tick variance is not shown — it's applied at roll time on top of this
+ * anchor (spell variance for DOTs, heal variance for HOTs).
+ */
+function ScaledTickPreview({
+  effect,
+  kind,
+  bindings,
+}: {
+  effect: StatusEffectDefinitionConfig;
+  kind: NonNullable<TickKind>;
+  bindings: StatBindings;
+}) {
+  const anchor = authoredTickAnchor(effect);
+  if (anchor <= 0) return null;
+  const levels = [1, 10, 20, 30];
+  const noun = kind === "damage" ? "Damage" : "Heal";
+  return (
+    <div className="mt-1 rounded-md border border-border-muted bg-bg-elevated/40 px-2.5 py-1.5">
+      <div className="mb-1 flex items-baseline justify-between gap-2">
+        <span className="text-2xs font-display uppercase tracking-wider text-text-muted">
+          Scaled tick preview · {noun.toLowerCase()}
+        </span>
+        <span className="text-3xs text-text-muted/70">base-stat caster</span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {levels.map((lvl) => {
+          const scaled = scaledTickAnchor(effect, kind, bindings, lvl);
+          return (
+            <div
+              key={lvl}
+              className="flex items-baseline gap-1 rounded border border-border-default bg-bg-primary px-2 py-0.5"
+            >
+              <span className="text-3xs uppercase tracking-wider text-text-muted">L{lvl}</span>
+              <span className="font-mono text-xs text-text-primary">{Math.round(scaled)}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

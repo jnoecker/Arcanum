@@ -29,8 +29,9 @@ import {
   manaCostFromPct,
   playerBaseManaAtLevel,
 } from "@/lib/abilityMana";
+import { primaryEffectType } from "@/lib/abilityEffects";
 
-const EFFECT_TYPES = [
+const LEAF_EFFECT_TYPES = [
   { value: "DIRECT_DAMAGE", label: "Direct Damage" },
   { value: "DIRECT_HEAL", label: "Direct Heal" },
   { value: "APPLY_STATUS", label: "Apply Status" },
@@ -39,11 +40,16 @@ const EFFECT_TYPES = [
   { value: "SUMMON_PET", label: "Summon Pet" },
 ];
 
+const EFFECT_TYPES = [
+  ...LEAF_EFFECT_TYPES,
+  { value: "COMPOSITE", label: "Composite (multi-effect)" },
+];
+
 const DESCRIPTION_LIMIT = 240;
 
 function abilityPrompt(ability: AbilityDefinitionConfig, style: ArtStyle): string {
   const preamble = getPreamble(style, "worldbuilding");
-  const effectDesc = ability.effect.type.toLowerCase().replace(/_/g, " ");
+  const effectDesc = primaryEffectType(ability.effect).toLowerCase().replace(/_/g, " ");
   return `${preamble}, a game ability icon for "${ability.displayName}" — ${effectDesc} spell, ${ability.description || "magical ability"}, centered square composition like an RPG ability sprite, iconic symbol rendered as flowing energy, no text, no figures`;
 }
 
@@ -52,7 +58,7 @@ function buildAbilityContext(ability: AbilityDefinitionConfig): string {
     `Ability: ${ability.displayName}`,
     ability.description ? `Description: ${ability.description}` : null,
     ability.requiredClass ? `Class: ${ability.requiredClass}` : null,
-    `Effect: ${ability.effect.type}`,
+    `Effect: ${primaryEffectType(ability.effect)}`,
     `Target: ${ability.targetType}`,
     `Level required: ${ability.levelRequired}`,
     `Mana cost: ${ability.manaCostPct}% base mana`,
@@ -175,7 +181,8 @@ const ARCHETYPE_LABEL: Record<AbilityVisualArchetype, string> = Object.fromEntri
 function deriveDefaultArchetype(ability: AbilityDefinitionConfig): AbilityVisualArchetype {
   const tt = (ability.targetType || "").toUpperCase();
   const cls = (ability.requiredClass || ability.classRestriction || "").toUpperCase();
-  switch (ability.effect.type) {
+  const primary = primaryEffectType(ability.effect);
+  switch (primary) {
     case "DIRECT_DAMAGE":
       return cls === "WARRIOR" || cls === "ROGUE" ? "MELEE_STRIKE" : "RANGED_PROJECTILE";
     case "DIRECT_HEAL":
@@ -194,7 +201,7 @@ function deriveDefaultArchetype(ability: AbilityDefinitionConfig): AbilityVisual
 }
 
 function effectVisualLanguage(ability: AbilityDefinitionConfig, archetype: AbilityVisualArchetype): string {
-  switch (ability.effect.type) {
+  switch (primaryEffectType(ability.effect)) {
     case "DIRECT_DAMAGE":
       return archetype === "MELEE_STRIKE"
         ? "a compact impact flash for a weapon strike, one clear burst of force, sharp contact flare, no weapon or character"
@@ -651,9 +658,7 @@ function CombatEffectCard({
   onPatchEffect: (p: Partial<AbilityEffectConfig>) => void;
 }) {
   const t = ability.effect.type;
-  const hasDamage = t === "DIRECT_DAMAGE" || t === "AREA_DAMAGE";
-  const hasHeal = t === "DIRECT_HEAL" || t === "AREA_DAMAGE";
-  const hasThreat = t === "TAUNT" || t === "AREA_DAMAGE";
+  const isComposite = t === "COMPOSITE";
 
   return (
     <SectionCard title="Combat Effect">
@@ -661,95 +666,42 @@ function CombatEffectCard({
         <FieldLabel label="Effect Type" required>
           <SelectInput
             value={t}
-            onCommit={(v) => onPatchEffect({ type: v })}
+            onCommit={(v) => {
+              if (v === t) return;
+              if (v === "COMPOSITE") {
+                onPatchEffect({
+                  type: "COMPOSITE",
+                  effects: [{ type: "DIRECT_DAMAGE" }],
+                });
+              } else {
+                onPatchEffect({ type: v });
+              }
+            }}
             options={EFFECT_TYPES}
             dense
           />
         </FieldLabel>
 
-        {hasDamage && (
-          <AbilityPowerPacingField
-            label="Damage Casts"
-            kind="damage"
+        {isComposite ? (
+          <CompositeChildrenEditor
+            children={ability.effect.effects ?? []}
             level={ability.levelRequired}
-            authoredPower={midpointOrZero(ability.effect.minDamage, ability.effect.maxDamage)}
+            statusEffectOptions={statusEffectOptions}
+            petOptions={petOptions}
             mobTiers={mobTiers}
             statBindings={statBindings}
-            onCommit={(v) => onPatchEffect({ minDamage: v, maxDamage: v })}
+            onChange={(next) => onPatchEffect({ effects: next })}
           />
-        )}
-
-        {hasHeal && (
-          <AbilityPowerPacingField
-            label="Heal Casts"
-            kind="heal"
+        ) : (
+          <LeafEffectFields
+            effect={ability.effect}
             level={ability.levelRequired}
-            authoredPower={midpointOrZero(ability.effect.minHeal, ability.effect.maxHeal)}
+            statusEffectOptions={statusEffectOptions}
+            petOptions={petOptions}
             mobTiers={mobTiers}
             statBindings={statBindings}
-            onCommit={(v) => onPatchEffect({ minHeal: v, maxHeal: v })}
+            onPatch={(p) => onPatchEffect(p)}
           />
-        )}
-
-        {t === "APPLY_STATUS" && (
-          <FieldLabel label="Status Effect">
-            <SelectInput
-              value={ability.effect.statusEffectId ?? ""}
-              onCommit={(v) =>
-                onPatchEffect({ statusEffectId: v || undefined })
-              }
-              options={statusEffectOptions}
-              allowEmpty
-              placeholder="— select —"
-              dense
-            />
-          </FieldLabel>
-        )}
-
-        {hasThreat && (
-          <div className="grid grid-cols-2 gap-3">
-            <FieldLabel label="Flat Threat">
-              <NumberInput
-                value={ability.effect.flatThreat ?? 0}
-                onCommit={(v) => onPatchEffect({ flatThreat: v ?? 0 })}
-                min={0}
-                dense
-              />
-            </FieldLabel>
-            <FieldLabel label="Margin">
-              <NumberInput
-                value={ability.effect.margin ?? 0}
-                onCommit={(v) => onPatchEffect({ margin: v ?? 0 })}
-                min={0}
-                dense
-              />
-            </FieldLabel>
-          </div>
-        )}
-
-        {t === "SUMMON_PET" && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <FieldLabel label="Pet Template">
-              <SelectInput
-                value={ability.effect.petTemplateKey ?? ""}
-                onCommit={(v) =>
-                  onPatchEffect({ petTemplateKey: v || undefined })
-                }
-                options={petOptions}
-                allowEmpty
-                placeholder="— select pet —"
-                dense
-              />
-            </FieldLabel>
-            <FieldLabel label="Duration (ms)" hint="0 = permanent until dismissed.">
-              <NumberInput
-                value={ability.effect.durationMs ?? 0}
-                onCommit={(v) => onPatchEffect({ durationMs: v ?? 0 })}
-                min={0}
-                dense
-              />
-            </FieldLabel>
-          </div>
         )}
 
         <PrerequisitesPicker
@@ -763,6 +715,287 @@ function CombatEffectCard({
         />
       </div>
     </SectionCard>
+  );
+}
+
+interface LeafFieldProps {
+  effect: AbilityEffectConfig;
+  level: number;
+  statusEffectOptions: { value: string; label: string }[];
+  petOptions: { value: string; label: string }[];
+  mobTiers: MobTiersConfig;
+  statBindings: StatBindings;
+  onPatch: (p: Partial<AbilityEffectConfig>) => void;
+}
+
+/**
+ * Renders the type-specific fields for a single (leaf) effect. Used both at
+ * the top level of `CombatEffectCard` and inside each row of a composite
+ * children list. Composite effects don't have leaf-specific fields — the
+ * composite editor handles their children directly.
+ */
+function LeafEffectFields({
+  effect,
+  level,
+  statusEffectOptions,
+  petOptions,
+  mobTiers,
+  statBindings,
+  onPatch,
+}: LeafFieldProps) {
+  const t = effect.type;
+  const hasDamage = t === "DIRECT_DAMAGE" || t === "AREA_DAMAGE";
+  const hasHeal = t === "DIRECT_HEAL" || t === "AREA_DAMAGE";
+  const hasThreat = t === "TAUNT" || t === "AREA_DAMAGE";
+
+  return (
+    <>
+      {hasDamage && (
+        <AbilityPowerPacingField
+          label="Damage Casts"
+          kind="damage"
+          level={level}
+          authoredPower={midpointOrZero(effect.minDamage, effect.maxDamage)}
+          mobTiers={mobTiers}
+          statBindings={statBindings}
+          onCommit={(v) => onPatch({ minDamage: v, maxDamage: v })}
+        />
+      )}
+
+      {hasHeal && (
+        <AbilityPowerPacingField
+          label="Heal Casts"
+          kind="heal"
+          level={level}
+          authoredPower={midpointOrZero(effect.minHeal, effect.maxHeal)}
+          mobTiers={mobTiers}
+          statBindings={statBindings}
+          onCommit={(v) => onPatch({ minHeal: v, maxHeal: v })}
+        />
+      )}
+
+      {t === "APPLY_STATUS" && (
+        <FieldLabel label="Status Effect">
+          <SelectInput
+            value={effect.statusEffectId ?? ""}
+            onCommit={(v) => onPatch({ statusEffectId: v || undefined })}
+            options={statusEffectOptions}
+            allowEmpty
+            placeholder="— select —"
+            dense
+          />
+        </FieldLabel>
+      )}
+
+      {hasThreat && (
+        <div className="grid grid-cols-2 gap-3">
+          <FieldLabel label="Flat Threat">
+            <NumberInput
+              value={effect.flatThreat ?? 0}
+              onCommit={(v) => onPatch({ flatThreat: v ?? 0 })}
+              min={0}
+              dense
+            />
+          </FieldLabel>
+          <FieldLabel label="Margin">
+            <NumberInput
+              value={effect.margin ?? 0}
+              onCommit={(v) => onPatch({ margin: v ?? 0 })}
+              min={0}
+              dense
+            />
+          </FieldLabel>
+        </div>
+      )}
+
+      {t === "SUMMON_PET" && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <FieldLabel label="Pet Template">
+            <SelectInput
+              value={effect.petTemplateKey ?? ""}
+              onCommit={(v) => onPatch({ petTemplateKey: v || undefined })}
+              options={petOptions}
+              allowEmpty
+              placeholder="— select pet —"
+              dense
+            />
+          </FieldLabel>
+          <FieldLabel label="Duration (ms)" hint="0 = permanent until dismissed.">
+            <NumberInput
+              value={effect.durationMs ?? 0}
+              onCommit={(v) => onPatch({ durationMs: v ?? 0 })}
+              min={0}
+              dense
+            />
+          </FieldLabel>
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
+ * Inline stack of child effects for a `COMPOSITE` ability. The first child is
+ * the "primary" — it drives the default visual archetype and icon prompt.
+ * Children are flat (no nested composites) to keep the editor approachable;
+ * the server flattens nested composites anyway, so the behavior is identical.
+ */
+function CompositeChildrenEditor({
+  children,
+  level,
+  statusEffectOptions,
+  petOptions,
+  mobTiers,
+  statBindings,
+  onChange,
+}: {
+  children: AbilityEffectConfig[];
+  level: number;
+  statusEffectOptions: { value: string; label: string }[];
+  petOptions: { value: string; label: string }[];
+  mobTiers: MobTiersConfig;
+  statBindings: StatBindings;
+  onChange: (next: AbilityEffectConfig[]) => void;
+}) {
+  const update = (i: number, patch: Partial<AbilityEffectConfig>) => {
+    const cur = children[i];
+    if (!cur) return;
+    const next = children.slice();
+    next[i] =
+      patch.type && patch.type !== cur.type
+        ? ({ type: patch.type } as AbilityEffectConfig)
+        : { ...cur, ...patch };
+    onChange(next);
+  };
+  const remove = (i: number) => onChange(children.filter((_, idx) => idx !== i));
+  const add = () => onChange([...children, { type: "DIRECT_DAMAGE" }]);
+  const move = (from: number, to: number) => {
+    if (to < 0 || to >= children.length) return;
+    const next = children.slice();
+    const item = next[from];
+    if (!item) return;
+    next.splice(from, 1);
+    next.splice(to, 0, item);
+    onChange(next);
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+          Child Effects
+        </span>
+        <span className="font-mono text-[0.6rem] text-text-muted/60">
+          Mana &amp; cooldown pay once. First child drives the icon.
+        </span>
+      </div>
+
+      {children.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-status-warning/40 bg-[var(--chrome-fill-soft)] px-3 py-2 text-2xs italic text-status-warning">
+          A composite ability needs at least one child effect.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {children.map((child, i) => (
+            <li
+              key={i}
+              className="rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-3"
+            >
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[0.6rem] uppercase tracking-wider text-text-muted/70">
+                    #{i + 1}
+                    {i === 0 && " · primary"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <IconButton
+                    label="Move up"
+                    disabled={i === 0}
+                    onClick={() => move(i, i - 1)}
+                  >
+                    ↑
+                  </IconButton>
+                  <IconButton
+                    label="Move down"
+                    disabled={i === children.length - 1}
+                    onClick={() => move(i, i + 1)}
+                  >
+                    ↓
+                  </IconButton>
+                  <IconButton label="Remove child effect" onClick={() => remove(i)} danger>
+                    ×
+                  </IconButton>
+                </div>
+              </div>
+
+              <FieldLabel label="Effect Type" required>
+                <SelectInput
+                  value={child.type}
+                  onCommit={(v) => update(i, { type: v })}
+                  options={LEAF_EFFECT_TYPES}
+                  dense
+                />
+              </FieldLabel>
+
+              <div className="mt-2 flex flex-col gap-2">
+                <LeafEffectFields
+                  effect={child}
+                  level={level}
+                  statusEffectOptions={statusEffectOptions}
+                  petOptions={petOptions}
+                  mobTiers={mobTiers}
+                  statBindings={statBindings}
+                  onPatch={(p) => update(i, p)}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <button
+        type="button"
+        onClick={add}
+        className="focus-ring inline-flex items-center justify-center gap-1 self-start rounded-md border border-accent/40 bg-accent/10 px-2 py-1 font-display text-[0.6rem] uppercase tracking-wider text-accent transition hover:bg-accent/20"
+      >
+        + Add child effect
+      </button>
+    </div>
+  );
+}
+
+function IconButton({
+  label,
+  children,
+  onClick,
+  disabled,
+  danger,
+}: {
+  label: string;
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className={cx(
+        "focus-ring inline-flex h-6 w-6 items-center justify-center rounded border font-mono text-xs transition",
+        disabled
+          ? "cursor-not-allowed border-[var(--chrome-stroke)] text-text-muted/40"
+          : danger
+            ? "border-status-error/40 text-text-muted hover:bg-status-error/15 hover:text-status-error"
+            : "border-[var(--chrome-stroke)] text-text-muted hover:bg-[var(--chrome-fill-soft)] hover:text-text-primary",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 

@@ -237,6 +237,13 @@ export interface AbilityEffectConfig {
   margin?: number;
   petTemplateKey?: string;
   durationMs?: number;
+  /**
+   * Child effects when `type` is `"COMPOSITE"`. The ability pays mana/cooldown
+   * once and every child resolves against the same primary target. The server
+   * flattens nested composites at parse time; the editor authors flat lists
+   * (see `lib/abilityEffects.ts`).
+   */
+  effects?: AbilityEffectConfig[];
 }
 
 /**

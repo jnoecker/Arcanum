@@ -325,6 +325,7 @@ const EFFECT_TYPES = new Set([
   "APPLY_STATUS",
   "TAUNT",
   "SUMMON_PET",
+  "COMPOSITE",
 ]);
 
 const TARGET_TYPES = new Set(["self", "ally", "enemy", "area"]);
@@ -377,6 +378,12 @@ function asEffect(v: unknown): AbilityEffectConfig {
   }
   if (typeof raw.petTemplateKey === "string" && raw.petTemplateKey.trim()) {
     out.petTemplateKey = raw.petTemplateKey.trim();
+  }
+  if (type === "COMPOSITE" && Array.isArray(raw.effects)) {
+    const children = raw.effects
+      .map((child) => asEffect(child))
+      .filter((c) => c.type !== "COMPOSITE" || (c.effects && c.effects.length > 0));
+    if (children.length > 0) out.effects = children;
   }
   return out;
 }
@@ -445,15 +452,17 @@ JSON shape:
   "requiredClass": "owning_class_id",
   "tier": 0|1|2|3,
   "effect": {
-    "type": "DIRECT_DAMAGE | AREA_DAMAGE | DIRECT_HEAL | APPLY_STATUS | TAUNT | SUMMON_PET",
+    "type": "DIRECT_DAMAGE | AREA_DAMAGE | DIRECT_HEAL | APPLY_STATUS | TAUNT | SUMMON_PET | COMPOSITE",
     "minDamage": int, "maxDamage": int, "damagePerLevel": number,
     "minHeal": int, "maxHeal": int, "healPerLevel": number,
-    "statusEffectId": "string", "durationMs": int
+    "statusEffectId": "string", "durationMs": int,
+    "effects": [ /* only for COMPOSITE: array of child effect objects with the same shape (no nested composites) */ ]
   }
 }
 
 Rules:
 - Effect type matches the action: damage attacks → DIRECT_DAMAGE / AREA_DAMAGE; heals → DIRECT_HEAL; buffs/debuffs → APPLY_STATUS; taunts → TAUNT; summons → SUMMON_PET.
+- Use COMPOSITE only when one cast clearly does two things to the same target (e.g. "damage + apply burn"). Provide every child in the 'effects' array; do not nest composites. All children must be compatible with the chosen targetType.
 - Set the numeric fields that suit the effect type and leave the rest unset (do not return 0 for fields that aren't relevant).
 - tier 0 = entry, 3 = capstone. Match the article's "Tier" field when set.
 - The id is the slug form of the title (lowercase, underscores, no punctuation).
@@ -531,10 +540,11 @@ JSON shape:
   "levelRequired": 1-100,
   "targetType": "self | ally | enemy | area",
   "effect": {
-    "type": "DIRECT_DAMAGE | AREA_DAMAGE | DIRECT_HEAL | APPLY_STATUS",
+    "type": "DIRECT_DAMAGE | AREA_DAMAGE | DIRECT_HEAL | APPLY_STATUS | COMPOSITE",
     "minDamage": int, "maxDamage": int, "damagePerLevel": number,
     "minHeal": int, "maxHeal": int, "healPerLevel": number,
-    "statusEffectId": "string", "durationMs": int
+    "statusEffectId": "string", "durationMs": int,
+    "effects": [ /* only for COMPOSITE: array of child effect objects (no nested composites) */ ]
   }
 }
 
@@ -543,7 +553,7 @@ Rules:
 - manaCostPct should usually be 0 — creatures don't pay mana.
 - levelRequired reflects the encounter tier where this power becomes threatening.
 - cooldownMs controls frequency: signature once-per-encounter moves get high cooldowns (60000+), rapid-fire attacks get low ones.
-- Effect type matches the action: most creature powers are DIRECT_DAMAGE / AREA_DAMAGE / APPLY_STATUS.
+- Effect type matches the action: most creature powers are DIRECT_DAMAGE / AREA_DAMAGE / APPLY_STATUS. Use COMPOSITE only when the power clearly does two things at once (e.g. damage + DoT); list every child in the 'effects' array, all compatible with the chosen targetType.
 - The id is the slug form of the title (lowercase, underscores, no punctuation).
 - Output ONLY valid JSON — no markdown fences, no preamble, no trailing commentary.${toneDirective ? `\n\nVoice directive for description:\n${toneDirective}` : ""}`;
 

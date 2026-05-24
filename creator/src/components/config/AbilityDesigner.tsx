@@ -138,7 +138,10 @@ export function AbilityDesigner({
       if (!cur) return;
       const nextEffect: AbilityEffectConfig =
         p.type && p.type !== cur.effect.type
-          ? ({ type: p.type } as AbilityEffectConfig)
+          ? // On type change, drop the previous type's fields but keep any
+            // seed values the caller passed in alongside `type` (e.g. an
+            // initial `effects` list when switching to COMPOSITE).
+            ({ ...p, type: p.type } as AbilityEffectConfig)
           : { ...cur.effect, ...p };
       onChange({
         abilities: { ...abilities, [id]: { ...cur, effect: nextEffect } },

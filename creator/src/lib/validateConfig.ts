@@ -1,6 +1,7 @@
 import type { AppConfig } from "@/types/config";
 import { missingRequiredGlobalAssets } from "./requiredGlobalAssets";
 import type { ValidationIssue } from "./validateZone";
+import { flattenEffect, incompatibleChildEffects } from "./abilityEffects";
 
 function normalizedLottery(config: AppConfig["lottery"]) {
   if (!config) return undefined;
@@ -317,27 +318,43 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
 
   // ─── Abilities ────────────────────────────────────────────────
   for (const [id, a] of Object.entries(config.abilities)) {
-    if (
-      a.effect.type === "APPLY_STATUS" &&
-      a.effect.statusEffectId &&
-      !statusEffectIds.has(a.effect.statusEffectId)
-    ) {
+    if (a.effect.type === "COMPOSITE" && (!a.effect.effects || a.effect.effects.length === 0)) {
       issues.push({
         severity: "error",
         entity: `ability:${id}`,
-        message: `Effect references unknown status effect "${a.effect.statusEffectId}"`,
+        message: `Composite effect has no child effects`,
       });
     }
-    if (
-      a.effect.type === "SUMMON_PET" &&
-      a.effect.petTemplateKey &&
-      petIds.size > 0 &&
-      !petIds.has(a.effect.petTemplateKey)
-    ) {
+    for (const leaf of flattenEffect(a.effect)) {
+      if (
+        leaf.type === "APPLY_STATUS" &&
+        leaf.statusEffectId &&
+        !statusEffectIds.has(leaf.statusEffectId)
+      ) {
+        issues.push({
+          severity: "error",
+          entity: `ability:${id}`,
+          message: `Effect references unknown status effect "${leaf.statusEffectId}"`,
+        });
+      }
+      if (
+        leaf.type === "SUMMON_PET" &&
+        leaf.petTemplateKey &&
+        petIds.size > 0 &&
+        !petIds.has(leaf.petTemplateKey)
+      ) {
+        issues.push({
+          severity: "warning",
+          entity: `ability:${id}`,
+          message: `Summon effect references unknown pet "${leaf.petTemplateKey}"`,
+        });
+      }
+    }
+    for (const bad of incompatibleChildEffects(a.effect, a.targetType)) {
       issues.push({
         severity: "warning",
         entity: `ability:${id}`,
-        message: `Summon effect references unknown pet "${a.effect.petTemplateKey}"`,
+        message: `Effect type "${bad.type}" is not valid for target "${a.targetType}" — the server will refuse to cast this ability`,
       });
     }
     const requiredClass = a.requiredClass?.trim() || a.classRestriction?.trim();

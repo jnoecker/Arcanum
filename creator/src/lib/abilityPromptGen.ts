@@ -3,6 +3,7 @@ import { getStyleSuffix, parseLlmJson } from "./arcanumPrompts";
 import { buildToneDirective } from "./loreGeneration";
 import type { AbilityDefinitionConfig, StatusEffectDefinitionConfig } from "@/types/config";
 import { AI_ENABLED } from "@/lib/featureFlags";
+import { primaryEffectType } from "@/lib/abilityEffects";
 
 const FORMAT_SPEC =
   "1:1 square ability icon centered in frame, symbolic/iconic representation, solid pale lavender (#d8d0e8) background";
@@ -83,7 +84,7 @@ Ability: ${ability.displayName}
 ${ability.description ? `Description: ${ability.description}` : ""}
 ${ability.requiredClass ? `Class: ${ability.requiredClass}` : ""}
 Target: ${ability.targetType}
-Effect type: ${ability.effect.type}
+Effect type: ${primaryEffectType(ability.effect)}
 Level: ${ability.levelRequired}
 
 Required style suffix (include verbatim at the end):
@@ -208,8 +209,9 @@ export function fillAbilityTemplate(
   const classStyle = template.classIconStyles[classKey]
     ?? template.classIconStyles["general"]
     ?? getClassPalette(classKey);
-  const effectVisual = template.effectTypeDescriptions[ability.effect.type]
-    ?? `${ability.effect.type} energy`;
+  const effectKey = primaryEffectType(ability.effect);
+  const effectVisual = template.effectTypeDescriptions[effectKey]
+    ?? `${effectKey} energy`;
 
   const prompt = template.template
     .replace(/\{ability_name\}/g, ability.displayName)

@@ -6,7 +6,7 @@ import { useConfigStore } from "@/stores/configStore";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { serializeZone } from "@/lib/saveZone";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
-import type { AppConfig } from "@/types/config";
+import type { AbilityEffectConfig, AppConfig } from "@/types/config";
 import {
   DEFAULT_ACHIEVEMENT_CATEGORIES,
   DEFAULT_ACHIEVEMENT_CRITERION_TYPES,
@@ -704,17 +704,25 @@ export function mapEntries<T>(
   return result;
 }
 
+function abilityEffectToPlain(e: AbilityEffectConfig): Record<string, unknown> {
+  const out: Record<string, unknown> = { type: e.type };
+  if (e.statusEffectId) out.statusEffectId = e.statusEffectId;
+  if (e.minDamage != null) out.minDamage = e.minDamage;
+  if (e.maxDamage != null) out.maxDamage = e.maxDamage;
+  if (e.minHeal != null) out.minHeal = e.minHeal;
+  if (e.maxHeal != null) out.maxHeal = e.maxHeal;
+  if (e.flatThreat != null) out.flatThreat = e.flatThreat;
+  if (e.margin != null) out.margin = e.margin;
+  if (e.petTemplateKey) out.petTemplateKey = e.petTemplateKey;
+  if (e.durationMs != null) out.durationMs = e.durationMs;
+  if (e.type === "COMPOSITE" && e.effects && e.effects.length > 0) {
+    out.effects = e.effects.map(abilityEffectToPlain);
+  }
+  return out;
+}
+
 export function abilityToPlain(a: AppConfig["abilities"][string]): Record<string, unknown> {
-  const effect: Record<string, unknown> = { type: a.effect.type };
-  if (a.effect.statusEffectId) effect.statusEffectId = a.effect.statusEffectId;
-  if (a.effect.minDamage != null) effect.minDamage = a.effect.minDamage;
-  if (a.effect.maxDamage != null) effect.maxDamage = a.effect.maxDamage;
-  if (a.effect.minHeal != null) effect.minHeal = a.effect.minHeal;
-  if (a.effect.maxHeal != null) effect.maxHeal = a.effect.maxHeal;
-  if (a.effect.flatThreat != null) effect.flatThreat = a.effect.flatThreat;
-  if (a.effect.margin != null) effect.margin = a.effect.margin;
-  if (a.effect.petTemplateKey) effect.petTemplateKey = a.effect.petTemplateKey;
-  if (a.effect.durationMs != null) effect.durationMs = a.effect.durationMs;
+  const effect = abilityEffectToPlain(a.effect);
   const obj: Record<string, unknown> = {
     displayName: a.displayName,
     manaCostPct: a.manaCostPct,

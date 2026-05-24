@@ -933,6 +933,14 @@ export interface RaceDefinitionConfig {
   image?: string;
   statMods?: StatMap;
   bodyDescription?: string;
+  /**
+   * Verbatim directive appended to every sprite prompt for this race
+   * (e.g. "NO FACE NO HUMAN FACE" for faceless ancestries). Bypasses the
+   * LLM paraphrase step that goes through `bodyDescription` → template, so
+   * it survives literally into the FLUX prompt. Keep it short — long
+   * addenda compete with the subject description for token weight.
+   */
+  imagePromptDirective?: string;
   staffPrompt?: string;
   /** Whether this race appears in character creation. Defaults to true when
    *  omitted. Mirrors the same field on `ClassDefinitionConfig`. */

@@ -39,6 +39,17 @@ export function getRaceBodyDescription(race: string): string {
     ?? race;
 }
 
+/**
+ * Returns the verbatim image-prompt directive authored on the race (e.g.
+ * "NO FACE NO HUMAN FACE"), or null if none. Appended literally to sprite
+ * prompts so it survives the LLM paraphrase that goes through the template.
+ */
+export function getRaceImagePromptDirective(race: string | undefined): string | null {
+  if (!race) return null;
+  const directive = useConfigStore.getState().config?.races[race]?.imagePromptDirective;
+  return directive && directive.trim() ? directive.trim() : null;
+}
+
 /** Get the outfit description for a class — config > fallback constant > class key */
 export function getClassOutfitDescription(cls: string): string {
   const config = useConfigStore.getState().config;
@@ -101,7 +112,13 @@ export function buildSpritePrompt(
 
   const body = `1:1 square full-body character illustration, centered, clean neutral background. ${subject.join(", ")}`;
 
-  return `${prefix}${toneLine}\n\n${body}\n\n${getStyleSuffix("worldbuilding")}`;
+  // Race-level verbatim directive (e.g. "NO FACE NO HUMAN FACE") — placed
+  // adjacent to the subject so FLUX gives it real weight, not after the
+  // style suffix where late tokens get downweighted.
+  const directive = getRaceImagePromptDirective(dimensions.race);
+  const directiveBlock = directive ? `\n\n${directive}` : "";
+
+  return `${prefix}${toneLine}\n\n${body}${directiveBlock}\n\n${getStyleSuffix("worldbuilding")}`;
 }
 
 export function fillSpriteTemplate(
@@ -193,6 +210,10 @@ export async function generateArtDirection(
     const desc = getClassOutfitDescription(playerClass);
     context.push(desc !== playerClass ? `Class: ${playerClass} — ${desc}` : `Class: ${playerClass}`);
   }
+  const directive = getRaceImagePromptDirective(race);
+  if (directive) {
+    context.push(`Hard constraint for this race (do not contradict): ${directive}`);
+  }
 
   const systemPrompt = `You are an expert visual art director for fantasy RPG character sprites. Given context about a sprite, write a concise visual description that an AI image generator can use to produce a compelling character portrait.${toneBlock}
 
@@ -200,6 +221,7 @@ Rules:
 - Focus on visual appearance: body type, clothing, armor, weapons, magical effects, color palette, mood
 - Be specific and vivid but concise (2-4 sentences)
 - If gender is specified, make it a clear visual characteristic
+- If a "Hard constraint" is provided, your description must NEVER describe features that contradict it (e.g. don't mention eyes/face if the constraint says no face)
 - Output ONLY the visual description — no quotes, no explanation`;
 
   const result = await invoke<string>("llm_complete", {

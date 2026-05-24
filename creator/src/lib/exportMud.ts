@@ -838,6 +838,7 @@ export function raceToPlain(race: AppConfig["races"][string]): Record<string, un
   if (race.image) obj.image = normalizeAssetRef(race.image);
   if (race.statMods && Object.keys(race.statMods).length > 0) obj.statMods = race.statMods;
   if (race.bodyDescription) obj.bodyDescription = race.bodyDescription;
+  if (race.imagePromptDirective) obj.imagePromptDirective = race.imagePromptDirective;
   if (race.staffPrompt) obj.staffPrompt = race.staffPrompt;
   return obj;
 }

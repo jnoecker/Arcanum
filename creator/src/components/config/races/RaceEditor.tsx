@@ -281,6 +281,22 @@ function BackstoryLoreCard({
           />
         </div>
       </div>
+
+      <div className="mt-4 flex flex-col gap-1">
+        <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+          Image Prompt Directive
+        </span>
+        <CommitTextarea
+          label=""
+          value={race.imagePromptDirective ?? ""}
+          onCommit={(v) => patch({ imagePromptDirective: v || undefined })}
+          placeholder='Appended verbatim to every sprite prompt for this race. Use for hard visual constraints the AI keeps ignoring — e.g. "NO FACE NO HUMAN FACE" for faceless ancestries.'
+          rows={2}
+        />
+        <p className="text-2xs text-text-muted/70">
+          Bypasses the LLM paraphrase step, so caps and emphasis are preserved literally.
+        </p>
+      </div>
     </SectionCard>
   );
 }

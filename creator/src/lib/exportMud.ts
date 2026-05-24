@@ -762,6 +762,7 @@ export function statusEffectToPlain(e: AppConfig["statusEffects"][string]): Reco
     effectType: normalizeStatusEffectTypeId(e.effectType),
     durationMs: e.durationMs,
   };
+  if (e.image) obj.image = normalizeAssetRef(e.image);
   if (e.tickIntervalMs != null) obj.tickIntervalMs = e.tickIntervalMs;
   const tickMinValue = e.tickMinValue ?? e.tickValue;
   const tickMaxValue = e.tickMaxValue ?? e.tickValue;

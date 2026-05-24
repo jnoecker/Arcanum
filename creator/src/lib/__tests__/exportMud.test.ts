@@ -204,6 +204,7 @@ describe("buildMonolithicConfigObject", () => {
           displayName: "Fortress Stance",
           effectType: "BUFF",
           durationMs: 10000,
+          image: "C:/Users/John Noecker Jr/AppData/Roaming/dev.ambon.creator/assets/images/fortress_stance.webp",
         },
       },
     };
@@ -233,6 +234,10 @@ describe("buildMonolithicConfigObject", () => {
     expect(runtime.admin.token).toBe("OVERRIDE_ME_FROM_ENV");
     expect(runtime.engine.classStartRooms.BULWARK).toBe("tutorial_glade:training_grounds");
     expect(runtime.engine.statusEffects.definitions.fortress_stance.effectType).toBe("stat_buff");
+    // Regression: status-effect icon path used to be silently dropped on save,
+    // causing the panel thumbnail to render empty after every reload even
+    // though the underlying asset variants were intact.
+    expect(runtime.engine.statusEffects.definitions.fortress_stance.image).toBe("fortress_stance.webp");
     expect(runtime.engine.abilities.definitions.shield_bash.image).toBe("shield_bash.png");
     // Unset skillPointCost is omitted so the Kotlin default of 1 applies
     expect(

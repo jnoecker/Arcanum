@@ -176,6 +176,10 @@ export function DialogueEditor({
     return a.localeCompare(b);
   });
 
+  const questOptions = Object.entries(world.quests ?? {})
+    .map(([id, q]) => ({ value: id, label: q.name ? `${q.name} (${id})` : id }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
   return (
     <Section
       title={`Dialogue (${nodeIds.length})`}
@@ -188,6 +192,7 @@ export function DialogueEditor({
             nodeId={nodeId}
             node={dialogue[nodeId]!}
             allNodeIds={nodeIds}
+            questOptions={questOptions}
             onUpdateText={(text) => handleUpdateNodeText(nodeId, text)}
             onRename={(newId) => handleRenameNode(nodeId, newId)}
             onDelete={() => handleDeleteNode(nodeId)}
@@ -215,6 +220,7 @@ interface DialogueNodeCardProps {
   nodeId: string;
   node: DialogueNodeFile;
   allNodeIds: string[];
+  questOptions: { value: string; label: string }[];
   onUpdateText: (text: string) => void;
   onRename: (newId: string) => void;
   onDelete: () => void;
@@ -227,6 +233,7 @@ function DialogueNodeCard({
   nodeId,
   node,
   allNodeIds,
+  questOptions,
   onUpdateText,
   onRename,
   onDelete,
@@ -290,6 +297,7 @@ function DialogueNodeCard({
                 key={i}
                 choice={choice}
                 nextOptions={nextOptions}
+                questOptions={questOptions}
                 onUpdate={(p) => onUpdateChoice(i, p)}
                 onDelete={() => onDeleteChoice(i)}
               />
@@ -349,11 +357,50 @@ function NodeTextArea({
 interface ChoiceRowProps {
   choice: DialogueChoiceFile;
   nextOptions: { value: string; label: string }[];
+  questOptions: { value: string; label: string }[];
   onUpdate: (patch: Partial<DialogueChoiceFile>) => void;
   onDelete: () => void;
 }
 
-const ChoiceRow = memo(function ChoiceRow({ choice, nextOptions, onUpdate, onDelete }: ChoiceRowProps) {
+// ─── Action encoding ────────────────────────────────────────────────
+// Dialogue choices carry a single optional `action` string, parsed by
+// the engine as `<verb>:<argument>`. The three verbs the server
+// currently handles are:
+//   - accept_quest:<quest_id>   — accept a quest from the giver
+//   - turn_in_quest:<quest_id>  — turn a quest in to this NPC
+//   - unlock_flag:<flag_name>   — set a global player flag
+// Anything else is preserved verbatim as "custom" so we never silently
+// drop a value the server might still understand.
+
+type ActionType = "none" | "accept_quest" | "turn_in_quest" | "unlock_flag" | "custom";
+
+const ACTION_TYPE_OPTIONS: { value: ActionType; label: string }[] = [
+  { value: "none", label: "None" },
+  { value: "accept_quest", label: "Accept quest" },
+  { value: "turn_in_quest", label: "Turn in quest" },
+  { value: "unlock_flag", label: "Set flag" },
+];
+
+function parseAction(action: string | undefined): { type: ActionType; value: string } {
+  if (!action) return { type: "none", value: "" };
+  for (const verb of ["accept_quest", "turn_in_quest", "unlock_flag"] as const) {
+    const prefix = `${verb}:`;
+    if (action.startsWith(prefix)) {
+      return { type: verb, value: action.slice(prefix.length).trim() };
+    }
+  }
+  return { type: "custom", value: action };
+}
+
+function buildAction(type: ActionType, value: string): string | undefined {
+  if (type === "none") return undefined;
+  const v = value.trim();
+  if (type === "custom") return v || undefined;
+  if (!v) return undefined;
+  return `${type}:${v}`;
+}
+
+const ChoiceRow = memo(function ChoiceRow({ choice, nextOptions, questOptions, onUpdate, onDelete }: ChoiceRowProps) {
   const [expanded, setExpanded] = useState(false);
   const hasConditions =
     choice.minLevel != null ||
@@ -421,21 +468,108 @@ const ChoiceRow = memo(function ChoiceRow({ choice, nextOptions, onUpdate, onDel
               placeholder="Any"
             />
           </FieldRow>
-          <FieldRow
-            label="Action"
-            hint="Trigger when chosen. Common: `unlock_flag:<name>` (sets a global flag — quests can gate on it via Requires dialogue flag), `accept_quest:<id>` (offers a quest)."
-          >
-            <TextInput
-              value={choice.action ?? ""}
-              onCommit={(v) => onUpdate({ action: v || undefined })}
-              placeholder="None"
-            />
-          </FieldRow>
+          <ActionField
+            action={choice.action}
+            questOptions={questOptions}
+            onCommit={(action) => onUpdate({ action })}
+          />
         </div>
       )}
     </div>
   );
 });
+
+// ─── Action picker ─────────────────────────────────────────────────
+
+function ActionField({
+  action,
+  questOptions,
+  onCommit,
+}: {
+  action: string | undefined;
+  questOptions: { value: string; label: string }[];
+  onCommit: (action: string | undefined) => void;
+}) {
+  const { type, value } = parseAction(action);
+
+  const typeOptions: { value: ActionType; label: string }[] =
+    type === "custom"
+      ? [...ACTION_TYPE_OPTIONS, { value: "custom", label: "Custom" }]
+      : ACTION_TYPE_OPTIONS;
+
+  const handleTypeChange = (next: string) => {
+    const nextType = next as ActionType;
+    if (nextType === type) return;
+    // Switching verbs clears the value — a quest id and a flag name
+    // aren't interchangeable.
+    onCommit(buildAction(nextType, ""));
+  };
+
+  const handleValueChange = (next: string) => {
+    onCommit(buildAction(type, next));
+  };
+
+  const isQuestAction = type === "accept_quest" || type === "turn_in_quest";
+  const hint =
+    type === "accept_quest"
+      ? "Player accepts the chosen quest from this NPC."
+      : type === "turn_in_quest"
+        ? "Player turns the chosen quest in to this NPC."
+        : type === "unlock_flag"
+          ? "Sets a global flag (quests can gate on it via Requires dialogue flag)."
+          : type === "custom"
+            ? "Unrecognised verb — preserved verbatim. Pick a known action above to convert."
+            : undefined;
+
+  return (
+    <>
+      <FieldRow label="Action" hint={hint}>
+        <SelectInput
+          value={type}
+          options={typeOptions.map((o) => ({ value: o.value, label: o.label }))}
+          onCommit={handleTypeChange}
+        />
+      </FieldRow>
+      {isQuestAction && (
+        <FieldRow label="Quest">
+          {questOptions.length > 0 ? (
+            <SelectInput
+              value={value}
+              options={questOptions}
+              onCommit={handleValueChange}
+              allowEmpty
+              placeholder="— select quest —"
+            />
+          ) : (
+            <TextInput
+              value={value}
+              onCommit={handleValueChange}
+              placeholder="quest_id (no quests in this zone yet)"
+            />
+          )}
+        </FieldRow>
+      )}
+      {type === "unlock_flag" && (
+        <FieldRow label="Flag">
+          <TextInput
+            value={value}
+            onCommit={handleValueChange}
+            placeholder="flag_name"
+          />
+        </FieldRow>
+      )}
+      {type === "custom" && (
+        <FieldRow label="Raw">
+          <TextInput
+            value={value}
+            onCommit={handleValueChange}
+            placeholder="verb:argument"
+          />
+        </FieldRow>
+      )}
+    </>
+  );
+}
 
 // ─── Inline node ID label (click to rename) ─────────────────────────
 

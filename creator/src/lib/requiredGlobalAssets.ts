@@ -327,8 +327,8 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
-    key: "widget_terminal",
-    defaultFilename: "widget_terminal.png",
+    key: "terminal_widget",
+    defaultFilename: "terminal_widget.png",
     label: "Terminal",
     description: "Left-edge nav button that opens the text-based game terminal.",
     assetType: "ability_icon",

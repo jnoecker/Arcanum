@@ -425,6 +425,110 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A single small hand-inked square room icon, pale paper-wash fill, thin sepia ink outline, slightly uneven hand-drawn edges, centered, with slight padding so the ink edges aren't clipped, isolated on a flat solid background, transparent background.",
     transparent: true,
   },
+  // Per-terrain room stamps. The client resolves minimap_room_<terrain>
+  // first and falls back to the generic minimap_room (then a procedural box)
+  // when a terrain glyph isn't registered, so any subset is fine. Keep them
+  // as bold silhouettes that read at node scale.
+  {
+    key: "minimap_room_inside",
+    defaultFilename: "minimap_room_inside.png",
+    label: "Minimap — Inside",
+    description: "Terrain stamp for indoor rooms.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A bold hand-inked glyph of an open interior doorway or arch, pale paper-wash fill, sepia ink outline, simple silhouette that reads at small size, centered, with slight padding, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "minimap_room_outside",
+    defaultFilename: "minimap_room_outside.png",
+    label: "Minimap — Outside",
+    description: "Terrain stamp for open-air rooms.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A bold hand-inked glyph of a small sun rising over a horizon line, pale paper-wash fill, sepia ink outline, simple silhouette that reads at small size, centered, with slight padding, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "minimap_room_forest",
+    defaultFilename: "minimap_room_forest.png",
+    label: "Minimap — Forest",
+    description: "Terrain stamp for forest rooms.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A bold hand-inked pine-tree silhouette, pale paper-wash fill, sepia ink outline, simple shape that reads at small size, centered, with slight padding, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "minimap_room_mountain",
+    defaultFilename: "minimap_room_mountain.png",
+    label: "Minimap — Mountain",
+    description: "Terrain stamp for mountain rooms.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A bold hand-inked peaked-mountain silhouette, pale paper-wash fill, sepia ink outline, simple shape that reads at small size, centered, with slight padding, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "minimap_room_underground",
+    defaultFilename: "minimap_room_underground.png",
+    label: "Minimap — Underground",
+    description: "Terrain stamp for underground / cave rooms.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A bold hand-inked cave-mouth arch with a couple of stalactites, pale paper-wash fill, sepia ink outline, simple silhouette that reads at small size, centered, with slight padding, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "minimap_room_underwater",
+    defaultFilename: "minimap_room_underwater.png",
+    label: "Minimap — Underwater",
+    description: "Terrain stamp for underwater rooms.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A bold hand-inked glyph of a curling wave with a rising bubble, pale paper-wash fill, sepia ink outline, simple silhouette that reads at small size, centered, with slight padding, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "minimap_room_desert",
+    defaultFilename: "minimap_room_desert.png",
+    label: "Minimap — Desert",
+    description: "Terrain stamp for desert rooms.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A bold hand-inked glyph of sand dunes beneath a small sun, pale paper-wash fill, sepia ink outline, simple silhouette that reads at small size, centered, with slight padding, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "minimap_room_swamp",
+    defaultFilename: "minimap_room_swamp.png",
+    label: "Minimap — Swamp",
+    description: "Terrain stamp for swamp rooms.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A bold hand-inked glyph of marsh reeds and cattails over a water ripple, pale paper-wash fill, sepia ink outline, simple silhouette that reads at small size, centered, with slight padding, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "minimap_room_urban",
+    defaultFilename: "minimap_room_urban.png",
+    label: "Minimap — Urban",
+    description: "Terrain stamp for urban / settlement rooms.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A bold hand-inked silhouette of a cluster of rooftops and buildings, pale paper-wash fill, sepia ink outline, simple shape that reads at small size, centered, with slight padding, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "minimap_room_sky",
+    defaultFilename: "minimap_room_sky.png",
+    label: "Minimap — Sky",
+    description: "Terrain stamp for sky / aerial rooms.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A bold hand-inked cloud silhouette, pale paper-wash fill, sepia ink outline, simple shape that reads at small size, centered, with slight padding, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
   {
     key: "minimap_room_current",
     defaultFilename: "minimap_room_current.png",

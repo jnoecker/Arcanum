@@ -14,6 +14,14 @@ describe("normalizeAssetRef", () => {
     expect(normalizeAssetRef("global_assets/compass_rose.png")).toBe("global_assets/compass_rose.png");
     expect(normalizeAssetRef("abc123.png")).toBe("abc123.png");
   });
+
+  it("collapses remote URLs of content-addressed assets to bare filenames", () => {
+    const hash = "a".repeat(64);
+    expect(normalizeAssetRef(`https://assets.example.com/${hash}.png`)).toBe(`${hash}.png`);
+    expect(normalizeAssetRef(`https://assets.example.com/images/${hash}.webp`)).toBe(`${hash}.webp`);
+    expect(normalizeAssetRef(`//cdn.example.com/${hash}.jpg`)).toBe(`${hash}.jpg`);
+    expect(normalizeAssetRef(`https://assets.example.com/${hash}.png?v=2`)).toBe(`${hash}.png`);
+  });
 });
 
 describe("normalizeGlobalAssetMap", () => {

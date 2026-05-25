@@ -5,13 +5,25 @@ const REMOTE_URL_RE = /^(?:https?:)?\/\//i;
 const ENGINE_MEDIA_PATH_RE = /^\/(?:images?|videos?|audio)\//i;
 const WINDOWS_ABSOLUTE_RE = /^[A-Za-z]:[\\/]/;
 const UNC_PATH_RE = /^\\\\/;
+// Content-addressed assets are stored as <sha256>.<ext> (64 hex chars).
+const R2_HASH_FILE_RE = /^[0-9a-f]{64}\.\w+$/i;
 
 export function normalizeAssetRef(value?: string | null): string | undefined {
   if (value == null) return undefined;
 
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  if (REMOTE_URL_RE.test(trimmed)) return trimmed;
+  if (REMOTE_URL_RE.test(trimmed)) {
+    // A remote URL pointing at one of our own content-addressed assets
+    // (e.g. a copied R2 URL pasted into an image field) must collapse to
+    // the bare hash filename so the runtime resolves it via images.baseUrl
+    // like every other asset. Otherwise sibling refs export inconsistently
+    // — some absolute URLs, some filenames. Genuinely external URLs (any
+    // non-hash basename) are left untouched.
+    const basename = trimmed.split(/[?#]/, 1)[0]?.split("/").pop()?.trim();
+    if (basename && R2_HASH_FILE_RE.test(basename)) return basename;
+    return trimmed;
+  }
   if (ENGINE_MEDIA_PATH_RE.test(trimmed)) return trimmed;
 
   if (

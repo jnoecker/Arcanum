@@ -198,6 +198,7 @@ const BASE_CONFIG: AppConfig = {
     minimap_unexplored: "minimap-unexplored.png",
     minimap_room_housing: "minimap_room_housing.png",
     minimap_quest: "minimap_quest.png",
+    minimap_expand: "minimap_expand.png",
     map_background: "map_background.png",
     room_panel_bg: "room_panel_bg.png",
     compass_bg: "compass_bg.png",

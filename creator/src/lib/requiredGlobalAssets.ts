@@ -570,6 +570,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
+    key: "minimap_expand",
+    defaultFilename: "minimap_expand.png",
+    label: "Minimap — Expand",
+    description: "Corner button on the minimap that opens the full world map.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single expand-to-fullscreen glyph — four short arrows pointing outward to the corners of a square frame, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
     key: "map_background",
     defaultFilename: "map_background.png",
     label: "Map Background",

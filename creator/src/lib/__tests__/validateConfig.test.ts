@@ -201,6 +201,8 @@ const BASE_CONFIG: AppConfig = {
     map_background: "map_background.png",
     room_panel_bg: "room_panel_bg.png",
     compass_bg: "compass_bg.png",
+    vitals_bar_bg: "vitals_bar_bg.png",
+    room_sign_bg: "room_sign_bg.png",
   },
   persistence: { backend: "YAML", rootDir: "data/players", worker: { enabled: true, flushIntervalMs: 5000 } },
   login: { maxWrongPasswordRetries: 3, maxFailedAttemptsBeforeDisconnect: 3, maxConcurrentLogins: 50, authThreads: 8 },

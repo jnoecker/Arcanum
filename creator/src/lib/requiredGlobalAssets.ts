@@ -602,6 +602,30 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A decorative rounded-square backdrop tile with a subtle starfield and faint aged-parchment texture, warm muted gold and indigo tones, no readable text, suitable behind a compass rose.",
     transparent: false,
   },
+  // HUD chrome frames. Transparent overlays the UI sits on, so they read as
+  // ornaments (full-width frame element, not a centered icon).
+  {
+    key: "vitals_bar_bg",
+    defaultFilename: "vitals_bar_bg.png",
+    label: "Vitals Bar Branch",
+    description: "Horizontal branch the HP/MP bar rests on. Transparent overlay spanning the top of the play area.",
+    assetType: "ornament",
+    defaultPrompt:
+      "A long horizontal tree branch spanning the full width, gnarled bark wrapped in climbing vines, small blossoms, and tiny mushrooms with a few leaves, the ends tapering off cleanly; whimsical hand-painted storybook style; isolated on a flat solid background, transparent background, no scene.",
+    transparent: true,
+    aspect: "landscape",
+  },
+  {
+    key: "room_sign_bg",
+    defaultFilename: "room_sign_bg.png",
+    label: "Room Name Sign",
+    description: "Hand-carved wooden sign that hangs below the vitals branch and holds the room name. Transparent overlay; leave the face blank (the UI draws the name).",
+    assetType: "ornament",
+    defaultPrompt:
+      "A small hand-carved wooden hanging sign, whimsical Disney-storybook style, a rounded weathered plank with a carved border and short hanging ropes or chains at the top, a couple of vines or tiny mushrooms at the corners, blank face with no text; isolated on a flat solid background, transparent background, no scene.",
+    transparent: true,
+    aspect: "landscape",
+  },
 ] as const;
 
 /** Set of required keys for fast membership checks. */

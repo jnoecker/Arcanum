@@ -33,6 +33,12 @@ const ICON_NEGATIVE = `${UNIVERSAL_NEGATIVE}, scene, scenery, landscape, environ
 // scene around them.
 const ICON_FRAMING = `Single iconic symbol centered in frame, simple flat shape, fills roughly 60% of the canvas, isolated on a uniform flat solid color background suitable for background removal, no scene, no scenery, no environmental elements, no extra subjects, no decorative borders, no sticker outline, no drop shadow.`;
 
+// Frame/ornament overlays (e.g. the vitals branch, hanging room sign) keep
+// their transparency but span the canvas — the centered-icon framing and the
+// anti-"decorative frame" negative would fight them, so they get their own.
+const FRAME_FRAMING = `A single ornate decorative frame element filling the canvas edge to edge, the ends tapering off cleanly, isolated on a uniform flat solid color background suitable for background removal, no scene, no scenery, no environment, no landscape, no sky, no ground, no extra subjects, no readable text.`;
+const FRAME_NEGATIVE = `${UNIVERSAL_NEGATIVE}, scene, scenery, landscape, environment, sky, ground, horizon, photograph, multiple subjects, collage, drop shadow, vignette, painted backdrop, busy background, readable text, letters`;
+
 interface Props {
   asset: RequiredGlobalAsset;
   onClose: () => void;
@@ -102,7 +108,8 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
   // guidance, so the icon visually belongs to the world without inheriting
   // scene directives. Backdrops like map_background use the full world
   // style because they're meant to feel like part of the world.
-  const isIcon = asset.transparent;
+  const isOrnament = asset.assetType === "ornament";
+  const isIcon = asset.transparent && !isOrnament;
 
   const handleGenerate = async () => {
     setStage("generating");
@@ -121,6 +128,16 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
           : "";
         finalPrompt = `${ICON_FRAMING}\n\n${prompt}${styleHint}`;
         negativePrompt = ICON_NEGATIVE;
+      } else if (isOrnament) {
+        // Transparent frame element (HUD chrome). Keep the world palette but
+        // frame it as a full-width ornament, not a centered icon, and don't
+        // forbid decorative borders the way ICON_NEGATIVE does.
+        const worldBase = buildVisualStyleDirective().trim();
+        const styleHint = worldBase
+          ? `\n\nPalette and material cues (apply to the frame only, do NOT add scenery, sky, ground, or extra subjects): ${worldBase}`
+          : "";
+        finalPrompt = `${FRAME_FRAMING}\n\n${prompt}${styleHint}`;
+        negativePrompt = FRAME_NEGATIVE;
       } else {
         const preamble = getPreamble("gentle_magic", "worldbuilding");
         const styleSuffix = getStyleSuffix("worldbuilding");

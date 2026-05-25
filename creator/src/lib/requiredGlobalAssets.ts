@@ -204,6 +204,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
+    key: "inn_widget",
+    defaultFilename: "inn_widget.png",
+    label: "Inn",
+    description: "Badge shown on inn rooms where players can rest and set their recall point.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single cozy curtained bed with a warm glowing lantern beside it, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
     key: "minimap_unexplored",
     defaultFilename: "minimap-unexplored.png",
     label: "Minimap — Unexplored",

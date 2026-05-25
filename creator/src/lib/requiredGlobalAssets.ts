@@ -338,18 +338,8 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A single retro command-line terminal window with a blinking prompt cursor, centered, soft outline, transparent background.",
     transparent: true,
   },
-  // Navigation compass: a central rose that fills the compass box, plus one
-  // glyph per movement direction for the surrounding buttons.
-  {
-    key: "compass_widget",
-    defaultFilename: "compass_widget.png",
-    label: "Compass Rose",
-    description: "Central compass rose that fills the navigation compass box.",
-    assetType: "ability_icon",
-    defaultPrompt:
-      "An ornate golden eight-point compass rose star with fine engraved detail and a small central hub, dark navy backdrop, centered, transparent background.",
-    transparent: true,
-  },
+  // Navigation compass: one glyph per movement direction for the buttons
+  // surrounding the compass box.
   {
     key: "compass_north",
     defaultFilename: "compass_north.png",
@@ -452,17 +442,6 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     defaultPrompt:
       "A decorative rounded-square backdrop tile with a subtle starfield and faint aged-parchment texture, warm muted gold and indigo tones, no readable text, suitable behind a compass rose.",
     transparent: false,
-  },
-  {
-    key: "action_bar_bg",
-    defaultFilename: "action_bar_bg.png",
-    label: "Action Bar Background",
-    description: "Backdrop for the bottom dock (panel buttons / skill bar), under a dark legibility scrim.",
-    assetType: "background",
-    defaultPrompt:
-      "A wide horizontal decorative backdrop strip with subtle texture, deep midnight tones with faint ember accents, no figures, no readable text, suitable beneath a row of icon buttons.",
-    transparent: false,
-    aspect: "landscape",
   },
 ] as const;
 

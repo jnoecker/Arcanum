@@ -428,6 +428,38 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A wide aged parchment or weathered vellum backdrop with subtle cartographer's texture, faint compass-rose watermark, soft warm sepia tones with hints of muted indigo, no readable text, no figures, suitable as a backdrop for an overlaid world map",
     transparent: false,
   },
+  // Optional client backdrops. Each is layered under a legibility scrim and
+  // falls back to the solid/floating look when the asset is absent.
+  {
+    key: "room_panel_bg",
+    defaultFilename: "room_panel_bg.png",
+    label: "Room Panel Background",
+    description: "Backdrop behind the whole room box (description + compass), under a dark legibility scrim.",
+    assetType: "background",
+    defaultPrompt:
+      "A dark atmospheric decorative backdrop with subtle magical texture, deep midnight-teal tones, faint ambient detail, no figures, no readable text, suitable beneath a panel of readable body text.",
+    transparent: false,
+  },
+  {
+    key: "compass_bg",
+    defaultFilename: "compass_bg.png",
+    label: "Compass Background",
+    description: "Backdrop behind the compass rose (rounded square). No scrim — the rose and letters sit on top.",
+    assetType: "background",
+    defaultPrompt:
+      "A decorative rounded-square backdrop tile with a subtle starfield and faint aged-parchment texture, warm muted gold and indigo tones, no readable text, suitable behind a compass rose.",
+    transparent: false,
+  },
+  {
+    key: "action_bar_bg",
+    defaultFilename: "action_bar_bg.png",
+    label: "Action Bar Background",
+    description: "Backdrop for the bottom dock (panel buttons / skill bar), under a dark legibility scrim.",
+    assetType: "background",
+    defaultPrompt:
+      "A wide horizontal decorative backdrop strip with subtle texture, deep midnight tones with faint ember accents, no figures, no readable text, suitable beneath a row of icon buttons.",
+    transparent: false,
+  },
 ] as const;
 
 /** Set of required keys for fast membership checks. */

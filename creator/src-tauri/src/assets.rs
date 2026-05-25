@@ -516,11 +516,30 @@ pub async fn save_bytes_as_asset(
             .map_err(|e| format!("Failed to write file: {e}"))?;
     }
 
+    let _lock = MANIFEST_LOCK.lock().await;
+    let mut manifest = load_manifest(&app).await?;
+
+    // A background-removed image is saved as a variant in the same group as
+    // its source. Inherit the source's prompt so the gallery shows the real
+    // prompt rather than a placeholder; fall back only when there's no
+    // non-bg-removal sibling to inherit from.
+    let (prompt, enhanced_prompt) = variant_group
+        .as_deref()
+        .filter(|g| !g.is_empty())
+        .and_then(|g| {
+            manifest
+                .assets
+                .iter()
+                .find(|a| a.variant_group == g && a.model != "bg-removal")
+        })
+        .map(|src| (src.prompt.clone(), src.enhanced_prompt.clone()))
+        .unwrap_or_else(|| ("Background removed".to_string(), String::new()));
+
     let entry = AssetEntry {
         id: uuid::Uuid::new_v4().to_string(),
         hash,
-        prompt: "Background removed".to_string(),
-        enhanced_prompt: String::new(),
+        prompt,
+        enhanced_prompt,
         model: "bg-removal".to_string(),
         asset_type,
         context: context.unwrap_or_default(),
@@ -533,8 +552,6 @@ pub async fn save_bytes_as_asset(
         is_active: false,
     };
 
-    let _lock = MANIFEST_LOCK.lock().await;
-    let mut manifest = load_manifest(&app).await?;
     manifest.assets.retain(|a| a.hash != entry.hash);
     manifest.assets.push(entry.clone());
     save_manifest(&app, &manifest).await?;

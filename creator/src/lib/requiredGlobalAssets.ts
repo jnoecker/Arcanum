@@ -336,6 +336,78 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A single retro command-line terminal window with a blinking prompt cursor, centered, soft outline, transparent background.",
     transparent: true,
   },
+  // Navigation compass: a central rose that fills the compass box, plus one
+  // glyph per movement direction for the surrounding buttons.
+  {
+    key: "compass_widget",
+    defaultFilename: "compass_widget.png",
+    label: "Compass Rose",
+    description: "Central compass rose that fills the navigation compass box.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "An ornate golden eight-point compass rose star with fine engraved detail and a small central hub, dark navy backdrop, centered, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "compass_north",
+    defaultFilename: "compass_north.png",
+    label: "Compass — North",
+    description: "Glyph for the North movement button on the navigation compass.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single upward-pointing ornate golden arrow glyph, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "compass_south",
+    defaultFilename: "compass_south.png",
+    label: "Compass — South",
+    description: "Glyph for the South movement button on the navigation compass.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single downward-pointing ornate golden arrow glyph, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "compass_east",
+    defaultFilename: "compass_east.png",
+    label: "Compass — East",
+    description: "Glyph for the East movement button on the navigation compass.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single right-pointing ornate golden arrow glyph, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "compass_west",
+    defaultFilename: "compass_west.png",
+    label: "Compass — West",
+    description: "Glyph for the West movement button on the navigation compass.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single left-pointing ornate golden arrow glyph, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "compass_up",
+    defaultFilename: "compass_up.png",
+    label: "Compass — Up",
+    description: "Glyph for the Up (ascend) movement button on the navigation compass.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single golden double-chevron pointing up, suggesting ascent, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "compass_down",
+    defaultFilename: "compass_down.png",
+    label: "Compass — Down",
+    description: "Glyph for the Down (descend) movement button on the navigation compass.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single golden double-chevron pointing down, suggesting descent, centered, soft outline, transparent background.",
+    transparent: true,
+  },
   {
     key: "minimap_unexplored",
     defaultFilename: "minimap-unexplored.png",

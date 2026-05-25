@@ -40,6 +40,21 @@ interface Props {
   onComplete: (fileName: string) => void;
 }
 
+// Generation canvases. Sizes match GPT Image 2's native canvases (and what
+// room/shop entities already generate at) so nothing gets upscaled.
+function dimsForAspect(
+  aspect: RequiredGlobalAsset["aspect"],
+): { width: number; height: number } {
+  switch (aspect) {
+    case "landscape":
+      return { width: 1536, height: 1024 };
+    case "portrait":
+      return { width: 1024, height: 1536 };
+    default:
+      return { width: 1024, height: 1024 };
+  }
+}
+
 const STAGE_LABEL: Record<Stage, string> = {
   compose: "Compose",
   generating: "Rendering",
@@ -118,12 +133,13 @@ export function GlobalAssetGeneratorModal({ asset, onClose, onComplete }: Props)
           ? (model as { defaultGuidance: number }).defaultGuidance
           : null;
 
+      const { width, height } = dimsForAspect(asset.aspect);
       const image = await generateAssetImage({
         provider: imageProvider,
         model: model ?? modelId,
         prompt: finalPrompt,
-        width: 1024,
-        height: 1024,
+        width,
+        height,
         assetType: asset.assetType,
         steps: model?.defaultSteps ?? null,
         guidance,

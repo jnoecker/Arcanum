@@ -27,6 +27,8 @@ export interface RequiredGlobalAsset {
   defaultPrompt: string;
   /** Whether background removal should be enabled by default after generation. */
   transparent: boolean;
+  /** Generation aspect ratio. Defaults to "square" (1024×1024) when omitted. */
+  aspect?: "square" | "landscape" | "portrait";
 }
 
 export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
@@ -439,6 +441,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     defaultPrompt:
       "A dark atmospheric decorative backdrop with subtle magical texture, deep midnight-teal tones, faint ambient detail, no figures, no readable text, suitable beneath a panel of readable body text.",
     transparent: false,
+    aspect: "landscape",
   },
   {
     key: "compass_bg",
@@ -459,6 +462,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     defaultPrompt:
       "A wide horizontal decorative backdrop strip with subtle texture, deep midnight tones with faint ember accents, no figures, no readable text, suitable beneath a row of icon buttons.",
     transparent: false,
+    aspect: "landscape",
   },
 ] as const;
 

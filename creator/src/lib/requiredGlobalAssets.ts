@@ -400,15 +400,70 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A single golden double-chevron pointing down, suggesting descent, centered, soft outline, transparent background.",
     transparent: true,
   },
+  // Torn-parchment minimap: a paper sheet backdrop plus square ink stamps
+  // drawn centered on each room node. The client clips the sheet to a torn
+  // polygon and inks the frame, so the backdrop is a plain rectangular fill;
+  // the room stamps are transparent so they sit on the paper.
+  {
+    key: "minimap_bg",
+    defaultFilename: "minimap_bg.png",
+    label: "Minimap — Parchment",
+    description: "Aged-paper sheet behind the minimap. The client clips it to a torn polygon and inks the frame on top — supply a clean rectangular fill, no border.",
+    assetType: "background",
+    defaultPrompt:
+      "A flat aged-paper texture filling the frame edge to edge — visible paper fibers, faint stains and discoloration, warm sepia tone, no border, no torn edge, no drawing, no figures, no readable text.",
+    transparent: false,
+    aspect: "landscape",
+  },
+  {
+    key: "minimap_room",
+    defaultFilename: "minimap_room.png",
+    label: "Minimap — Room",
+    description: "Stamp for an explored room. The workhorse — most of the map — so keep it calm and neutral.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single small hand-inked square room icon, pale paper-wash fill, thin sepia ink outline, slightly uneven hand-drawn edges, centered, with slight padding so the ink edges aren't clipped, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "minimap_room_current",
+    defaultFilename: "minimap_room_current.png",
+    label: "Minimap — Current Room",
+    description: "\"You are here\" stamp. Most prominent — rendered larger than other rooms.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single small hand-inked square room icon in sienna-red ink with a clear central marker (a filled dot or an X), pale paper-wash fill, slightly uneven hand-drawn edges, centered, with slight padding so the ink edges aren't clipped, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
   {
     key: "minimap_unexplored",
     defaultFilename: "minimap-unexplored.png",
     label: "Minimap — Unexplored",
-    description: "Fog-of-war tile shown on the minimap for unvisited rooms.",
+    description: "Faint stamp for an unvisited room — low contrast so explored rooms pop.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A flat square tile of uniform muted blue-grey fog, gentle subtle texture, no detail, no objects, no figures, fills the entire square frame edge to edge.",
-    transparent: false,
+      "A single faint, ghosted square room outline in pale washed-out sepia ink, very low contrast, an optional faint question mark in the center, slightly uneven hand-drawn edges, centered, with slight padding so the edges aren't clipped, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "minimap_room_housing",
+    defaultFilename: "minimap_room_housing.png",
+    label: "Minimap — Housing",
+    description: "Stamp marking player housing on the minimap.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single small hand-inked house glyph with a peaked roof, pale paper-wash fill, thin sepia ink outline, slightly uneven hand-drawn edges, centered, with slight padding so the ink edges aren't clipped, isolated on a flat solid background, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "minimap_quest",
+    defaultFilename: "minimap_quest.png",
+    label: "Minimap — Quest",
+    description: "Overlay haloing a room with a quest objective. Drawn slightly larger than the room box and pulsed via opacity — keep it flat, no baked glow.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single flat amber ring or diamond marker, solid even color, no glow, no gradient, crisp clean edges, slightly uneven hand-drawn line, centered, with slight padding so the edges aren't clipped, isolated on a flat solid background, transparent background.",
+    transparent: true,
   },
   {
     key: "map_background",

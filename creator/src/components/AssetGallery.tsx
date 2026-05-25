@@ -99,7 +99,13 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   const [removingBg, setRemovingBg] = useState(false);
   const [previewCache, setPreviewCache] = useState<Record<string, string>>({});
   const [syncResult, setSyncResult] = useState<SyncProgress | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const copyText = (field: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 1500);
+  };
 
   const hasR2 = !!(settings?.r2_account_id && settings?.r2_bucket && settings?.r2_access_key_id);
 
@@ -619,16 +625,16 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                           {`${settings.r2_custom_domain.replace(/\/$/, "")}/${selected.file_name}`}
                         </p>
                         <button
-                          onClick={() => {
-                            const url = `${settings.r2_custom_domain.replace(/\/$/, "")}/${selected.file_name}`;
-                            navigator.clipboard.writeText(url);
-                            setCopiedId(selected.id);
-                            setTimeout(() => setCopiedId(null), 1500);
-                          }}
+                          onClick={() =>
+                            copyText(
+                              "url",
+                              `${settings.r2_custom_domain.replace(/\/$/, "")}/${selected.file_name}`,
+                            )
+                          }
                           className="shrink-0 rounded px-1.5 py-0.5 text-2xs text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-secondary"
                           title="Copy URL"
                         >
-                          {copiedId === selected.id ? "Copied" : "Copy"}
+                          {copiedField === "url" ? "Copied" : "Copy"}
                         </button>
                       </div>
                     </div>
@@ -648,16 +654,36 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                     </div>
                   )}
 
-                  <div>
-                    <p className="text-2xs uppercase tracking-wider text-text-muted">Prompt</p>
-                    <p className="text-2xs leading-relaxed text-text-secondary">
-                      {selected.prompt.length > 320 ? `${selected.prompt.slice(0, 320)}...` : selected.prompt}
-                    </p>
-                  </div>
+                  {selected.prompt && (
+                    <div>
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="text-2xs uppercase tracking-wider text-text-muted">Prompt</p>
+                        <button
+                          onClick={() => copyText("prompt", selected.prompt)}
+                          className="shrink-0 rounded px-1.5 py-0.5 text-2xs text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-secondary"
+                          title="Copy prompt"
+                        >
+                          {copiedField === "prompt" ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                      <p className="text-2xs leading-relaxed text-text-secondary">
+                        {selected.prompt.length > 320 ? `${selected.prompt.slice(0, 320)}...` : selected.prompt}
+                      </p>
+                    </div>
+                  )}
 
                   {selected.enhanced_prompt && (
                     <div>
-                      <p className="text-2xs uppercase tracking-wider text-text-muted">Enhanced Prompt</p>
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="text-2xs uppercase tracking-wider text-text-muted">Enhanced Prompt</p>
+                        <button
+                          onClick={() => copyText("enhanced", selected.enhanced_prompt)}
+                          className="shrink-0 rounded px-1.5 py-0.5 text-2xs text-text-muted transition-colors hover:bg-bg-elevated hover:text-text-secondary"
+                          title="Copy enhanced prompt"
+                        >
+                          {copiedField === "enhanced" ? "Copied" : "Copy"}
+                        </button>
+                      </div>
                       <p className="text-2xs leading-relaxed text-text-secondary">
                         {selected.enhanced_prompt.length > 320
                           ? `${selected.enhanced_prompt.slice(0, 320)}...`

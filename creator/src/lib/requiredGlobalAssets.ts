@@ -327,6 +327,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
+    key: "widget_terminal",
+    defaultFilename: "widget_terminal.png",
+    label: "Terminal",
+    description: "Left-edge nav button that opens the text-based game terminal.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single retro command-line terminal window with a blinking prompt cursor, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
     key: "minimap_unexplored",
     defaultFilename: "minimap-unexplored.png",
     label: "Minimap — Unexplored",

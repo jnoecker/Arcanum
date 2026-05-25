@@ -213,6 +213,119 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A single cozy curtained bed with a warm glowing lantern beside it, centered, soft outline, transparent background.",
     transparent: true,
   },
+  // Persistent player-UI navigation buttons rendered down the left edge of
+  // every room canvas (unlike the room-feature badges above, which only
+  // appear on rooms that host the corresponding feature).
+  {
+    key: "character_widget",
+    defaultFilename: "character_widget.png",
+    label: "Character Panel",
+    description: "Left-edge nav button that opens the character sheet.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single human bust silhouette portrait icon, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "inventory_widget",
+    defaultFilename: "inventory_widget.png",
+    label: "Inventory Panel",
+    description: "Left-edge nav button that opens the inventory.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single open satchel or backpack icon, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "equipment_widget",
+    defaultFilename: "equipment_widget.png",
+    label: "Equipment Panel",
+    description: "Left-edge nav button that opens the equipment / worn-gear screen.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single suit-of-armor breastplate icon, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "spellbook_widget",
+    defaultFilename: "spellbook_widget.png",
+    label: "Spellbook Panel",
+    description: "Left-edge nav button that opens the spellbook / abilities screen.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single closed spellbook with an arcane rune on the cover, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "quests_widget",
+    defaultFilename: "quests_widget.png",
+    label: "Quests Panel",
+    description: "Left-edge nav button that opens the active-quests journal.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single furled quest scroll icon, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "combat_log_widget",
+    defaultFilename: "combat_log_widget.png",
+    label: "Combat Log Panel",
+    description: "Left-edge nav button that opens the combat log.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single crossed-swords emblem over a small lined parchment, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "social_widget",
+    defaultFilename: "social_widget.png",
+    label: "Social Panel",
+    description: "Left-edge nav button that opens the social / chat / party screen.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single pair of overlapping speech-bubble icons, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "crafting_widget",
+    defaultFilename: "crafting_widget.png",
+    label: "Crafting Panel",
+    description: "Left-edge nav button that opens the crafting screen.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single blacksmith hammer crossed with tongs, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "auction_widget",
+    defaultFilename: "auction_widget.png",
+    label: "Auction Panel",
+    description: "Left-edge nav button that opens the auction house screen.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single auctioneer's gavel on an ornate block, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "mail_widget",
+    defaultFilename: "mail_widget.png",
+    label: "Mail Panel",
+    description: "Left-edge nav button that opens the in-game mail screen.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single sealed envelope icon, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "help_widget",
+    defaultFilename: "help_widget.png",
+    label: "Help Panel",
+    description: "Left-edge nav button that opens the help / documentation screen.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single question mark inside a circle icon, centered, soft outline, transparent background.",
+    transparent: true,
+  },
   {
     key: "minimap_unexplored",
     defaultFilename: "minimap-unexplored.png",

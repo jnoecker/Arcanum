@@ -644,6 +644,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: false,
   },
   {
+    key: "trainer_bg",
+    defaultFilename: "trainer_bg.png",
+    label: "Trainer Board Texture",
+    description: "Slate texture layered over the procedural trainer chalkboard background. Falls back to procedural slate when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A dark slate chalkboard texture filling the frame edge to edge — matte charcoal-grey surface with faint chalk dust and subtle smudges, no border, no writing, no objects, no figures, no readable text, suitable as a backdrop layered over a trainer board.",
+    transparent: false,
+  },
+  {
     key: "equipment_bg",
     defaultFilename: "equipment_bg.png",
     label: "Equipment Backdrop",

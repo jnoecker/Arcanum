@@ -809,6 +809,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A single open storage chest with a small downward arrow above it, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
   },
+  {
+    key: "action_unequip",
+    defaultFilename: "action_unequip.png",
+    label: "Action — Unequip",
+    description: "Icon on the Unequip button for equipped items.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single suit-of-armor breastplate with a small outward-pointing arrow, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
 ] as const;
 
 /** Set of required keys for fast membership checks. */

@@ -221,6 +221,7 @@ const BASE_CONFIG: AppConfig = {
     action_drop: "action_drop.png",
     action_equip: "action_equip.png",
     action_store: "action_store.png",
+    action_unequip: "action_unequip.png",
   },
   persistence: { backend: "YAML", rootDir: "data/players", worker: { enabled: true, flushIntervalMs: 5000 } },
   login: { maxWrongPasswordRetries: 3, maxFailedAttemptsBeforeDisconnect: 3, maxConcurrentLogins: 50, authThreads: 8 },

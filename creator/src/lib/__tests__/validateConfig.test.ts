@@ -203,6 +203,7 @@ const BASE_CONFIG: AppConfig = {
     room_panel_bg: "room_panel_bg.png",
     compass_bg: "compass_bg.png",
     monster_manual_bg: "monster_manual_bg.png",
+    inventory_satchel_bg: "inventory_satchel_bg.png",
     vitals_bar_bg: "vitals_bar_bg.png",
     room_sign_bg: "room_sign_bg.png",
     action_attack: "action_attack.png",

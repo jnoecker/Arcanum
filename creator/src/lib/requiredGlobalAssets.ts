@@ -623,6 +623,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: false,
     aspect: "landscape",
   },
+  {
+    key: "inventory_satchel_bg",
+    defaultFilename: "inventory_satchel_bg.png",
+    label: "Inventory Satchel Texture",
+    description: "Leather texture layered over the procedural satchel inventory background. Falls back to procedural leather when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A worn leather texture filling the frame edge to edge — supple tanned hide with subtle grain, faint stitching, and gentle wear, warm brown tones, no border, no objects, no figures, no readable text, suitable as a backdrop layered behind inventory pockets.",
+    transparent: false,
+  },
   // HUD chrome frames. Transparent overlays the UI sits on, so they read as
   // ornaments (full-width frame element, not a centered icon).
   {

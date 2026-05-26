@@ -205,6 +205,8 @@ const BASE_CONFIG: AppConfig = {
     monster_manual_bg: "monster_manual_bg.png",
     inventory_satchel_bg: "inventory_satchel_bg.png",
     equipment_bg: "equipment_bg.png",
+    inn_bg: "inn_bg.png",
+    inn_key: "inn_key.png",
     vitals_bar_bg: "vitals_bar_bg.png",
     room_sign_bg: "room_sign_bg.png",
     action_attack: "action_attack.png",

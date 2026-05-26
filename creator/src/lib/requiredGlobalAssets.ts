@@ -644,6 +644,28 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: false,
     aspect: "landscape",
   },
+  // Inn (recall) modal: a card backdrop plus the hangable key.
+  {
+    key: "inn_bg",
+    defaultFilename: "inn_bg.png",
+    label: "Inn Card Background",
+    description: "Backdrop behind the inn (recall) modal card. Falls back to the warm procedural card when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A cozy inn interior backdrop — warm lamplight, wooden beams, a stone hearth glow, soft golden tones, snug and inviting, no figures, no readable text, suitable as a backdrop behind an inn rest card.",
+    transparent: false,
+    aspect: "landscape",
+  },
+  {
+    key: "inn_key",
+    defaultFilename: "inn_key.png",
+    label: "Inn Key",
+    description: "Brass key that hangs on a hook in the inn modal; clicking it sets your recall point. Falls back to a simple key icon when absent.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single ornate brass key oriented vertically as if hanging — the bow (handle loop) at the top, the bit at the bottom — warm metallic tones, bold silhouette, centered, soft outline, transparent background.",
+    transparent: true,
+  },
   // HUD chrome frames. Transparent overlays the UI sits on, so they read as
   // ornaments (full-width frame element, not a centered icon).
   {

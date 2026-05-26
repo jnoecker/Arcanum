@@ -654,6 +654,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: false,
   },
   {
+    key: "journal_bg",
+    defaultFilename: "journal_bg.png",
+    label: "Battle Journal Texture",
+    description: "Parchment-page texture layered over the procedural Battle Journal (combat log) background. Falls back to procedural parchment when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A warm aged-parchment page texture filling the frame edge to edge — soft paper fibers, faint stains and foxing, gentle warm sepia tone, no border, no ruled lines, no writing, no objects, no figures, no readable text, suitable as a backdrop layered behind journal entries.",
+    transparent: false,
+  },
+  {
     key: "equipment_bg",
     defaultFilename: "equipment_bg.png",
     label: "Equipment Backdrop",

@@ -213,6 +213,8 @@ const BASE_CONFIG: AppConfig = {
     action_possess: "action_possess.png",
     action_close: "action_close.png",
     action_entry: "action_entry.png",
+    action_get: "action_get.png",
+    action_look: "action_look.png",
   },
   persistence: { backend: "YAML", rootDir: "data/players", worker: { enabled: true, flushIntervalMs: 5000 } },
   login: { maxWrongPasswordRetries: 3, maxFailedAttemptsBeforeDisconnect: 3, maxConcurrentLogins: 50, authThreads: 8 },

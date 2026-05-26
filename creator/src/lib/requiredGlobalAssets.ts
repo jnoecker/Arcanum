@@ -728,6 +728,26 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A single open book with a portrait page, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
   },
+  {
+    key: "action_get",
+    defaultFilename: "action_get.png",
+    label: "Action — Get",
+    description: "Icon on the Get / pick-up button for items.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single open grasping hand reaching for a small item, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "action_look",
+    defaultFilename: "action_look.png",
+    label: "Action — Look",
+    description: "Icon on the Look / examine button for items.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single magnifying glass, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
 ] as const;
 
 /** Set of required keys for fast membership checks. */

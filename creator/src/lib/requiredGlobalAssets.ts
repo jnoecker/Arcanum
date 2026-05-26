@@ -647,6 +647,77 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
     aspect: "landscape",
   },
+  // Mob interaction action buttons. Tiny (~22px render), so bold silhouettes.
+  {
+    key: "action_attack",
+    defaultFilename: "action_attack.png",
+    label: "Action — Attack",
+    description: "Icon on the Attack button in the mob interaction bar.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single small crossed-swords emblem, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "action_quest",
+    defaultFilename: "action_quest.png",
+    label: "Action — Quest",
+    description: "Icon on the Quest / Turn In Quest button in the mob interaction bar.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single furled quest scroll, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "action_talk",
+    defaultFilename: "action_talk.png",
+    label: "Action — Talk",
+    description: "Icon on the Talk button in the mob interaction bar.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single speech-bubble icon, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "action_shop",
+    defaultFilename: "action_shop.png",
+    label: "Action — Shop",
+    description: "Icon on the Browse Shop button in the mob interaction bar.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single coin pouch with a few spilling coins, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "action_cinematic",
+    defaultFilename: "action_cinematic.png",
+    label: "Action — Cinematic",
+    description: "Icon on the Cinematic button in the mob interaction bar.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single play-button triangle inside a soft circle, bold silhouette that reads at small size, centered, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "action_possess",
+    defaultFilename: "action_possess.png",
+    label: "Action — Possess",
+    description: "Icon on the Possess (staff) button in the mob interaction bar.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single wisp of spirit smoke with a small sparkle, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "action_close",
+    defaultFilename: "action_close.png",
+    label: "Action — Close",
+    description: "Icon on the Close button in the mob interaction bar.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single left-pointing back chevron arrow, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
 ] as const;
 
 /** Set of required keys for fast membership checks. */

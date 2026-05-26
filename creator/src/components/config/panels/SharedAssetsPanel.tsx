@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import type { ConfigPanelProps, AppConfig } from "./types";
 import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
-import { useImageSrc } from "@/lib/useImageSrc";
+import { useImageSrc, isR2HashPath } from "@/lib/useImageSrc";
 import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
 import { AssetPickerModal } from "@/components/ui/AssetPickerModal";
@@ -118,6 +118,8 @@ interface AssetCardProps {
   onPickGallery: () => void;
   onPickFile: () => void;
   onGenerate: () => void;
+  onFlip: () => void;
+  flipping: boolean;
   onClear: () => void;
   onRemove: () => void;
 }
@@ -127,11 +129,16 @@ function AssetCard({
   onPickGallery,
   onPickFile,
   onGenerate,
+  onFlip,
+  flipping,
   onClear,
   onRemove,
 }: AssetCardProps) {
   const unset = !slot.filename.trim();
   const thumbSize = slot.tileable ? 72 : 56;
+  // flip_image resolves the source from the local asset cache, so it only
+  // works on content-addressed (R2 hash) files — not bundled defaults.
+  const canFlip = isR2HashPath(slot.filename);
 
   return (
     <div
@@ -214,6 +221,16 @@ function AssetCard({
         >
           File…
         </button>
+        {canFlip && (
+          <button
+            onClick={onFlip}
+            disabled={flipping}
+            className="focus-ring rounded border border-border-default px-1.5 py-0.5 text-[10px] text-text-secondary transition-colors hover:border-accent/50 hover:text-accent disabled:opacity-50"
+            title="Flip horizontally"
+          >
+            {flipping ? "…" : "⇄ Flip"}
+          </button>
+        )}
         {!unset && slot.scope === "default" && (
           <button
             onClick={onClear}
@@ -243,6 +260,7 @@ export function SharedAssetsPanel({ config, onChange }: ConfigPanelProps) {
   const [newKey, setNewKey] = useState("");
   const [deploying, setDeploying] = useState(false);
   const [deployResult, setDeployResult] = useState<SyncProgress | null>(null);
+  const [flippingKey, setFlippingKey] = useState<string | null>(null);
   const [pickingFor, setPickingFor] =
     useState<{ key: string; scope: "global" | "default" } | null>(null);
   const [generatingFor, setGeneratingFor] =
@@ -446,6 +464,23 @@ export function SharedAssetsPanel({ config, onChange }: ConfigPanelProps) {
     setGeneratingFor({ spec: slot.generateSpec, scope: slot.scope });
   };
 
+  const handleFlip = useCallback(
+    async (key: string, scope: "global" | "default", filename: string) => {
+      const slotId = `${scope}:${key}`;
+      setFlippingKey(slotId);
+      try {
+        const newFileName = await invoke<string>("flip_image", { imageRef: filename });
+        setSlot(key, scope, newFileName);
+        await useAssetStore.getState().loadAssets();
+      } catch (e) {
+        console.error("Flip failed:", e);
+      } finally {
+        setFlippingKey(null);
+      }
+    },
+    [setSlot],
+  );
+
   const renderCard = (slot: SharedAssetSlot) => (
     <AssetCard
       key={`${slot.scope}:${slot.key}`}
@@ -453,6 +488,8 @@ export function SharedAssetsPanel({ config, onChange }: ConfigPanelProps) {
       onPickGallery={() => setPickingFor({ key: slot.key, scope: slot.scope })}
       onPickFile={() => handlePickFile(slot.key, slot.scope)}
       onGenerate={() => handleGenerateClick(slot)}
+      onFlip={() => handleFlip(slot.key, slot.scope, slot.filename)}
+      flipping={flippingKey === `${slot.scope}:${slot.key}`}
       onClear={() => setSlot(slot.key, slot.scope, "")}
       onRemove={() => removeCustom(slot.key)}
     />

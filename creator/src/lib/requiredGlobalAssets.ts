@@ -633,6 +633,17 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A worn leather texture filling the frame edge to edge — supple tanned hide with subtle grain, faint stitching, and gentle wear, warm brown tones, no border, no objects, no figures, no readable text, suitable as a backdrop layered behind inventory pockets.",
     transparent: false,
   },
+  {
+    key: "equipment_bg",
+    defaultFilename: "equipment_bg.png",
+    label: "Equipment Backdrop",
+    description: "Backdrop behind the equipment panel — the \"dark dressing room\". Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A dark, moody dressing-room backdrop — deep violet and midnight tones, soft ambient glow, subtle atmospheric depth, a faint suggestion of draped fabric or a tall mirror, no figures, no readable text, suitable as a backdrop behind a character equipment panel.",
+    transparent: false,
+    aspect: "landscape",
+  },
   // HUD chrome frames. Transparent overlays the UI sits on, so they read as
   // ornaments (full-width frame element, not a centered icon).
   {

@@ -718,6 +718,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A single left-pointing back chevron arrow, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
   },
+  {
+    key: "action_entry",
+    defaultFilename: "action_entry.png",
+    label: "Action — Entry",
+    description: "Icon on the button that returns to the entry screen (mob description and image) from a sub-screen like Talk or Quest.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single open book with a portrait page, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
 ] as const;
 
 /** Set of required keys for fast membership checks. */

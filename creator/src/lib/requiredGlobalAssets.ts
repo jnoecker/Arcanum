@@ -612,6 +612,17 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A decorative rounded-square backdrop tile with a subtle starfield and faint aged-parchment texture, warm muted gold and indigo tones, no readable text, suitable behind a compass rose.",
     transparent: false,
   },
+  {
+    key: "monster_manual_bg",
+    defaultFilename: "monster_manual_bg.png",
+    label: "Monster Manual Frame",
+    description: "Painted parchment frame layered behind the monster-manual (mob inspect) card — ornate border plus a ribbon area in the top-right for the \"Favored\" tag. Falls back to procedural paper when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A landscape aged-parchment page with an ornate hand-painted border of vines and flourishes framing the edges, warm sepia paper in the center, a small decorative ribbon banner in the top-right corner, jewel-toned accents, no readable text, no figures, suitable as a backdrop for an overlaid creature-codex card.",
+    transparent: false,
+    aspect: "landscape",
+  },
   // HUD chrome frames. Transparent overlays the UI sits on, so they read as
   // ornaments (full-width frame element, not a centered icon).
   {

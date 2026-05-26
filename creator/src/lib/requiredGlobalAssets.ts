@@ -684,6 +684,27 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: false,
     aspect: "landscape",
   },
+  // Terminal writing-desk: a desk-surface texture plus the resting quill.
+  {
+    key: "terminal_bg",
+    defaultFilename: "terminal_bg.png",
+    label: "Terminal Desk Texture",
+    description: "Dark wood desk-surface texture layered over the procedural terminal writing-desk background. Falls back to procedural wood when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A dark stained-wood desk-surface texture filling the frame edge to edge — rich planks with visible grain and subtle wear, deep warm brown tones, no border, no objects, no figures, no readable text, suitable as a backdrop layered over a writing desk.",
+    transparent: false,
+  },
+  {
+    key: "desk_quill",
+    defaultFilename: "desk_quill.png",
+    label: "Desk Quill",
+    description: "Quill that rests over the corner of the terminal command slip (shown upright). Falls back to a quill glyph when absent.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single elegant feather quill pen oriented upright, bold silhouette, centered, soft outline, transparent background.",
+    transparent: true,
+  },
   {
     key: "equipment_bg",
     defaultFilename: "equipment_bg.png",

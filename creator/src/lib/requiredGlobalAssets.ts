@@ -664,6 +664,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: false,
   },
   {
+    key: "quest_board_bg",
+    defaultFilename: "quest_board_bg.png",
+    label: "Quest Board Texture",
+    description: "Cork texture layered over the procedural quest cork-board background. Falls back to procedural cork when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A speckled cork-board texture filling the frame edge to edge — natural cork with fine flecks and subtle grain, warm tan tones, no border, no pins, no notes, no objects, no figures, no readable text, suitable as a backdrop layered behind pinned quest notes.",
+    transparent: false,
+  },
+  {
     key: "equipment_bg",
     defaultFilename: "equipment_bg.png",
     label: "Equipment Backdrop",

@@ -207,6 +207,7 @@ const BASE_CONFIG: AppConfig = {
     shop_bg: "shop_bg.png",
     trainer_bg: "trainer_bg.png",
     journal_bg: "journal_bg.png",
+    quest_board_bg: "quest_board_bg.png",
     equipment_bg: "equipment_bg.png",
     inn_bg: "inn_bg.png",
     inn_key: "inn_key.png",

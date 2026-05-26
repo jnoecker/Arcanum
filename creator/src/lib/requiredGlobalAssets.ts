@@ -674,6 +674,17 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: false,
   },
   {
+    key: "spellbook_bg",
+    defaultFilename: "spellbook_bg.png",
+    label: "Spellbook Spread",
+    description: "Open-book parchment backdrop behind the grimoire (spellbook) two-page spread. Falls back to procedural pages + gutter when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "An open leather-bound book viewed from above, two facing aged-parchment pages with a soft shadowed center gutter, warm paper with subtle fibers and gentle wear, leather binding edges, no writing, no ruled lines, no objects, no figures, no readable text, suitable as a backdrop behind a two-page spell list.",
+    transparent: false,
+    aspect: "landscape",
+  },
+  {
     key: "equipment_bg",
     defaultFilename: "equipment_bg.png",
     label: "Equipment Backdrop",

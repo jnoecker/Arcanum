@@ -758,6 +758,46 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A single magnifying glass, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
   },
+  {
+    key: "action_use",
+    defaultFilename: "action_use.png",
+    label: "Action — Use",
+    description: "Icon on the Use button for items.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single tilted potion bottle with a small rising sparkle, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "action_drop",
+    defaultFilename: "action_drop.png",
+    label: "Action — Drop",
+    description: "Icon on the Drop button for items.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single open hand releasing a small item downward, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "action_equip",
+    defaultFilename: "action_equip.png",
+    label: "Action — Equip",
+    description: "Icon on the Equip button for items.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single suit-of-armor breastplate, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
+  {
+    key: "action_store",
+    defaultFilename: "action_store.png",
+    label: "Action — Store",
+    description: "Icon on the Put / Store button for items (into a container).",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single open storage chest with a small downward arrow above it, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+  },
 ] as const;
 
 /** Set of required keys for fast membership checks. */

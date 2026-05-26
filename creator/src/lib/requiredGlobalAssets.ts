@@ -706,6 +706,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
+    key: "mail_bg",
+    defaultFilename: "mail_bg.png",
+    label: "Mail Parchment Texture",
+    description: "Light parchment texture layered over the procedural mail background. Falls back to procedural light parchment when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A light warm-parchment letter texture filling the frame edge to edge — soft paper fibers, faint stains and gentle wear, pale cream tone, no border, no writing, no ruled lines, no objects, no figures, no readable text, suitable as a backdrop layered behind mail letters.",
+    transparent: false,
+  },
+  {
     key: "equipment_bg",
     defaultFilename: "equipment_bg.png",
     label: "Equipment Backdrop",

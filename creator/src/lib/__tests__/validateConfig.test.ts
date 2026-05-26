@@ -211,6 +211,7 @@ const BASE_CONFIG: AppConfig = {
     spellbook_bg: "spellbook_bg.png",
     terminal_bg: "terminal_bg.png",
     desk_quill: "desk_quill.png",
+    mail_bg: "mail_bg.png",
     equipment_bg: "equipment_bg.png",
     inn_bg: "inn_bg.png",
     inn_key: "inn_key.png",

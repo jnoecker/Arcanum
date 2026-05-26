@@ -634,6 +634,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: false,
   },
   {
+    key: "shop_bg",
+    defaultFilename: "shop_bg.png",
+    label: "Shop Cart Texture",
+    description: "Wood texture layered over the procedural merchant-cart shop background. Falls back to procedural wood when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A weathered wood-grain texture filling the frame edge to edge — aged planks with visible grain, subtle knots, and gentle wear, warm brown tones, no border, no objects, no figures, no readable text, suitable as a backdrop layered over a merchant cart.",
+    transparent: false,
+  },
+  {
     key: "equipment_bg",
     defaultFilename: "equipment_bg.png",
     label: "Equipment Backdrop",

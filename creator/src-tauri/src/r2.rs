@@ -1126,18 +1126,28 @@ pub async fn deploy_zones_to_r2(
     Ok(progress)
 }
 
-/// Build the contract R2 object key for a dialogue clip:
-/// `voices/<zone>/<templateKey>/<nodeId>.<sha8>.mp3`. The AmbonMUD engine
-/// constructs the identical string from the same three values plus the
-/// agreed text hash, so both repos resolve to the same object.
+/// Structural R2 object key for a dialogue clip:
+/// `voices/<zone>/<templateKey>/<nodeId>.mp3`. This is the path the AmbonMUD
+/// engine currently resolves `voiceUrl` to.
+fn voice_object_key_plain(zone: &str, template_key: &str, node_id: &str) -> String {
+    format!("voices/{zone}/{template_key}/{node_id}.mp3")
+}
+
+/// Edit-safe R2 object key embedding the agreed text hash:
+/// `voices/<zone>/<templateKey>/<nodeId>.<sha8>.mp3`. The engine resolves to
+/// this once it adopts the `.<sha8>` variant; an edited line publishes to a
+/// fresh path so stale audio is never served.
 fn voice_object_key(zone: &str, template_key: &str, node_id: &str, text_sha8: &str) -> String {
     format!("voices/{zone}/{template_key}/{node_id}.{text_sha8}.mp3")
 }
 
-/// Upload synthesized dialogue clips to R2 at the voice-over contract path.
-/// Skips re-uploading clips whose source bytes match the last publish (via the
-/// runtime sync-state cache). Because the object key embeds the text hash, an
-/// edited line publishes to a fresh path and never serves stale audio.
+/// Upload synthesized dialogue clips to R2. Each clip is published to BOTH the
+/// structural path (`…/<nodeId>.mp3`) and the edit-safe hashed path
+/// (`…/<nodeId>.<sha8>.mp3`) so it resolves whether the AmbonMUD engine emits
+/// the structural URL (current behavior) or the hashed variant (future flip).
+/// Re-uploads are skipped when the source bytes match the last publish (via the
+/// runtime sync-state cache, keyed per object). The structural path is
+/// overwritten in place on edit; the hashed path lands at a fresh key.
 #[tauri::command]
 pub async fn deploy_voices_to_r2(
     app: AppHandle,
@@ -1156,8 +1166,9 @@ pub async fn deploy_voices_to_r2(
     let client = crate::http::shared_client();
     let mut sync_state = load_runtime_sync_state(&app).await;
 
+    // Each job publishes to two object keys (structural + hashed).
     let mut progress = SyncProgress {
-        total: jobs.len(),
+        total: jobs.len() * 2,
         uploaded: 0,
         skipped: 0,
         failed: 0,
@@ -1166,54 +1177,59 @@ pub async fn deploy_voices_to_r2(
 
     for job in &jobs {
         if job.zone.is_empty() || job.template_key.is_empty() || job.node_id.is_empty() {
-            progress.failed += 1;
+            progress.failed += 2;
             progress
                 .errors
                 .push(format!("{}: missing zone/template/node", job.cache_hash));
             continue;
         }
 
-        let object_key =
-            voice_object_key(&job.zone, &job.template_key, &job.node_id, &job.text_sha8);
-
         let file_path = voices_dir.join(format!("{}.mp3", job.cache_hash));
         let body = match tokio::fs::read(&file_path).await {
             Ok(b) => b,
             Err(e) => {
-                progress.failed += 1;
-                progress
-                    .errors
-                    .push(format!("{object_key}: clip not generated yet ({e})"));
+                progress.failed += 2;
+                progress.errors.push(format!(
+                    "{}/{}/{}: clip not generated yet ({e})",
+                    job.zone, job.template_key, job.node_id
+                ));
                 continue;
             }
         };
-
-        // Skip re-upload when the source bytes match the last publish.
         let src_hash = sha256_hex(&body);
-        if sync_state.get(&object_key).map(|h| h.as_str()) == Some(src_hash.as_str()) {
-            progress.skipped += 1;
-            continue;
-        }
 
-        match upload_object(
-            &client,
-            &s.r2_account_id,
-            &s.r2_bucket,
-            &s.r2_access_key_id,
-            &s.r2_secret_access_key,
-            &object_key,
-            body,
-            "audio/mpeg",
-        )
-        .await
-        {
-            Ok(()) => {
-                progress.uploaded += 1;
-                sync_state.insert(object_key.clone(), src_hash);
+        let object_keys = [
+            voice_object_key_plain(&job.zone, &job.template_key, &job.node_id),
+            voice_object_key(&job.zone, &job.template_key, &job.node_id, &job.text_sha8),
+        ];
+
+        for object_key in object_keys {
+            // Skip re-upload when the source bytes match the last publish.
+            if sync_state.get(&object_key).map(|h| h.as_str()) == Some(src_hash.as_str()) {
+                progress.skipped += 1;
+                continue;
             }
-            Err(e) => {
-                progress.failed += 1;
-                progress.errors.push(format!("{object_key}: {e}"));
+
+            match upload_object(
+                &client,
+                &s.r2_account_id,
+                &s.r2_bucket,
+                &s.r2_access_key_id,
+                &s.r2_secret_access_key,
+                &object_key,
+                body.clone(),
+                "audio/mpeg",
+            )
+            .await
+            {
+                Ok(()) => {
+                    progress.uploaded += 1;
+                    sync_state.insert(object_key.clone(), src_hash.clone());
+                }
+                Err(e) => {
+                    progress.failed += 1;
+                    progress.errors.push(format!("{object_key}: {e}"));
+                }
             }
         }
     }
@@ -1442,6 +1458,14 @@ mod tests {
         assert_eq!(
             voice_object_key("tutorial_glade", "headmaster_aldric", "root", "1a2b3c4d"),
             "voices/tutorial_glade/headmaster_aldric/root.1a2b3c4d.mp3"
+        );
+    }
+
+    #[test]
+    fn voice_object_key_plain_matches_structural_template() {
+        assert_eq!(
+            voice_object_key_plain("tutorial_glade", "headmaster_aldric", "root"),
+            "voices/tutorial_glade/headmaster_aldric/root.mp3"
         );
     }
 

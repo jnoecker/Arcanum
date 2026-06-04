@@ -271,6 +271,9 @@ mod tests {
         // `printf 'Hello!' | sha256sum` → 334d016f…
         assert_eq!(text_sha8("Hello!"), "334d016f");
         assert_eq!(text_sha8("Hello there!"), "89b8b8e4");
+        // YAML `|` literal block (clip chomping) → exactly one trailing newline.
+        // The terminal '\n' is hash-significant; `|-` (strip) would differ.
+        assert_eq!(text_sha8("Hello there!\nStay a while.\n"), "df658e4d");
     }
 
     #[test]

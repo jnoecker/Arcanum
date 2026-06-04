@@ -266,6 +266,14 @@ mod tests {
     }
 
     #[test]
+    fn text_sha8_matches_contract_reference_vectors() {
+        // Cross-repo reference vectors shared with AmbonMUD's GmcpEmitter.sha8.
+        // `printf 'Hello!' | sha256sum` → 334d016f…
+        assert_eq!(text_sha8("Hello!"), "334d016f");
+        assert_eq!(text_sha8("Hello there!"), "89b8b8e4");
+    }
+
+    #[test]
     fn text_sha8_is_sensitive_to_whitespace() {
         // The engine hashes raw node text — leading/trailing whitespace counts.
         assert_ne!(text_sha8("hello"), text_sha8(" hello "));

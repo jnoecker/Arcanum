@@ -7,6 +7,12 @@ describe("sha8 (voice-over contract hash)", () => {
     expect(await sha8("")).toBe("e3b0c442");
   });
 
+  // Cross-repo reference vectors shared with AmbonMUD's GmcpEmitter.sha8.
+  it("matches the contract reference vectors", async () => {
+    expect(await sha8("Hello!")).toBe("334d016f");
+    expect(await sha8("Hello there!")).toBe("89b8b8e4");
+  });
+
   it("returns 8 hex chars", async () => {
     const h = await sha8("Greetings, traveler.");
     expect(h).toMatch(/^[0-9a-f]{8}$/);

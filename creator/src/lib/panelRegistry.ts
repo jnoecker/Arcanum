@@ -61,6 +61,7 @@ const STUDIO_PANELS: PanelDef[] = [
   { id: "studioAbilities", label: "Icons", host: "studio", kicker: "Studio", title: "Icons", description: "Ability and status-effect icon generation.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F532}", aiOnly: true },
   { id: "sprites", label: "Player Sprites", host: "command", kicker: "Studio", title: "Player sprites", description: "Visible identity, unlockable variants, and portrait logic.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F9CD}" },
   { id: "playtest", label: "Playtest", host: "command", kicker: "Studio", title: "Playtest", description: "Walk through your world room-by-room. Read descriptions, meet mobs, try dialogue, inspect items and gathering nodes.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F6B6}" },
+  { id: "voices", label: "Voice-Over", host: "command", kicker: "Studio", title: "Dialogue voice-over", description: "Synthesize spoken audio for NPC dialogue with ElevenLabs and publish the clips to your CDN.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F3A4}", aiOnly: true },
   ART_STYLE_PANEL,
 ];
 

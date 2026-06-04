@@ -9,6 +9,8 @@ mod captions;
 #[cfg(feature = "ai")]
 mod deepinfra;
 #[cfg(feature = "ai")]
+mod elevenlabs;
+#[cfg(feature = "ai")]
 mod embeddings;
 #[cfg(feature = "ai")]
 mod rag;
@@ -42,6 +44,7 @@ mod sketch;
 mod video_encode;
 mod video_export;
 mod vibes;
+mod voices;
 
 macro_rules! base_handler {
     ($($extra:path),* $(,)?) => {
@@ -106,9 +109,12 @@ macro_rules! base_handler {
             r2::deploy_zones_to_r2,
             r2::deploy_showcase_to_r2,
             r2::deploy_story_video_to_r2,
+            r2::deploy_voices_to_r2,
             hub::publish_to_hub,
             vibes::save_zone_vibe,
             vibes::load_zone_vibe,
+            voices::load_voice_map,
+            voices::save_voice_map,
             arcanum_meta::load_arcanum_meta,
             arcanum_meta::save_arcanum_meta,
             admin::load_admin_config,
@@ -180,6 +186,8 @@ pub fn run() {
                     runware::runware_generate_video,
                     openai_images::openai_generate_image,
                     openai_tts::openai_tts_generate,
+                    elevenlabs::elevenlabs_list_voices,
+                    elevenlabs::elevenlabs_synthesize,
                     sketch::analyze_sketch,
                     rag::rag_upsert_chunks,
                     rag::rag_retrieve,

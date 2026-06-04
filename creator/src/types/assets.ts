@@ -83,6 +83,7 @@ export interface Settings {
   anthropic_api_key: string;
   openrouter_api_key: string;
   openai_api_key: string;
+  elevenlabs_api_key: string;
   image_model: string;
   enhance_model: string;
   prompt_llm_provider: string;

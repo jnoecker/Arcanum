@@ -10,7 +10,7 @@ import type { ProjectSettings, Settings } from "@/types/assets";
 // here is the only touch point when a new provider key is added.
 
 interface ProviderCard {
-  id: "deepinfra" | "anthropic" | "openrouter" | "runware" | "openai";
+  id: "deepinfra" | "anthropic" | "openrouter" | "runware" | "openai" | "elevenlabs";
   label: string;
   keyField: keyof Settings & (
     | "deepinfra_api_key"
@@ -18,6 +18,7 @@ interface ProviderCard {
     | "openrouter_api_key"
     | "runware_api_key"
     | "openai_api_key"
+    | "elevenlabs_api_key"
   );
   helpUrl: string;
   /** Which pipelines this provider feeds. Displayed under the key
@@ -60,6 +61,13 @@ const PROVIDER_CARDS: ProviderCard[] = [
     keyField: "openai_api_key",
     helpUrl: "platform.openai.com/api-keys",
     uses: "Image generation (GPT Image 2) and text-to-speech.",
+  },
+  {
+    id: "elevenlabs",
+    label: "ElevenLabs",
+    keyField: "elevenlabs_api_key",
+    helpUrl: "elevenlabs.io/app/settings/api-keys",
+    uses: "Dialogue voice-over synthesis.",
   },
 ];
 

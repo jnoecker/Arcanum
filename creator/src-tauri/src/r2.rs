@@ -24,6 +24,21 @@ pub struct SyncProgress {
     pub errors: Vec<String>,
 }
 
+/// One dialogue clip to publish. The cached MP3 lives at
+/// `assets/voices/<cache_hash>.mp3` (written by `elevenlabs::synthesize`);
+/// it's uploaded to the contract path built from the other three fields.
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VoiceUploadJob {
+    pub zone: String,
+    pub template_key: String,
+    pub node_id: String,
+    /// First 8 hex of SHA-256(raw node text). Both repos agree on this.
+    pub text_sha8: String,
+    /// Cache filename stem of the local clip to upload.
+    pub cache_hash: String,
+}
+
 #[derive(Debug, Clone, Copy)]
 struct RuntimeImageProfile {
     max_width: u32,
@@ -1111,6 +1126,102 @@ pub async fn deploy_zones_to_r2(
     Ok(progress)
 }
 
+/// Build the contract R2 object key for a dialogue clip:
+/// `voices/<zone>/<templateKey>/<nodeId>.<sha8>.mp3`. The AmbonMUD engine
+/// constructs the identical string from the same three values plus the
+/// agreed text hash, so both repos resolve to the same object.
+fn voice_object_key(zone: &str, template_key: &str, node_id: &str, text_sha8: &str) -> String {
+    format!("voices/{zone}/{template_key}/{node_id}.{text_sha8}.mp3")
+}
+
+/// Upload synthesized dialogue clips to R2 at the voice-over contract path.
+/// Skips re-uploading clips whose source bytes match the last publish (via the
+/// runtime sync-state cache). Because the object key embeds the text hash, an
+/// edited line publishes to a fresh path and never serves stale audio.
+#[tauri::command]
+pub async fn deploy_voices_to_r2(
+    app: AppHandle,
+    jobs: Vec<VoiceUploadJob>,
+) -> Result<SyncProgress, String> {
+    let s = settings::get_settings(app.clone()).await?;
+    if s.r2_account_id.is_empty()
+        || s.r2_access_key_id.is_empty()
+        || s.r2_secret_access_key.is_empty()
+        || s.r2_bucket.is_empty()
+    {
+        return Err("R2 credentials not configured. Set them in Settings.".to_string());
+    }
+
+    let voices_dir = assets_base_dir(&app)?.join("voices");
+    let client = crate::http::shared_client();
+    let mut sync_state = load_runtime_sync_state(&app).await;
+
+    let mut progress = SyncProgress {
+        total: jobs.len(),
+        uploaded: 0,
+        skipped: 0,
+        failed: 0,
+        errors: Vec::new(),
+    };
+
+    for job in &jobs {
+        if job.zone.is_empty() || job.template_key.is_empty() || job.node_id.is_empty() {
+            progress.failed += 1;
+            progress
+                .errors
+                .push(format!("{}: missing zone/template/node", job.cache_hash));
+            continue;
+        }
+
+        let object_key =
+            voice_object_key(&job.zone, &job.template_key, &job.node_id, &job.text_sha8);
+
+        let file_path = voices_dir.join(format!("{}.mp3", job.cache_hash));
+        let body = match tokio::fs::read(&file_path).await {
+            Ok(b) => b,
+            Err(e) => {
+                progress.failed += 1;
+                progress
+                    .errors
+                    .push(format!("{object_key}: clip not generated yet ({e})"));
+                continue;
+            }
+        };
+
+        // Skip re-upload when the source bytes match the last publish.
+        let src_hash = sha256_hex(&body);
+        if sync_state.get(&object_key).map(|h| h.as_str()) == Some(src_hash.as_str()) {
+            progress.skipped += 1;
+            continue;
+        }
+
+        match upload_object(
+            &client,
+            &s.r2_account_id,
+            &s.r2_bucket,
+            &s.r2_access_key_id,
+            &s.r2_secret_access_key,
+            &object_key,
+            body,
+            "audio/mpeg",
+        )
+        .await
+        {
+            Ok(()) => {
+                progress.uploaded += 1;
+                sync_state.insert(object_key.clone(), src_hash);
+            }
+            Err(e) => {
+                progress.failed += 1;
+                progress.errors.push(format!("{object_key}: {e}"));
+            }
+        }
+    }
+
+    save_runtime_sync_state(&app, &sync_state).await;
+    Ok(progress)
+}
+
 // ─── Import from R2 ─────────────────────────────────────────────────
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -1320,4 +1431,26 @@ pub async fn deploy_showcase_to_r2(
 
     let domain = s.r2_custom_domain.trim_end_matches('/');
     Ok(format!("{domain}/{object_key}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn voice_object_key_matches_contract_template() {
+        assert_eq!(
+            voice_object_key("tutorial_glade", "headmaster_aldric", "root", "1a2b3c4d"),
+            "voices/tutorial_glade/headmaster_aldric/root.1a2b3c4d.mp3"
+        );
+    }
+
+    #[test]
+    fn voice_object_key_distinguishes_nodes_and_hashes() {
+        let a = voice_object_key("z", "m", "root", "aaaaaaaa");
+        let b = voice_object_key("z", "m", "farewell", "aaaaaaaa");
+        let c = voice_object_key("z", "m", "root", "bbbbbbbb");
+        assert_ne!(a, b);
+        assert_ne!(a, c);
+    }
 }

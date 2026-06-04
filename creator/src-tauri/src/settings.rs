@@ -40,6 +40,8 @@ pub struct Settings {
     #[serde(default)]
     pub openai_api_key: String,
     #[serde(default)]
+    pub elevenlabs_api_key: String,
+    #[serde(default)]
     pub voyage_api_key: String,
     #[serde(default = "default_image_model")]
     pub image_model: String,
@@ -136,6 +138,7 @@ impl Default for Settings {
             anthropic_api_key: String::new(),
             openrouter_api_key: String::new(),
             openai_api_key: String::new(),
+            elevenlabs_api_key: String::new(),
             voyage_api_key: String::new(),
             image_model: default_image_model(),
             enhance_model: default_enhance_model(),
@@ -219,6 +222,7 @@ pub async fn get_settings(app: AppHandle) -> Result<Settings, String> {
                 anthropic_api_key: user.anthropic_api_key,
                 openrouter_api_key: user.openrouter_api_key,
                 openai_api_key: user.openai_api_key,
+                elevenlabs_api_key: user.elevenlabs_api_key,
                 voyage_api_key: user.voyage_api_key,
                 github_pat: user.github_pat,
                 hub_api_url: user.hub_api_url,
@@ -288,6 +292,7 @@ pub async fn get_merged_settings(
             anthropic_api_key: user.anthropic_api_key,
             openrouter_api_key: user.openrouter_api_key,
             openai_api_key: user.openai_api_key,
+            elevenlabs_api_key: user.elevenlabs_api_key,
             voyage_api_key: user.voyage_api_key,
             github_pat: user.github_pat,
             hub_api_url: user.hub_api_url,

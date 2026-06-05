@@ -295,24 +295,55 @@ pub async fn elevenlabs_synthesize(
         },
     };
 
+    // Retry transient failures with backoff. ElevenLabs returns 429
+    // `too_many_concurrent_requests` when parallel calls exceed the plan's
+    // concurrency cap, and occasional 5xx under load — both clear on retry,
+    // so a bulk "Generate all" doesn't lose most of its lines to the cap.
     let client = crate::http::shared_client();
-    let response = client
-        .post(format!(
-            "{API_BASE}/text-to-speech/{voice_id}?output_format={OUTPUT_FORMAT}"
-        ))
-        .header("xi-api-key", &app_settings.elevenlabs_api_key)
-        .header("Accept", "audio/mpeg")
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| format!("ElevenLabs TTS request failed: {e}"))?;
+    let url = format!("{API_BASE}/text-to-speech/{voice_id}?output_format={OUTPUT_FORMAT}");
+    const MAX_ATTEMPTS: u32 = 5;
+    let mut last_err = String::new();
+    let mut bytes = None;
 
-    let response = crate::http::check_response(response).await?;
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|e| format!("Failed to read TTS response bytes: {e}"))?;
+    for attempt in 1..=MAX_ATTEMPTS {
+        match client
+            .post(&url)
+            .header("xi-api-key", &app_settings.elevenlabs_api_key)
+            .header("Accept", "audio/mpeg")
+            .json(&body)
+            .send()
+            .await
+        {
+            Ok(resp) if resp.status().is_success() => {
+                let b = resp
+                    .bytes()
+                    .await
+                    .map_err(|e| format!("Failed to read TTS response bytes: {e}"))?;
+                bytes = Some(b);
+                break;
+            }
+            Ok(resp) => {
+                let status = resp.status();
+                let text = resp.text().await.unwrap_or_default();
+                let retryable = status.is_server_error() || status.as_u16() == 429;
+                last_err = format!("ElevenLabs TTS failed ({status}): {text}");
+                if !retryable || attempt == MAX_ATTEMPTS {
+                    return Err(last_err);
+                }
+            }
+            Err(e) => {
+                last_err = format!("ElevenLabs TTS request failed: {e}");
+                if attempt == MAX_ATTEMPTS {
+                    return Err(last_err);
+                }
+            }
+        }
+        // Backoff: 600ms, 1.2s, 2.4s, 4.8s — long enough for in-flight
+        // concurrent requests to clear the cap.
+        tokio::time::sleep(std::time::Duration::from_millis(600u64 << (attempt - 1))).await;
+    }
 
+    let bytes = bytes.ok_or(last_err)?;
     if bytes.is_empty() {
         return Err("ElevenLabs returned an empty audio body.".to_string());
     }

@@ -172,6 +172,19 @@ export default function VoiceOverPanel() {
     return n;
   }, [lines, results]);
 
+  const errorSummary = useMemo(() => {
+    let count = 0;
+    let firstMessage = "";
+    for (const line of lines) {
+      const st = results.get(lineKey(line.zone, line.templateKey, line.nodeId));
+      if (st?.status === "error") {
+        count += 1;
+        if (!firstMessage && st.error) firstMessage = st.error;
+      }
+    }
+    return { count, firstMessage };
+  }, [lines, results]);
+
   const handleSaveMap = async () => {
     setSavingMap(true);
     try {
@@ -368,6 +381,17 @@ export default function VoiceOverPanel() {
           </div>
         )}
 
+        {errorSummary.count > 0 && (
+          <div className="mb-3 rounded border border-status-error/30 bg-status-error/5 px-3 py-2 text-2xs text-status-error">
+            {errorSummary.count} line{errorSummary.count !== 1 ? "s" : ""} failed to generate.
+            {errorSummary.firstMessage && (
+              <span className="mt-1 block break-words font-mono text-3xs opacity-90">
+                {errorSummary.firstMessage}
+              </span>
+            )}
+          </div>
+        )}
+
         {lines.length === 0 ? (
           <p className="rounded border border-dashed border-border-muted bg-bg-primary px-3 py-6 text-center text-2xs italic text-text-muted/70">
             No NPC dialogue found in the loaded zones. Add dialogue to a mob, then return here.
@@ -391,8 +415,15 @@ export default function VoiceOverPanel() {
                       {line.zone} · {line.nodeId}
                     </div>
                   </div>
-                  <div className="min-w-0 flex-1 truncate text-2xs text-text-secondary" title={line.text}>
-                    {line.text}
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-2xs text-text-secondary" title={line.text}>
+                      {line.text}
+                    </div>
+                    {st?.status === "error" && st.error && (
+                      <div className="truncate text-3xs text-status-error" title={st.error}>
+                        {st.error}
+                      </div>
+                    )}
                   </div>
                   <StatusBadge status={st?.status ?? "idle"} stale={stale} error={st?.error} />
                   {clip && (

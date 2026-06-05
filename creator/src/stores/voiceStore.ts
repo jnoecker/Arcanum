@@ -14,8 +14,10 @@ import {
   type VoiceUploadJob,
 } from "@/types/voiceover";
 
-/** Max parallel ElevenLabs calls — kept low to respect provider concurrency limits. */
-const SYNTH_CONCURRENCY = 3;
+/** Max parallel ElevenLabs calls. Kept at 2 because free/starter plans cap
+ *  concurrent requests low (2–3) and over-cap calls 429; the backend also
+ *  retries transient 429/5xx with backoff. */
+const SYNTH_CONCURRENCY = 2;
 
 const EMPTY_MAP: VoiceMap = {
   defaultVoiceId: "",

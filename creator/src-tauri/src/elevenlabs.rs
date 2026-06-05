@@ -139,9 +139,35 @@ async fn voices_cache_dir(app: &AppHandle) -> Result<std::path::PathBuf, String>
 
 // ─── Commands ────────────────────────────────────────────────────
 
+/// ElevenLabs `/v1/voices` response shape. The API returns snake_case keys
+/// (`voice_id`, `preview_url`), so this parse type uses plain field names —
+/// distinct from the camelCase IPC `ElevenLabsVoice` we hand the frontend.
+/// Unknown fields are ignored.
+#[derive(Debug, Deserialize)]
+struct ApiVoice {
+    voice_id: String,
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    category: String,
+    #[serde(default)]
+    preview_url: String,
+}
+
 #[derive(Debug, Deserialize)]
 struct ListVoicesResponse {
-    voices: Vec<ElevenLabsVoice>,
+    voices: Vec<ApiVoice>,
+}
+
+impl From<ApiVoice> for ElevenLabsVoice {
+    fn from(v: ApiVoice) -> Self {
+        Self {
+            voice_id: v.voice_id,
+            name: v.name,
+            category: v.category,
+            preview_url: v.preview_url,
+        }
+    }
 }
 
 /// List the voices available on the configured ElevenLabs account.
@@ -165,7 +191,7 @@ pub async fn elevenlabs_list_voices(app: AppHandle) -> Result<Vec<ElevenLabsVoic
         .json()
         .await
         .map_err(|e| format!("Failed to parse ElevenLabs voices response: {e}"))?;
-    Ok(parsed.voices)
+    Ok(parsed.voices.into_iter().map(ElevenLabsVoice::from).collect())
 }
 
 #[derive(Debug, Serialize)]
@@ -364,6 +390,35 @@ mod tests {
         assert_eq!(n.style, Some(1.0));
         assert_eq!(n.speed, Some(1.2));
         assert_eq!(n.use_speaker_boost, Some(false));
+    }
+
+    #[test]
+    fn parses_snake_case_voices_response() {
+        // ElevenLabs returns snake_case keys + many extra fields we ignore.
+        let body = r#"{
+            "voices": [
+                {
+                    "voice_id": "21m00Tcm4TlvDq8ikWAM",
+                    "name": "Rachel",
+                    "category": "premade",
+                    "preview_url": "https://example.com/rachel.mp3",
+                    "labels": {"accent": "american"},
+                    "settings": null
+                },
+                { "voice_id": "abc123", "name": "Goblin" }
+            ]
+        }"#;
+        let parsed: ListVoicesResponse = serde_json::from_str(body).unwrap();
+        let voices: Vec<ElevenLabsVoice> =
+            parsed.voices.into_iter().map(ElevenLabsVoice::from).collect();
+        assert_eq!(voices.len(), 2);
+        assert_eq!(voices[0].voice_id, "21m00Tcm4TlvDq8ikWAM");
+        assert_eq!(voices[0].name, "Rachel");
+        assert_eq!(voices[0].preview_url, "https://example.com/rachel.mp3");
+        // Missing category/preview_url default to empty, don't fail the parse.
+        assert_eq!(voices[1].voice_id, "abc123");
+        assert_eq!(voices[1].category, "");
+        assert_eq!(voices[1].preview_url, "");
     }
 
     #[test]

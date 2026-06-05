@@ -5,10 +5,12 @@ import type { SyncProgress } from "@/types/assets";
 import {
   DEFAULT_ELEVENLABS_MODEL,
   lineKey,
+  resolveVoiceSettings,
   type DialogueLine,
   type ElevenLabsVoice,
   type VoiceClip,
   type VoiceMap,
+  type VoiceSettings,
   type VoiceUploadJob,
 } from "@/types/voiceover";
 
@@ -19,7 +21,22 @@ const EMPTY_MAP: VoiceMap = {
   defaultVoiceId: "",
   modelId: DEFAULT_ELEVENLABS_MODEL,
   assignments: {},
+  defaultSettings: {},
+  settings: {},
 };
+
+/** Drop generated results for a mob's lines so changed voice/settings show as
+ *  needing regeneration. lineKey is `${zone} ${templateKey} ${nodeId}`. */
+function pruneResultsForMob(
+  results: Map<string, LineState>,
+  templateKey: string,
+): Map<string, LineState> {
+  const next = new Map(results);
+  for (const key of results.keys()) {
+    if (key.split(" ")[1] === templateKey) next.delete(key);
+  }
+  return next;
+}
 
 export type LineStatus = "idle" | "generating" | "done" | "error";
 
@@ -46,6 +63,10 @@ interface VoiceStore {
   setModel: (modelId: string) => void;
   setAssignment: (templateKey: string, voiceId: string) => void;
   resolveVoiceId: (templateKey: string) => string;
+  setDefaultSettings: (patch: Partial<VoiceSettings>) => void;
+  setMobSettings: (templateKey: string, patch: Partial<VoiceSettings>) => void;
+  clearMobSettings: (templateKey: string) => void;
+  clearDefaultSettings: () => void;
 
   fetchVoices: () => Promise<void>;
 
@@ -79,6 +100,8 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
           defaultVoiceId: map.defaultVoiceId ?? "",
           modelId: map.modelId || DEFAULT_ELEVENLABS_MODEL,
           assignments: map.assignments ?? {},
+          defaultSettings: map.defaultSettings ?? {},
+          settings: map.settings ?? {},
         },
       });
     } catch (e) {
@@ -106,13 +129,47 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
       } else {
         delete assignments[templateKey];
       }
-      return { voiceMap: { ...s.voiceMap, assignments } };
+      return {
+        voiceMap: { ...s.voiceMap, assignments },
+        results: pruneResultsForMob(s.results, templateKey),
+      };
     }),
 
   resolveVoiceId: (templateKey) => {
     const { voiceMap } = get();
     return voiceMap.assignments[templateKey] || voiceMap.defaultVoiceId;
   },
+
+  setDefaultSettings: (patch) =>
+    set((s) => ({
+      voiceMap: {
+        ...s.voiceMap,
+        defaultSettings: { ...s.voiceMap.defaultSettings, ...patch },
+      },
+    })),
+
+  clearDefaultSettings: () =>
+    set((s) => ({ voiceMap: { ...s.voiceMap, defaultSettings: {} } })),
+
+  setMobSettings: (templateKey, patch) =>
+    set((s) => {
+      const settings = { ...s.voiceMap.settings };
+      settings[templateKey] = { ...settings[templateKey], ...patch };
+      return {
+        voiceMap: { ...s.voiceMap, settings },
+        results: pruneResultsForMob(s.results, templateKey),
+      };
+    }),
+
+  clearMobSettings: (templateKey) =>
+    set((s) => {
+      const settings = { ...s.voiceMap.settings };
+      delete settings[templateKey];
+      return {
+        voiceMap: { ...s.voiceMap, settings },
+        results: pruneResultsForMob(s.results, templateKey),
+      };
+    }),
 
   fetchVoices: async () => {
     set({ loadingVoices: true, voicesError: null });
@@ -147,6 +204,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
         text: line.text,
         voiceId,
         modelId: get().voiceMap.modelId || DEFAULT_ELEVENLABS_MODEL,
+        voiceSettings: resolveVoiceSettings(get().voiceMap, line.templateKey),
       });
       set((s) => {
         const results = new Map(s.results);

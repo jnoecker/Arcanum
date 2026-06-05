@@ -22,12 +22,77 @@ export interface VoiceClip {
   cached: boolean;
 }
 
+/** Per-request ElevenLabs delivery controls (mirrors Rust VoiceSettings).
+ *  Every field optional — unset falls back to the project default, then to
+ *  ElevenLabs' own voice default. */
+export interface VoiceSettings {
+  stability?: number;
+  similarityBoost?: number;
+  style?: number;
+  useSpeakerBoost?: boolean;
+  speed?: number;
+}
+
 /** Mirrors the Rust VoiceMap struct (.arcanum/voices.json). */
 export interface VoiceMap {
   defaultVoiceId: string;
   modelId: string;
   /** templateKey → ElevenLabs voiceId. */
   assignments: Record<string, string>;
+  /** Project-wide delivery defaults. */
+  defaultSettings: VoiceSettings;
+  /** templateKey → per-mob delivery overrides. */
+  settings: Record<string, VoiceSettings>;
+}
+
+/** ElevenLabs' own defaults, shown in sliders when nothing is set. */
+export const ELEVENLABS_DEFAULT_SETTINGS: Required<VoiceSettings> = {
+  stability: 0.5,
+  similarityBoost: 0.75,
+  style: 0,
+  useSpeakerBoost: true,
+  speed: 1.0,
+};
+
+/** Numeric delivery controls surfaced as sliders. `useSpeakerBoost` is a
+ *  separate checkbox. */
+export const VOICE_SETTING_FIELDS = [
+  { key: "stability", label: "Stability", min: 0, max: 1, step: 0.05, hint: "Low = more emotional & variable; high = flat & consistent." },
+  { key: "similarityBoost", label: "Similarity", min: 0, max: 1, step: 0.05, hint: "How closely to match the source voice." },
+  { key: "style", label: "Style", min: 0, max: 1, step: 0.05, hint: "Amplify the voice's character (slower to render)." },
+  { key: "speed", label: "Speed", min: 0.7, max: 1.2, step: 0.05, hint: "Delivery pacing." },
+] as const satisfies readonly {
+  key: keyof VoiceSettings;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  hint: string;
+}[];
+
+/** Merge a mob's per-NPC overrides over the project defaults, field by field. */
+export function resolveVoiceSettings(map: VoiceMap, templateKey: string): VoiceSettings {
+  const base = map.defaultSettings ?? {};
+  const over = map.settings?.[templateKey] ?? {};
+  return {
+    stability: over.stability ?? base.stability,
+    similarityBoost: over.similarityBoost ?? base.similarityBoost,
+    style: over.style ?? base.style,
+    useSpeakerBoost: over.useSpeakerBoost ?? base.useSpeakerBoost,
+    speed: over.speed ?? base.speed,
+  };
+}
+
+/** True when no field is set (so the backend omits voice_settings entirely). */
+export function settingsAreEmpty(s: VoiceSettings | undefined): boolean {
+  if (!s) return true;
+  return (
+    s.stability === undefined &&
+    s.similarityBoost === undefined &&
+    s.style === undefined &&
+    s.useSpeakerBoost === undefined &&
+    s.speed === undefined
+  );
 }
 
 /** Mirrors the Rust VoiceUploadJob struct passed to deploy_voices_to_r2. */

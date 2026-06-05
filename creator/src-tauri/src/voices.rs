@@ -14,6 +14,26 @@ use std::path::{Path, PathBuf};
 
 const VOICE_MAP_FILE: &str = ".arcanum/voices.json";
 
+/// Per-request ElevenLabs delivery controls. Every field is optional — an
+/// unset field falls back to the project default, then to ElevenLabs' own
+/// voice default. Stored in the voice map (per-mob + a project default) and
+/// passed through to `elevenlabs_synthesize`. camelCase on the wire for the
+/// frontend; the ElevenLabs request body uses its own snake_case shape.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct VoiceSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stability: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub similarity_boost: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub style: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub use_speaker_boost: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub speed: Option<f32>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct VoiceMap {
@@ -26,6 +46,13 @@ pub struct VoiceMap {
     /// templateKey → ElevenLabs voiceId.
     #[serde(default)]
     pub assignments: HashMap<String, String>,
+    /// Project-wide delivery defaults, applied to mobs without an override.
+    #[serde(default)]
+    pub default_settings: VoiceSettings,
+    /// templateKey → per-mob delivery overrides (each field falls back to
+    /// `default_settings` when unset).
+    #[serde(default)]
+    pub settings: HashMap<String, VoiceSettings>,
 }
 
 fn voice_map_path(project_dir: &str) -> PathBuf {

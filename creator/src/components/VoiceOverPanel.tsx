@@ -5,10 +5,17 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useVoiceStore } from "@/stores/voiceStore";
 import { panelTab } from "@/lib/panelRegistry";
 import {
+  ELEVENLABS_DEFAULT_SETTINGS,
   ELEVENLABS_MODELS,
   lineKey,
+  resolveVoiceSettings,
+  settingsAreEmpty,
   sha8,
+  VOICE_SETTING_FIELDS,
   type DialogueLine,
+  type ElevenLabsVoice,
+  type VoiceMap,
+  type VoiceSettings,
 } from "@/types/voiceover";
 
 interface MobGroup {
@@ -16,6 +23,18 @@ interface MobGroup {
   templateKey: string;
   mobName: string;
   lineCount: number;
+}
+
+/** Fill any unset setting with the ElevenLabs default so sliders always have a
+ *  concrete value to display. */
+function effectiveSettings(s: VoiceSettings): Required<VoiceSettings> {
+  return {
+    stability: s.stability ?? ELEVENLABS_DEFAULT_SETTINGS.stability,
+    similarityBoost: s.similarityBoost ?? ELEVENLABS_DEFAULT_SETTINGS.similarityBoost,
+    style: s.style ?? ELEVENLABS_DEFAULT_SETTINGS.style,
+    useSpeakerBoost: s.useSpeakerBoost ?? ELEVENLABS_DEFAULT_SETTINGS.useSpeakerBoost,
+    speed: s.speed ?? ELEVENLABS_DEFAULT_SETTINGS.speed,
+  };
 }
 
 /** Flatten every voiceable NPC dialogue line across all loaded zones. */
@@ -66,6 +85,10 @@ export default function VoiceOverPanel() {
   const setDefaultVoice = useVoiceStore((s) => s.setDefaultVoice);
   const setModel = useVoiceStore((s) => s.setModel);
   const setAssignment = useVoiceStore((s) => s.setAssignment);
+  const setDefaultSettings = useVoiceStore((s) => s.setDefaultSettings);
+  const clearDefaultSettings = useVoiceStore((s) => s.clearDefaultSettings);
+  const setMobSettings = useVoiceStore((s) => s.setMobSettings);
+  const clearMobSettings = useVoiceStore((s) => s.clearMobSettings);
   const resolveVoiceId = useVoiceStore((s) => s.resolveVoiceId);
   const fetchVoices = useVoiceStore((s) => s.fetchVoices);
   const synthesizeLine = useVoiceStore((s) => s.synthesizeLine);
@@ -250,6 +273,28 @@ export default function VoiceOverPanel() {
           </label>
         </div>
 
+        {/* Project-wide delivery defaults */}
+        <details className="mt-3 rounded border border-border-muted bg-bg-primary px-3 py-2">
+          <summary className="cursor-pointer select-none text-2xs uppercase tracking-wider text-text-muted">
+            Default delivery
+            {!settingsAreEmpty(voiceMap.defaultSettings) && (
+              <span className="ml-2 rounded-full bg-accent/15 px-1.5 py-0.5 text-3xs normal-case tracking-normal text-accent">
+                customized
+              </span>
+            )}
+          </summary>
+          <div className="mt-2">
+            <VoiceSettingsEditor
+              effective={effectiveSettings(voiceMap.defaultSettings)}
+              onSet={(field, value) =>
+                setDefaultSettings({ [field]: value } as Partial<VoiceSettings>)
+              }
+              onReset={clearDefaultSettings}
+              canReset={!settingsAreEmpty(voiceMap.defaultSettings)}
+            />
+          </div>
+        </details>
+
         {voicesError && (
           <p className="mt-2 text-2xs text-status-error">Couldn't load voices: {voicesError}</p>
         )}
@@ -262,39 +307,20 @@ export default function VoiceOverPanel() {
               {mobGroups.length === 1 ? "NPC" : "NPCs"})
             </p>
             <ul className="flex flex-col gap-1.5">
-              {mobGroups.map((g) => {
-                const key = `${g.zone} ${g.templateKey}`;
-                const assigned = voiceMap.assignments[g.templateKey] ?? "";
-                return (
-                  <li
-                    key={key}
-                    className="flex items-center gap-3 rounded border border-border-muted bg-bg-primary px-2.5 py-1.5"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <span className="text-xs text-text-primary">{g.mobName}</span>
-                      <span className="ml-2 font-mono text-3xs text-text-muted/70">
-                        {g.zone}:{g.templateKey} · {g.lineCount} line{g.lineCount !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                    <select
-                      value={assigned}
-                      onChange={(e) => setAssignment(g.templateKey, e.target.value)}
-                      disabled={!voices.length}
-                      className="w-48 rounded border border-border-default bg-bg-secondary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
-                    >
-                      <option value="">
-                        Default
-                        {voiceMap.defaultVoiceId ? ` (${voiceName(voiceMap.defaultVoiceId)})` : ""}
-                      </option>
-                      {voices.map((v) => (
-                        <option key={v.voiceId} value={v.voiceId}>
-                          {v.name}
-                        </option>
-                      ))}
-                    </select>
-                  </li>
-                );
-              })}
+              {mobGroups.map((g) => (
+                <MobAssignmentRow
+                  key={`${g.zone} ${g.templateKey}`}
+                  group={g}
+                  voices={voices}
+                  voiceMap={voiceMap}
+                  defaultVoiceLabel={voiceMap.defaultVoiceId ? voiceName(voiceMap.defaultVoiceId) : ""}
+                  onAssign={(voiceId) => setAssignment(g.templateKey, voiceId)}
+                  onSet={(field, value) =>
+                    setMobSettings(g.templateKey, { [field]: value } as Partial<VoiceSettings>)
+                  }
+                  onReset={() => clearMobSettings(g.templateKey)}
+                />
+              ))}
             </ul>
           </div>
         )}
@@ -393,6 +419,134 @@ export default function VoiceOverPanel() {
           </ul>
         )}
       </section>
+    </div>
+  );
+}
+
+interface MobAssignmentRowProps {
+  group: MobGroup;
+  voices: ElevenLabsVoice[];
+  voiceMap: VoiceMap;
+  defaultVoiceLabel: string;
+  onAssign: (voiceId: string) => void;
+  onSet: (field: keyof VoiceSettings, value: number | boolean) => void;
+  onReset: () => void;
+}
+
+function MobAssignmentRow({
+  group,
+  voices,
+  voiceMap,
+  defaultVoiceLabel,
+  onAssign,
+  onSet,
+  onReset,
+}: MobAssignmentRowProps) {
+  const [expanded, setExpanded] = useState(false);
+  const assigned = voiceMap.assignments[group.templateKey] ?? "";
+  const customized = !settingsAreEmpty(voiceMap.settings[group.templateKey]);
+  const effective = effectiveSettings(resolveVoiceSettings(voiceMap, group.templateKey));
+
+  return (
+    <li className="rounded border border-border-muted bg-bg-primary">
+      <div className="flex items-center gap-3 px-2.5 py-1.5">
+        <div className="min-w-0 flex-1">
+          <span className="text-xs text-text-primary">{group.mobName}</span>
+          <span className="ml-2 font-mono text-3xs text-text-muted/70">
+            {group.zone}:{group.templateKey} · {group.lineCount} line
+            {group.lineCount !== 1 ? "s" : ""}
+          </span>
+        </div>
+        <select
+          value={assigned}
+          onChange={(e) => onAssign(e.target.value)}
+          disabled={!voices.length}
+          className="w-48 rounded border border-border-default bg-bg-secondary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+        >
+          <option value="">Default{defaultVoiceLabel ? ` (${defaultVoiceLabel})` : ""}</option>
+          {voices.map((v) => (
+            <option key={v.voiceId} value={v.voiceId}>
+              {v.name}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => setExpanded((x) => !x)}
+          aria-expanded={expanded}
+          title="Delivery settings"
+          className={`focus-ring inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border text-xs transition ${
+            customized
+              ? "border-accent/40 text-accent hover:bg-accent/10"
+              : "border-border-default text-text-muted hover:bg-bg-tertiary hover:text-text-primary"
+          }`}
+        >
+          &#x2699;
+        </button>
+      </div>
+      {expanded && (
+        <div className="border-t border-border-muted px-2.5 py-2">
+          <VoiceSettingsEditor
+            effective={effective}
+            onSet={onSet}
+            onReset={onReset}
+            canReset={customized}
+          />
+        </div>
+      )}
+    </li>
+  );
+}
+
+interface VoiceSettingsEditorProps {
+  effective: Required<VoiceSettings>;
+  onSet: (field: keyof VoiceSettings, value: number | boolean) => void;
+  onReset: () => void;
+  canReset: boolean;
+}
+
+function VoiceSettingsEditor({ effective, onSet, onReset, canReset }: VoiceSettingsEditorProps) {
+  return (
+    <div className="flex flex-col gap-2">
+      {VOICE_SETTING_FIELDS.map((f) => (
+        <div key={f.key} className="flex items-center gap-2">
+          <label className="w-20 shrink-0 text-2xs text-text-muted" title={f.hint}>
+            {f.label}
+          </label>
+          <input
+            type="range"
+            min={f.min}
+            max={f.max}
+            step={f.step}
+            value={effective[f.key] as number}
+            onChange={(e) => onSet(f.key, parseFloat(e.target.value))}
+            className="h-1.5 flex-1 accent-accent"
+            aria-label={f.label}
+          />
+          <span className="w-9 shrink-0 text-right font-mono text-3xs text-text-secondary">
+            {(effective[f.key] as number).toFixed(2)}
+          </span>
+        </div>
+      ))}
+      <div className="flex items-center justify-between gap-2 pt-0.5">
+        <label className="flex cursor-pointer items-center gap-1.5 text-2xs text-text-muted">
+          <input
+            type="checkbox"
+            checked={effective.useSpeakerBoost}
+            onChange={(e) => onSet("useSpeakerBoost", e.target.checked)}
+            className="accent-accent"
+          />
+          Speaker boost
+        </label>
+        <button
+          onClick={onReset}
+          disabled={!canReset}
+          className="focus-ring rounded border border-border-default px-2 py-0.5 text-3xs text-text-muted transition hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-40"
+          title="Clear overrides for this scope"
+        >
+          Reset
+        </button>
+      </div>
+      <p className="text-3xs text-text-muted/60">Unset values fall back to ElevenLabs defaults.</p>
     </div>
   );
 }

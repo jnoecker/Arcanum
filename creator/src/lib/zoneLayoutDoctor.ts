@@ -8,7 +8,8 @@ export type IssueKind =
   | "contradictory-pair"
   | "disconnected-room"
   | "text-direction-mismatch"
-  | "text-room-mismatch";
+  | "text-room-mismatch"
+  | "redundant-exit-direction";
 
 export type IssueSeverity = "warning" | "error";
 
@@ -438,6 +439,61 @@ function detectTextRoomMismatches(world: WorldFile): {
   return { issues, mismatches };
 }
 
+// ─── Redundant exit-direction references ──────────────────────
+
+/**
+ * Flags directional references in room descriptions that line up with a real
+ * exit. The engine now narrates exits automatically ("to the north you see
+ * …"), so these hand-written directional callouts are redundant and should
+ * usually be stripped from the prose.
+ *
+ * Crucially, this only fires when the mentioned direction HAS a matching exit.
+ * A direction with no matching exit is left to detectTextDirectionMismatches /
+ * detectTextRoomMismatches — that's where genuine distant-landmark flavor
+ * ("far to the east, a tower pierces the clouds") lives, and we must not
+ * suggest removing it.
+ */
+function detectRedundantExitDirections(world: WorldFile): {
+  issues: LayoutIssue[];
+  mismatches: TextDirectionMismatch[];
+} {
+  const issues: LayoutIssue[] = [];
+  const mismatches: TextDirectionMismatch[] = [];
+
+  for (const [roomId, room] of Object.entries(world.rooms)) {
+    const desc = room.description;
+    if (!desc) continue;
+
+    const exitDirs = new Set(
+      Object.keys(room.exits ?? {}).filter((d) => VALID_DIRS.has(d)),
+    );
+    if (exitDirs.size === 0) continue;
+
+    for (const [dir, pattern] of Object.entries(DIR_PATTERNS)) {
+      if (!exitDirs.has(dir)) continue; // only flag references to a real exit
+      const match = desc.match(pattern);
+      if (!match) continue;
+
+      const dirLabel = DIR_LABELS[dir]!;
+      issues.push({
+        kind: "redundant-exit-direction",
+        severity: "warning",
+        roomId,
+        message: `Description references the ${dirLabel} exit ("${match[0]}"). The engine now describes exits automatically — you can usually drop this. Keep it only if it's intentional flavor (a distant landmark rather than the adjacent exit).`,
+        key: `redundant-exit-direction:${roomId}:${dir}`,
+      });
+      mismatches.push({
+        roomId,
+        mentionedDir: dir,
+        snippet: match[0],
+        problem: `Remove the "${match[0]}" directional exit callout — the engine now auto-describes the ${dirLabel} exit. Strip the clause or sentence that points the player ${dirLabel}, preserving all other atmosphere. Leave it only if it describes a distant landmark rather than the adjacent exit.`,
+      });
+    }
+  }
+
+  return { issues, mismatches };
+}
+
 // ─── Public API ────────────────────────────────────────────────
 
 export interface DoctorReport {
@@ -453,6 +509,8 @@ export function analyzeZoneLayout(world: WorldFile): DoctorReport {
   const { issues: textIssues, mismatches } = detectTextDirectionMismatches(world);
   const { issues: roomMismatchIssues, mismatches: roomMismatches } =
     detectTextRoomMismatches(world);
+  const { issues: redundantIssues, mismatches: redundantMismatches } =
+    detectRedundantExitDirections(world);
 
   return {
     issues: [
@@ -461,7 +519,8 @@ export function analyzeZoneLayout(world: WorldFile): DoctorReport {
       ...oneWay,
       ...textIssues,
       ...roomMismatchIssues,
+      ...redundantIssues,
     ],
-    textMismatches: [...mismatches, ...roomMismatches],
+    textMismatches: [...mismatches, ...roomMismatches, ...redundantMismatches],
   };
 }

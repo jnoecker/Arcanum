@@ -149,3 +149,76 @@ describe("detectTextRoomMismatches", () => {
     expect(fromRoomMismatch!.problem).toMatch(/drawbridge/i);
   });
 });
+
+describe("detectRedundantExitDirections", () => {
+  it("flags a directional reference that matches a real exit", () => {
+    const report = analyzeZoneLayout(
+      world({
+        gate: {
+          title: "The Gate",
+          description: "A heavy iron gate. To the north, a path climbs toward the tower.",
+          exits: { n: "tower" },
+        },
+        tower: {
+          title: "The Tower",
+          description: "A tall tower.",
+          exits: { s: "gate" },
+        },
+      }),
+    );
+
+    const issue = report.issues.find((i) => i.kind === "redundant-exit-direction");
+    expect(issue).toBeDefined();
+    expect(issue!.roomId).toBe("gate");
+    expect(issue!.severity).toBe("warning");
+
+    // Routed through textMismatches so the LLM rewriter can strip it.
+    const mismatch = report.textMismatches.find(
+      (m) => m.roomId === "gate" && /remove/i.test(m.problem ?? ""),
+    );
+    expect(mismatch).toBeDefined();
+  });
+
+  it("does not flag a distant landmark whose direction has no matching exit", () => {
+    const report = analyzeZoneLayout(
+      world({
+        overlook: {
+          title: "The Overlook",
+          description:
+            "Far to the east, a tower pierces the clouds — too distant to reach from here.",
+          exits: { w: "trail" },
+        },
+        trail: {
+          title: "The Trail",
+          description: "A winding trail.",
+          exits: { e: "overlook" },
+        },
+      }),
+    );
+
+    // "east" has no east exit, so it is NOT a redundant exit reference — this is
+    // the intentional distant-landmark flavor the detector must leave alone.
+    expect(
+      report.issues.some((i) => i.kind === "redundant-exit-direction"),
+    ).toBe(false);
+  });
+
+  it("does not flag a direction that is only mentioned without a matching exit", () => {
+    const report = analyzeZoneLayout(
+      world({
+        hall: {
+          title: "Hall",
+          description: "A long hall. A draft blows in from the north.",
+          exits: { e: "library" },
+        },
+        library: { title: "Library", description: ".", exits: { w: "hall" } },
+      }),
+    );
+
+    // north is mentioned but there's no north exit → mismatch territory, not
+    // redundancy. The east exit isn't referenced in the prose, so nothing to strip.
+    expect(
+      report.issues.some((i) => i.kind === "redundant-exit-direction"),
+    ).toBe(false);
+  });
+});

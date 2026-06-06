@@ -34,6 +34,7 @@ const KIND_LABELS: Record<string, string> = {
   "disconnected-room": "Disconnected Room",
   "text-direction-mismatch": "Text Mismatch",
   "text-room-mismatch": "Text ↔ Layout Mismatch",
+  "redundant-exit-direction": "Redundant Exit Reference",
 };
 
 export function ZoneLayoutDoctor({ world, onWorldChange }: ZoneLayoutDoctorProps) {
@@ -130,7 +131,9 @@ export function ZoneLayoutDoctor({ world, onWorldChange }: ZoneLayoutDoctorProps
   const errorCount = visibleIssues.filter((i) => i.severity === "error").length;
   const warningCount = visibleIssues.filter((i) => i.severity === "warning").length;
   const isTextIssue = (k: LayoutIssue["kind"]) =>
-    k === "text-direction-mismatch" || k === "text-room-mismatch";
+    k === "text-direction-mismatch" ||
+    k === "text-room-mismatch" ||
+    k === "redundant-exit-direction";
   const textMismatchCount = visibleIssues.filter((i) => isTextIssue(i.kind)).length;
   const structuralCount = visibleIssues.filter((i) => !isTextIssue(i.kind)).length;
 
@@ -172,7 +175,8 @@ export function ZoneLayoutDoctor({ world, onWorldChange }: ZoneLayoutDoctorProps
             </div>
             <p className="text-sm leading-relaxed text-text-secondary">
               Scan this zone's {roomCount} room{roomCount === 1 ? "" : "s"} for structural problems
-              and directional references in room descriptions that no longer match the layout.
+              and directional references in room descriptions — mismatches with the layout, plus exit
+              callouts the engine now describes automatically.
             </p>
             <button
               onClick={handleAnalyze}
@@ -282,7 +286,7 @@ export function ZoneLayoutDoctor({ world, onWorldChange }: ZoneLayoutDoctorProps
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <h3 className="font-display text-xs uppercase tracking-widest text-text-secondary">
-              Text / Direction Mismatches
+              Text / Direction References
             </h3>
             {AI_ENABLED && hasLlmKey && textMismatchCount > 0 && rewrites.length === 0 && (
               <ActionButton

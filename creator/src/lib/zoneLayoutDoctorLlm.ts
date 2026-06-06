@@ -55,7 +55,7 @@ export async function rewriteRoomDescriptions(
 
   const tone = buildToneDirective();
 
-  const systemPrompt = `You are a text editor for a MUD (text-based game). You fix room descriptions so that directional references match the room's actual exits. Preserve the atmosphere, voice, length, and style of the original text. Only change the parts that reference incorrect directions — leave everything else untouched. If the original text mentions a direction that has no exit, either remove the reference or rephrase it to match an actual exit that leads to a similar destination.${tone ? `\n\nWorld context: ${tone}` : ""}
+  const systemPrompt = `You are a text editor for a MUD (text-based game). You clean up directional references in room descriptions. The game engine now narrates each room's exits automatically (e.g. "To the north you see the Garden"), so explicit directional exit callouts baked into the prose are redundant and should be removed. You also fix references that contradict the room's actual exits. Preserve the atmosphere, voice, length, and style of the original text — only touch the directional references called out in each room's "Problems" list, and leave everything else untouched. Follow each room's Problems exactly: remove a redundant exit callout cleanly without leaving a dangling sentence, and for a genuine mismatch either drop the reference or rephrase it to match an actual exit. Never strip a description down to nothing — keep all the sensory/atmospheric content. Keep deliberate distant-landmark flavor (e.g. "far to the east, a tower pierces the clouds") that paints scenery rather than naming an adjacent exit.${tone ? `\n\nWorld context: ${tone}` : ""}
 
 Return ONLY a JSON array of objects: [{ "roomId": string, "description": string }]
 No markdown fences, no commentary.`;
@@ -83,7 +83,7 @@ No markdown fences, no commentary.`;
     );
   }
 
-  const userPrompt = `Fix the directional references in these room descriptions so they match the actual exits.\n\n${roomEntries.join("\n\n")}`;
+  const userPrompt = `Clean up the directional references in these room descriptions, following the Problems noted for each.\n\n${roomEntries.join("\n\n")}`;
 
   const response = await invoke<string>("llm_complete", {
     systemPrompt,

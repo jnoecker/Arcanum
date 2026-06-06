@@ -187,6 +187,7 @@ pub fn run() {
                     openai_images::openai_generate_image,
                     openai_tts::openai_tts_generate,
                     elevenlabs::elevenlabs_list_voices,
+                    elevenlabs::elevenlabs_voice_settings,
                     elevenlabs::elevenlabs_synthesize,
                     elevenlabs::voice_clip_status,
                     elevenlabs::read_voice_clip,

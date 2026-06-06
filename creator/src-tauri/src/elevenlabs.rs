@@ -194,6 +194,63 @@ pub async fn elevenlabs_list_voices(app: AppHandle) -> Result<Vec<ElevenLabsVoic
     Ok(parsed.voices.into_iter().map(ElevenLabsVoice::from).collect())
 }
 
+/// `/v1/voices/{id}/settings` response (snake_case). Mapped to the camelCase
+/// `VoiceSettings` the frontend stores.
+#[derive(Debug, Default, Deserialize)]
+struct ApiVoiceSettingsResponse {
+    #[serde(default)]
+    stability: Option<f32>,
+    #[serde(default)]
+    similarity_boost: Option<f32>,
+    #[serde(default)]
+    style: Option<f32>,
+    #[serde(default)]
+    use_speaker_boost: Option<bool>,
+    #[serde(default)]
+    speed: Option<f32>,
+}
+
+impl From<ApiVoiceSettingsResponse> for VoiceSettings {
+    fn from(r: ApiVoiceSettingsResponse) -> Self {
+        Self {
+            stability: r.stability,
+            similarity_boost: r.similarity_boost,
+            style: r.style,
+            use_speaker_boost: r.use_speaker_boost,
+            speed: r.speed,
+        }
+    }
+}
+
+/// Fetch a voice's own saved settings, used to seed the editor sliders so they
+/// start at the voice's defaults rather than a generic baseline.
+#[tauri::command]
+pub async fn elevenlabs_voice_settings(
+    app: AppHandle,
+    voice_id: String,
+) -> Result<VoiceSettings, String> {
+    if voice_id.trim().is_empty() {
+        return Err("No voice id.".to_string());
+    }
+    let settings = settings::get_settings(app).await?;
+    if settings.elevenlabs_api_key.is_empty() {
+        return Err("ElevenLabs API key not configured. Set it in Settings.".to_string());
+    }
+    let client = crate::http::shared_client();
+    let response = client
+        .get(format!("{API_BASE}/voices/{voice_id}/settings"))
+        .header("xi-api-key", &settings.elevenlabs_api_key)
+        .send()
+        .await
+        .map_err(|e| format!("ElevenLabs voice settings request failed: {e}"))?;
+    let response = crate::http::check_response(response).await?;
+    let parsed: ApiVoiceSettingsResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse voice settings response: {e}"))?;
+    Ok(VoiceSettings::from(parsed))
+}
+
 #[derive(Debug, Serialize)]
 struct TtsRequest {
     text: String,

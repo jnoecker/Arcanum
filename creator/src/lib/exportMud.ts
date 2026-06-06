@@ -42,6 +42,18 @@ function siblingMediaBaseUrl(imagesBaseUrl: string, folder: "videos" | "audio"):
   return normalized.replace(/\/images\/?$/i, `/${folder}/`);
 }
 
+// Voice-over clips are published to R2 under a dedicated `voices/` prefix (see
+// `voice_object_key` in r2.rs/hub.rs) and the engine resolves voiceUrl against
+// that same prefix, so the base URL always needs an explicit `/voices/` segment
+// — unlike videos/audio, which share the bare asset host.
+function voicesBaseUrl(imagesBaseUrl: string): string {
+  const normalized = normalizeBaseUrl(imagesBaseUrl, "/images/");
+  if (/\/images\/?$/i.test(normalized)) {
+    return normalized.replace(/\/images\/?$/i, "/voices/");
+  }
+  return `${normalized}voices/`;
+}
+
 function sanitizeAdminConfigForRuntime(admin: AppConfig["admin"] | undefined): AppConfig["admin"] {
   return {
     enabled: admin?.enabled ?? false,
@@ -550,6 +562,10 @@ export function buildMonolithicConfigObject(
     },
     audio: {
       baseUrl: siblingMediaBaseUrl(imageBaseUrl, "audio"),
+    },
+    voices: {
+      enabled: true,
+      baseUrl: voicesBaseUrl(imageBaseUrl),
     },
   };
 

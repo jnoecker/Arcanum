@@ -367,6 +367,85 @@ fn to_data_url(bytes: &[u8]) -> String {
     format!("data:audio/mpeg;base64,{b64}")
 }
 
+// ─── Cache status + readback (panel rehydration) ─────────────────
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VoiceStatusQuery {
+    /// Opaque key echoed back so the frontend can map results to lines.
+    pub key: String,
+    pub text: String,
+    pub voice_id: String,
+    #[serde(default)]
+    pub model_id: Option<String>,
+    #[serde(default)]
+    pub voice_settings: Option<VoiceSettings>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VoiceStatusResult {
+    pub key: String,
+    pub cache_hash: String,
+    pub text_sha8: String,
+    pub present: bool,
+}
+
+/// For each line, compute its clip cache key and report whether the MP3 is
+/// already cached on disk. Lets the panel restore "already generated" status
+/// after a reopen or app restart without re-calling ElevenLabs.
+#[tauri::command]
+pub async fn voice_clip_status(
+    app: AppHandle,
+    queries: Vec<VoiceStatusQuery>,
+) -> Result<Vec<VoiceStatusResult>, String> {
+    let dir = voices_cache_dir(&app).await?;
+    let mut out = Vec::with_capacity(queries.len());
+    for q in queries {
+        let text_sha8 = text_sha8(&q.text);
+        if q.text.trim().is_empty() || q.voice_id.trim().is_empty() {
+            out.push(VoiceStatusResult {
+                key: q.key,
+                cache_hash: String::new(),
+                text_sha8,
+                present: false,
+            });
+            continue;
+        }
+        let model_id = q
+            .model_id
+            .map(|m| m.trim().to_string())
+            .filter(|m| !m.is_empty())
+            .unwrap_or_else(|| DEFAULT_MODEL.to_string());
+        let settings = normalize_settings(q.voice_settings.unwrap_or_default());
+        let cache_hash = cache_hash(&q.text, &q.voice_id, &model_id, &settings);
+        let path = dir.join(format!("{cache_hash}.mp3"));
+        let present = matches!(tokio::fs::metadata(&path).await, Ok(m) if m.is_file() && m.len() > 0);
+        out.push(VoiceStatusResult {
+            key: q.key,
+            cache_hash,
+            text_sha8,
+            present,
+        });
+    }
+    Ok(out)
+}
+
+/// Read a cached clip back as a data URL for preview playback. Used when a
+/// line's status was rehydrated from disk (no in-memory data URL yet).
+#[tauri::command]
+pub async fn read_voice_clip(app: AppHandle, cache_hash: String) -> Result<String, String> {
+    if cache_hash.is_empty() || !cache_hash.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err("Invalid clip id.".to_string());
+    }
+    let dir = voices_cache_dir(&app).await?;
+    let path = dir.join(format!("{cache_hash}.mp3"));
+    let bytes = tokio::fs::read(&path)
+        .await
+        .map_err(|e| format!("Cached clip not found: {e}"))?;
+    Ok(to_data_url(&bytes))
+}
+
 // ─── Tests ───────────────────────────────────────────────────────
 
 #[cfg(test)]

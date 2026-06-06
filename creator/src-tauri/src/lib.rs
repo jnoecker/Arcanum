@@ -188,6 +188,8 @@ pub fn run() {
                     openai_tts::openai_tts_generate,
                     elevenlabs::elevenlabs_list_voices,
                     elevenlabs::elevenlabs_synthesize,
+                    elevenlabs::voice_clip_status,
+                    elevenlabs::read_voice_clip,
                     sketch::analyze_sketch,
                     rag::rag_upsert_chunks,
                     rag::rag_retrieve,

@@ -8,9 +8,12 @@ import {
   resolveVoiceSettings,
   type DialogueLine,
   type ElevenLabsVoice,
+  type LineClip,
   type VoiceClip,
   type VoiceMap,
   type VoiceSettings,
+  type VoiceStatusQuery,
+  type VoiceStatusResult,
   type VoiceUploadJob,
 } from "@/types/voiceover";
 
@@ -44,12 +47,15 @@ export type LineStatus = "idle" | "generating" | "done" | "error";
 
 export interface LineState {
   status: LineStatus;
-  clip?: VoiceClip;
+  clip?: LineClip;
   error?: string;
 }
 
 interface VoiceStore {
   voiceMap: VoiceMap;
+  /** True once the voice map has been read from disk, so remounts don't
+   *  reload and clobber unsaved in-memory edits. */
+  mapLoaded: boolean;
   voices: ElevenLabsVoice[];
   loadingVoices: boolean;
   voicesError: string | null;
@@ -61,6 +67,8 @@ interface VoiceStore {
 
   loadVoiceMap: () => Promise<void>;
   saveVoiceMap: () => Promise<void>;
+  rehydrate: (lines: DialogueLine[]) => Promise<void>;
+  ensureClipDataUrl: (key: string) => Promise<string | undefined>;
   setDefaultVoice: (voiceId: string) => void;
   setModel: (modelId: string) => void;
   setAssignment: (templateKey: string, voiceId: string) => void;
@@ -84,6 +92,7 @@ function projectDir(): string | undefined {
 
 export const useVoiceStore = create<VoiceStore>((set, get) => ({
   voiceMap: EMPTY_MAP,
+  mapLoaded: false,
   voices: [],
   loadingVoices: false,
   voicesError: null,
@@ -93,6 +102,9 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
   lastPublish: null,
 
   loadVoiceMap: async () => {
+    // Only read from disk once per session — remounting the panel must not
+    // overwrite in-memory edits with the (older) saved file.
+    if (get().mapLoaded) return;
     const dir = projectDir();
     if (!dir) return;
     try {
@@ -105,6 +117,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
           defaultSettings: map.defaultSettings ?? {},
           settings: map.settings ?? {},
         },
+        mapLoaded: true,
       });
     } catch (e) {
       console.error("Failed to load voice map", e);
@@ -115,6 +128,59 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
     const dir = projectDir();
     if (!dir) return;
     await invoke("save_voice_map", { projectDir: dir, map: get().voiceMap });
+  },
+
+  rehydrate: async (lines) => {
+    const { voiceMap } = get();
+    const queries: VoiceStatusQuery[] = lines.map((line) => ({
+      key: lineKey(line.zone, line.templateKey, line.nodeId),
+      text: line.text,
+      voiceId: voiceMap.assignments[line.templateKey] || voiceMap.defaultVoiceId,
+      modelId: voiceMap.modelId || DEFAULT_ELEVENLABS_MODEL,
+      voiceSettings: resolveVoiceSettings(voiceMap, line.templateKey),
+    }));
+    if (!queries.length) return;
+    let statuses: VoiceStatusResult[];
+    try {
+      statuses = await invoke<VoiceStatusResult[]>("voice_clip_status", { queries });
+    } catch {
+      return;
+    }
+    set((s) => {
+      const results = new Map(s.results);
+      for (const st of statuses) {
+        const cur = results.get(st.key);
+        // Only fill lines we don't already have richer state for, so we never
+        // clobber an in-progress, freshly-generated, or errored entry.
+        if (st.present && (!cur || cur.status === "idle")) {
+          results.set(st.key, {
+            status: "done",
+            clip: { cacheHash: st.cacheHash, textSha8: st.textSha8 },
+          });
+        }
+      }
+      return { results };
+    });
+  },
+
+  ensureClipDataUrl: async (key) => {
+    const cur = get().results.get(key);
+    if (!cur?.clip) return undefined;
+    if (cur.clip.dataUrl) return cur.clip.dataUrl;
+    try {
+      const dataUrl = await invoke<string>("read_voice_clip", {
+        cacheHash: cur.clip.cacheHash,
+      });
+      set((s) => {
+        const results = new Map(s.results);
+        const c = results.get(key);
+        if (c?.clip) results.set(key, { ...c, clip: { ...c.clip, dataUrl } });
+        return { results };
+      });
+      return dataUrl;
+    } catch {
+      return undefined;
+    }
   },
 
   setDefaultVoice: (voiceId) =>
@@ -202,7 +268,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
     });
 
     try {
-      const clip = await invoke<VoiceClip>("elevenlabs_synthesize", {
+      const vc = await invoke<VoiceClip>("elevenlabs_synthesize", {
         text: line.text,
         voiceId,
         modelId: get().voiceMap.modelId || DEFAULT_ELEVENLABS_MODEL,
@@ -210,7 +276,10 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
       });
       set((s) => {
         const results = new Map(s.results);
-        results.set(key, { status: "done", clip });
+        results.set(key, {
+          status: "done",
+          clip: { cacheHash: vc.cacheHash, textSha8: vc.textSha8, dataUrl: vc.dataUrl },
+        });
         return { results };
       });
     } catch (e) {

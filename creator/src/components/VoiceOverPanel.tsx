@@ -80,8 +80,11 @@ export default function VoiceOverPanel() {
   const publishing = useVoiceStore((s) => s.publishing);
   const lastPublish = useVoiceStore((s) => s.lastPublish);
 
+  const mapLoaded = useVoiceStore((s) => s.mapLoaded);
   const loadVoiceMap = useVoiceStore((s) => s.loadVoiceMap);
   const saveVoiceMap = useVoiceStore((s) => s.saveVoiceMap);
+  const rehydrate = useVoiceStore((s) => s.rehydrate);
+  const ensureClipDataUrl = useVoiceStore((s) => s.ensureClipDataUrl);
   const setDefaultVoice = useVoiceStore((s) => s.setDefaultVoice);
   const setModel = useVoiceStore((s) => s.setModel);
   const setAssignment = useVoiceStore((s) => s.setAssignment);
@@ -153,12 +156,47 @@ export default function VoiceOverPanel() {
     };
   }, [lines]);
 
+  // Auto-save the voice map shortly after any change so assignments and
+  // settings survive closing the panel or restarting the app. Gated on
+  // mapLoaded so we never persist the empty default over a real saved file
+  // before the on-disk map has loaded.
+  useEffect(() => {
+    if (!projectDir || !mapLoaded) return;
+    const t = setTimeout(() => {
+      saveVoiceMap().catch(() => {});
+    }, 600);
+    return () => clearTimeout(t);
+  }, [voiceMap, projectDir, mapLoaded, saveVoiceMap]);
+
+  // Final flush on unmount, so an edit made within the debounce window is still
+  // persisted if the panel closes immediately after.
+  useEffect(() => {
+    return () => {
+      const s = useVoiceStore.getState();
+      if (s.mapLoaded) s.saveVoiceMap().catch(() => {});
+    };
+  }, []);
+
+  // Restore "already generated" status from the on-disk clip cache whenever the
+  // lines or voice config change. Debounced so slider drags don't spam queries.
+  useEffect(() => {
+    if (!lines.length) return;
+    const t = setTimeout(() => {
+      rehydrate(lines).catch(() => {});
+    }, 300);
+    return () => clearTimeout(t);
+  }, [lines, voiceMap, rehydrate]);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playClip = (dataUrl: string) => {
     audioRef.current?.pause();
     const audio = new Audio(dataUrl);
     audioRef.current = audio;
     audio.play().catch(() => {});
+  };
+  const handlePlay = async (key: string) => {
+    const url = await ensureClipDataUrl(key);
+    if (url) playClip(url);
   };
 
   const voiceName = (voiceId: string) => voices.find((v) => v.voiceId === voiceId)?.name ?? voiceId;
@@ -428,7 +466,7 @@ export default function VoiceOverPanel() {
                   <StatusBadge status={st?.status ?? "idle"} stale={stale} error={st?.error} />
                   {clip && (
                     <button
-                      onClick={() => playClip(clip.dataUrl)}
+                      onClick={() => handlePlay(key)}
                       className="focus-ring inline-flex h-6 w-6 items-center justify-center rounded border border-border-default text-xs text-text-muted transition hover:bg-bg-tertiary hover:text-text-primary"
                       title="Play preview"
                       aria-label={`Play ${line.mobName} ${line.nodeId}`}

@@ -32,6 +32,11 @@ pub struct VoiceSettings {
     pub use_speaker_boost: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub speed: Option<f32>,
+    /// Extra pause (seconds) inserted after each sentence. Not an ElevenLabs
+    /// voice setting — Arcanum injects `<break>` tags into the synthesis input
+    /// only; the stored/displayed/hashed node text is unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sentence_pause: Option<f32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

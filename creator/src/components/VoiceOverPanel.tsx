@@ -38,6 +38,7 @@ function fillRequired(
     style: s.style ?? base.style,
     useSpeakerBoost: s.useSpeakerBoost ?? base.useSpeakerBoost,
     speed: s.speed ?? base.speed,
+    sentencePause: s.sentencePause ?? base.sentencePause,
   };
 }
 
@@ -648,8 +649,9 @@ function VoiceSettingsEditor({
               className="h-1.5 flex-1 accent-accent"
               aria-label={f.label}
             />
-            <span className="w-9 shrink-0 text-right font-mono text-3xs text-text-secondary">
+            <span className="w-12 shrink-0 text-right font-mono text-3xs text-text-secondary">
               {(effective[f.key] as number).toFixed(2)}
+              {(f as { suffix?: string }).suffix ?? ""}
             </span>
             <button
               onClick={() => onResetField(f.key)}

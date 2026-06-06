@@ -31,6 +31,9 @@ export interface VoiceSettings {
   style?: number;
   useSpeakerBoost?: boolean;
   speed?: number;
+  /** Extra pause (seconds) inserted after each sentence. Not an ElevenLabs
+   *  voice setting — Arcanum injects `<break>` tags into the synthesis input. */
+  sentencePause?: number;
 }
 
 /** Lightweight generated-clip handle held in the panel's per-line state.
@@ -77,6 +80,7 @@ export const ELEVENLABS_DEFAULT_SETTINGS: Required<VoiceSettings> = {
   style: 0,
   useSpeakerBoost: true,
   speed: 1.0,
+  sentencePause: 0,
 };
 
 /** Numeric delivery controls surfaced as sliders. `useSpeakerBoost` is a
@@ -86,12 +90,14 @@ export const VOICE_SETTING_FIELDS = [
   { key: "similarityBoost", label: "Similarity", min: 0, max: 1, step: 0.05, hint: "How closely to match the source voice." },
   { key: "style", label: "Style", min: 0, max: 1, step: 0.05, hint: "Amplify the voice's character (slower to render)." },
   { key: "speed", label: "Speed", min: 0.7, max: 1.2, step: 0.05, hint: "Delivery pacing." },
+  { key: "sentencePause", label: "Sentence pause", min: 0, max: 2, step: 0.1, suffix: "s", hint: "Extra pause inserted after each sentence (added to the audio only, not the displayed text)." },
 ] as const satisfies readonly {
   key: keyof VoiceSettings;
   label: string;
   min: number;
   max: number;
   step: number;
+  suffix?: string;
   hint: string;
 }[];
 
@@ -105,6 +111,7 @@ export function resolveVoiceSettings(map: VoiceMap, templateKey: string): VoiceS
     style: over.style ?? base.style,
     useSpeakerBoost: over.useSpeakerBoost ?? base.useSpeakerBoost,
     speed: over.speed ?? base.speed,
+    sentencePause: over.sentencePause ?? base.sentencePause,
   };
 }
 
@@ -116,7 +123,8 @@ export function settingsAreEmpty(s: VoiceSettings | undefined): boolean {
     s.similarityBoost === undefined &&
     s.style === undefined &&
     s.useSpeakerBoost === undefined &&
-    s.speed === undefined
+    s.speed === undefined &&
+    s.sentencePause === undefined
   );
 }
 

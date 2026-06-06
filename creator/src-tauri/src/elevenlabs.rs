@@ -83,7 +83,7 @@ fn settings_fingerprint(s: &VoiceSettings) -> String {
         o.map(|x| format!("{x:.3}")).unwrap_or_else(|| "_".to_string())
     }
     format!(
-        "st{}|si{}|sy{}|sp{}|b{}",
+        "st{}|si{}|sy{}|sp{}|b{}|p{}",
         f(s.stability),
         f(s.similarity_boost),
         f(s.style),
@@ -91,7 +91,66 @@ fn settings_fingerprint(s: &VoiceSettings) -> String {
         s.use_speaker_boost
             .map(|b| if b { "1" } else { "0" })
             .unwrap_or("_"),
+        f(s.sentence_pause),
     )
+}
+
+/// Insert `<break time="Xs" />` after sentence-ending punctuation so spoken
+/// dialogue gets a beat between sentences. Applied only to the synthesis input
+/// — the stored/displayed/hashed node text is untouched. Skips text that
+/// already contains break tags, and caps inserted breaks to avoid the
+/// instability ElevenLabs warns about with many tags.
+fn insert_sentence_breaks(text: &str, pause_secs: f32) -> String {
+    if pause_secs <= 0.0 || text.contains("<break") {
+        return text.to_string();
+    }
+    const MAX_BREAKS: usize = 8;
+    let tag = format!("<break time=\"{pause_secs:.2}s\" />");
+    let s: Vec<char> = text.chars().collect();
+    let n = s.len();
+    let mut out = String::with_capacity(text.len() + tag.len() * 4);
+    let mut inserted = 0;
+    let mut i = 0;
+    while i < n {
+        out.push(s[i]);
+        if inserted < MAX_BREAKS && matches!(s[i], '.' | '!' | '?') {
+            // Swallow a run of consecutive enders / closing quotes (e.g. "?!",
+            // "...", a period before a closing quote) so we break after the
+            // whole cluster, not inside it.
+            let mut j = i + 1;
+            while j < n
+                && matches!(
+                    s[j],
+                    '.' | '!' | '?' | '"' | '\'' | ')' | ']' | '\u{201D}' | '\u{2019}'
+                )
+            {
+                out.push(s[j]);
+                j += 1;
+            }
+            let ws_start = j;
+            while j < n && s[j].is_whitespace() {
+                j += 1;
+            }
+            let had_ws = j > ws_start;
+            let more_text = j < n;
+            if had_ws && more_text {
+                out.push(' ');
+                out.push_str(&tag);
+                out.push(' ');
+                inserted += 1;
+            } else {
+                // No whitespace boundary (e.g. "3.14") or end of line — keep
+                // whatever we consumed verbatim, no break.
+                for ch in &s[ws_start..j] {
+                    out.push(*ch);
+                }
+            }
+            i = j;
+            continue;
+        }
+        i += 1;
+    }
+    out
 }
 
 /// Clamp settings to ElevenLabs' accepted ranges. None stays None (omitted from
@@ -103,6 +162,7 @@ fn normalize_settings(s: VoiceSettings) -> VoiceSettings {
         style: s.style.map(|v| v.clamp(0.0, 1.0)),
         use_speaker_boost: s.use_speaker_boost,
         speed: s.speed.map(|v| v.clamp(0.7, 1.2)),
+        sentence_pause: s.sentence_pause.map(|v| v.clamp(0.0, 2.0)),
     }
 }
 
@@ -218,6 +278,8 @@ impl From<ApiVoiceSettingsResponse> for VoiceSettings {
             style: r.style,
             use_speaker_boost: r.use_speaker_boost,
             speed: r.speed,
+            // Not an ElevenLabs voice setting — always defaults to no pause.
+            sentence_pause: None,
         }
     }
 }
@@ -342,8 +404,12 @@ pub async fn elevenlabs_synthesize(
         return Err("ElevenLabs API key not configured. Set it in Settings.".to_string());
     }
 
+    // Sentence pauses are an Arcanum-side text transform, not a voice setting:
+    // they only affect what we send to ElevenLabs, never `text_sha8`/the path.
+    let synth_text = insert_sentence_breaks(&text, settings.sentence_pause.unwrap_or(0.0));
+
     let body = TtsRequest {
-        text: text.clone(),
+        text: synth_text,
         model_id: model_id.clone(),
         voice_settings: if settings_is_empty(&settings) {
             None
@@ -551,12 +617,46 @@ mod tests {
             style: Some(2.0),
             use_speaker_boost: Some(false),
             speed: Some(3.0),
+            sentence_pause: Some(5.0),
         });
         assert_eq!(n.stability, Some(1.0));
         assert_eq!(n.similarity_boost, Some(0.0));
         assert_eq!(n.style, Some(1.0));
         assert_eq!(n.speed, Some(1.2));
         assert_eq!(n.use_speaker_boost, Some(false));
+        assert_eq!(n.sentence_pause, Some(2.0));
+    }
+
+    #[test]
+    fn cache_hash_varies_with_sentence_pause() {
+        let base = cache_hash("hello", "voiceA", "model1", &no_settings());
+        let paused = VoiceSettings {
+            sentence_pause: Some(0.8),
+            ..VoiceSettings::default()
+        };
+        assert_ne!(base, cache_hash("hello", "voiceA", "model1", &paused));
+    }
+
+    #[test]
+    fn insert_sentence_breaks_adds_tags_between_sentences() {
+        let out = insert_sentence_breaks("Hello there. Stay a while.", 1.0);
+        assert_eq!(out, "Hello there. <break time=\"1.00s\" /> Stay a while.");
+    }
+
+    #[test]
+    fn insert_sentence_breaks_groups_clusters_and_skips_trailing() {
+        // "?!" cluster gets one break; the final sentence gets no trailing tag.
+        let out = insert_sentence_breaks("Really?! Yes.", 0.5);
+        assert_eq!(out, "Really?! <break time=\"0.50s\" /> Yes.");
+    }
+
+    #[test]
+    fn insert_sentence_breaks_noop_cases() {
+        // Zero pause, decimals, and pre-existing break tags are left alone.
+        assert_eq!(insert_sentence_breaks("One. Two.", 0.0), "One. Two.");
+        assert_eq!(insert_sentence_breaks("Pi is 3.14 exactly.", 1.0), "Pi is 3.14 exactly.");
+        let existing = "A. <break time=\"2.00s\" /> B.";
+        assert_eq!(insert_sentence_breaks(existing, 1.0), existing);
     }
 
     #[test]

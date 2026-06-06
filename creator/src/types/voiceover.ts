@@ -33,6 +33,31 @@ export interface VoiceSettings {
   speed?: number;
 }
 
+/** Lightweight generated-clip handle held in the panel's per-line state.
+ *  `dataUrl` is loaded lazily (absent for clips rehydrated from disk). */
+export interface LineClip {
+  cacheHash: string;
+  textSha8: string;
+  dataUrl?: string;
+}
+
+/** Mirrors the Rust VoiceStatusQuery — one per line, for cache rehydration. */
+export interface VoiceStatusQuery {
+  key: string;
+  text: string;
+  voiceId: string;
+  modelId?: string;
+  voiceSettings?: VoiceSettings;
+}
+
+/** Mirrors the Rust VoiceStatusResult. */
+export interface VoiceStatusResult {
+  key: string;
+  cacheHash: string;
+  textSha8: string;
+  present: boolean;
+}
+
 /** Mirrors the Rust VoiceMap struct (.arcanum/voices.json). */
 export interface VoiceMap {
   defaultVoiceId: string;

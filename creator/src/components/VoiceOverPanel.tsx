@@ -378,7 +378,16 @@ export default function VoiceOverPanel() {
         </details>
 
         {voicesError && (
-          <p className="mt-2 text-2xs text-status-error">Couldn't load voices: {voicesError}</p>
+          <div className="mt-2 flex items-start gap-2 text-2xs text-status-error">
+            <span className="min-w-0 flex-1 break-words">Couldn't load voices: {voicesError}</span>
+            <button
+              onClick={() => fetchVoices()}
+              disabled={loadingVoices}
+              className="focus-ring shrink-0 rounded border border-status-error/40 px-2 py-0.5 text-3xs text-status-error transition hover:bg-status-error/10 disabled:opacity-40"
+            >
+              {loadingVoices ? "Retrying…" : "Retry"}
+            </button>
+          </div>
         )}
 
         {/* Per-mob assignment */}

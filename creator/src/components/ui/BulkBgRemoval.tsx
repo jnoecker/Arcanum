@@ -33,9 +33,15 @@ type Phase = "checking" | "ready" | "running" | "done";
 export function BulkBgRemoval({
   targets: initialTargets,
   onClose,
+  onComplete,
 }: {
   targets: BulkBgTarget[];
   onClose: () => void;
+  /** Called once after the run with the bg-free result for each successfully
+   *  processed target, so the caller can repoint the entity's `image` to the
+   *  new variant. Without this the active variant flips server-side but the
+   *  entity keeps referencing its original, background-bearing image. */
+  onComplete?: (results: { target: BulkBgTarget; fileName: string }[]) => void;
 }) {
   const dialogRef = useFocusTrap<HTMLDivElement>(onClose);
   const listVariants = useAssetStore((s) => s.listVariants);
@@ -85,6 +91,8 @@ export function BulkBgRemoval({
       .map((item, idx) => ({ item, idx }))
       .filter(({ item }) => item.checked && item.status !== "skipped");
 
+    const processed: { target: BulkBgTarget; fileName: string }[] = [];
+
     for (const { item, idx } of toProcess) {
       if (abortRef.current) break;
 
@@ -107,10 +115,11 @@ export function BulkBgRemoval({
           item.variantGroup,
         );
 
-        // Touch `entry` so TypeScript doesn't warn about the unused binding;
-        // the real effect is that the asset was saved via the variant group,
-        // and loadAssets() below refreshes the manifest.
-        void entry;
+        // Record the bg-free result so the caller can repoint the entity's
+        // image field. removeBgAndSave flips the active variant server-side,
+        // but the entity keeps referencing its original background image until
+        // we rewrite it via onComplete below.
+        processed.push({ target: item, fileName: entry.file_name });
         setItems((prev) =>
           prev.map((t, i) => (i === idx ? { ...t, status: "done", error: undefined } : t)),
         );
@@ -124,8 +133,9 @@ export function BulkBgRemoval({
     }
 
     await loadAssets();
+    if (processed.length > 0) onComplete?.(processed);
     setPhase("done");
-  }, [items, loadAssets]);
+  }, [items, loadAssets, onComplete]);
 
   const toggleItem = (idx: number) => {
     setItems((prev) =>

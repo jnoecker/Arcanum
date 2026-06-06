@@ -136,6 +136,35 @@ function collectBgRemovalTargets(world: WorldFile, zoneId: string, assetsDir: st
   return targets;
 }
 
+/** Repoint each bulk-processed entity's `image` to its new background-free
+ *  variant. Bulk removal sets the active variant server-side, but the zone's
+ *  entity records still reference the original (background-bearing) image until
+ *  we rewrite them here — otherwise the entity keeps rendering its old image. */
+function applyBgRemovedImages(
+  world: WorldFile,
+  results: { target: BulkBgTarget; fileName: string }[],
+): WorldFile {
+  let next = world;
+  for (const { target, fileName } of results) {
+    const entityType = target.context?.entity_type;
+    const entityId = target.context?.entity_id;
+    if (!entityId) continue;
+    const collection =
+      entityType === "mob" ? "mobs"
+      : entityType === "item" ? "items"
+      : entityType === "gatheringNode" ? "gatheringNodes"
+      : null;
+    if (!collection) continue;
+    const coll = next[collection] as Record<string, { image?: string }> | undefined;
+    if (!coll?.[entityId]) continue;
+    next = {
+      ...next,
+      [collection]: { ...coll, [entityId]: { ...coll[entityId], image: fileName } },
+    };
+  }
+  return next;
+}
+
 function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const reactFlow = useReactFlow();
   const zoneState = useZoneStore((s) => s.zones.get(zoneId));
@@ -1145,6 +1174,10 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               <BulkBgRemoval
                 targets={collectBgRemovalTargets(zoneState.data, zoneId, assetsDir)}
                 onClose={() => setShowBulkBgRemoval(false)}
+                onComplete={(results) => {
+                  const next = applyBgRemovedImages(zoneState.data, results);
+                  if (next !== zoneState.data) applyWorldChange(next);
+                }}
               />
             )}
 

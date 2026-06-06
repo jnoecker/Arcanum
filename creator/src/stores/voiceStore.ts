@@ -43,6 +43,16 @@ function pruneResultsForMob(
   return next;
 }
 
+/** Merge a settings patch, dropping any field set back to undefined so a
+ *  per-field reset truly clears the override (rather than storing undefined). */
+function mergeSettings(base: VoiceSettings, patch: Partial<VoiceSettings>): VoiceSettings {
+  const next: VoiceSettings = { ...base, ...patch };
+  for (const k of Object.keys(next) as (keyof VoiceSettings)[]) {
+    if (next[k] === undefined) delete next[k];
+  }
+  return next;
+}
+
 export type LineStatus = "idle" | "generating" | "done" | "error";
 
 export interface LineState {
@@ -59,6 +69,8 @@ interface VoiceStore {
   voices: ElevenLabsVoice[];
   loadingVoices: boolean;
   voicesError: string | null;
+  /** voiceId → that voice's own ElevenLabs default settings (slider baseline). */
+  voiceDefaults: Record<string, VoiceSettings>;
   /** lineKey → generation state. */
   results: Map<string, LineState>;
   generating: boolean;
@@ -79,6 +91,7 @@ interface VoiceStore {
   clearDefaultSettings: () => void;
 
   fetchVoices: () => Promise<void>;
+  fetchVoiceDefaults: (voiceId: string) => Promise<void>;
 
   synthesizeLine: (line: DialogueLine) => Promise<void>;
   generateAll: (lines: DialogueLine[]) => Promise<void>;
@@ -96,6 +109,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
   voices: [],
   loadingVoices: false,
   voicesError: null,
+  voiceDefaults: {},
   results: new Map(),
   generating: false,
   publishing: false,
@@ -212,7 +226,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
     set((s) => ({
       voiceMap: {
         ...s.voiceMap,
-        defaultSettings: { ...s.voiceMap.defaultSettings, ...patch },
+        defaultSettings: mergeSettings(s.voiceMap.defaultSettings, patch),
       },
     })),
 
@@ -222,7 +236,12 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
   setMobSettings: (templateKey, patch) =>
     set((s) => {
       const settings = { ...s.voiceMap.settings };
-      settings[templateKey] = { ...settings[templateKey], ...patch };
+      const merged = mergeSettings(settings[templateKey] ?? {}, patch);
+      if (Object.keys(merged).length === 0) {
+        delete settings[templateKey];
+      } else {
+        settings[templateKey] = merged;
+      }
       return {
         voiceMap: { ...s.voiceMap, settings },
         results: pruneResultsForMob(s.results, templateKey),
@@ -246,6 +265,18 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
       set({ voices, loadingVoices: false });
     } catch (e) {
       set({ loadingVoices: false, voicesError: String(e) });
+    }
+  },
+
+  fetchVoiceDefaults: async (voiceId) => {
+    if (!voiceId || get().voiceDefaults[voiceId] !== undefined) return;
+    // Reserve the slot up front so concurrent callers don't double-fetch.
+    set((s) => ({ voiceDefaults: { ...s.voiceDefaults, [voiceId]: {} } }));
+    try {
+      const settings = await invoke<VoiceSettings>("elevenlabs_voice_settings", { voiceId });
+      set((s) => ({ voiceDefaults: { ...s.voiceDefaults, [voiceId]: settings } }));
+    } catch {
+      // Leave the empty placeholder so sliders fall back to the generic baseline.
     }
   },
 

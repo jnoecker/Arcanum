@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
@@ -25,15 +25,19 @@ interface MobGroup {
   lineCount: number;
 }
 
-/** Fill any unset setting with the ElevenLabs default so sliders always have a
- *  concrete value to display. */
-function effectiveSettings(s: VoiceSettings): Required<VoiceSettings> {
+/** Fill any unset field from a baseline so sliders always have a concrete value.
+ *  The baseline is the assigned voice's own defaults (which themselves fall back
+ *  to the generic ElevenLabs defaults). */
+function fillRequired(
+  s: VoiceSettings,
+  base: Required<VoiceSettings>,
+): Required<VoiceSettings> {
   return {
-    stability: s.stability ?? ELEVENLABS_DEFAULT_SETTINGS.stability,
-    similarityBoost: s.similarityBoost ?? ELEVENLABS_DEFAULT_SETTINGS.similarityBoost,
-    style: s.style ?? ELEVENLABS_DEFAULT_SETTINGS.style,
-    useSpeakerBoost: s.useSpeakerBoost ?? ELEVENLABS_DEFAULT_SETTINGS.useSpeakerBoost,
-    speed: s.speed ?? ELEVENLABS_DEFAULT_SETTINGS.speed,
+    stability: s.stability ?? base.stability,
+    similarityBoost: s.similarityBoost ?? base.similarityBoost,
+    style: s.style ?? base.style,
+    useSpeakerBoost: s.useSpeakerBoost ?? base.useSpeakerBoost,
+    speed: s.speed ?? base.speed,
   };
 }
 
@@ -73,6 +77,8 @@ export default function VoiceOverPanel() {
 
   const voiceMap = useVoiceStore((s) => s.voiceMap);
   const voices = useVoiceStore((s) => s.voices);
+  const voiceDefaults = useVoiceStore((s) => s.voiceDefaults);
+  const fetchVoiceDefaults = useVoiceStore((s) => s.fetchVoiceDefaults);
   const loadingVoices = useVoiceStore((s) => s.loadingVoices);
   const voicesError = useVoiceStore((s) => s.voicesError);
   const results = useVoiceStore((s) => s.results);
@@ -187,6 +193,18 @@ export default function VoiceOverPanel() {
     return () => clearTimeout(t);
   }, [lines, voiceMap, rehydrate]);
 
+  // Fetch each in-use voice's own default settings so the sliders seed from them.
+  useEffect(() => {
+    if (!voices.length) return;
+    const ids = new Set<string>();
+    if (voiceMap.defaultVoiceId) ids.add(voiceMap.defaultVoiceId);
+    for (const g of mobGroups) {
+      const vid = voiceMap.assignments[g.templateKey] || voiceMap.defaultVoiceId;
+      if (vid) ids.add(vid);
+    }
+    ids.forEach((id) => fetchVoiceDefaults(id));
+  }, [voices.length, voiceMap, mobGroups, fetchVoiceDefaults]);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playClip = (dataUrl: string) => {
     audioRef.current?.pause();
@@ -200,6 +218,14 @@ export default function VoiceOverPanel() {
   };
 
   const voiceName = (voiceId: string) => voices.find((v) => v.voiceId === voiceId)?.name ?? voiceId;
+
+  // Slider baseline for a voice: its own ElevenLabs defaults, falling back to
+  // the generic defaults until they've been fetched.
+  const baselineFor = useCallback(
+    (voiceId: string): Required<VoiceSettings> =>
+      fillRequired(voiceDefaults[voiceId] ?? {}, ELEVENLABS_DEFAULT_SETTINGS),
+    [voiceDefaults],
+  );
 
   const doneCount = useMemo(() => {
     let n = 0;
@@ -336,9 +362,13 @@ export default function VoiceOverPanel() {
           </summary>
           <div className="mt-2">
             <VoiceSettingsEditor
-              effective={effectiveSettings(voiceMap.defaultSettings)}
+              effective={fillRequired(voiceMap.defaultSettings, baselineFor(voiceMap.defaultVoiceId))}
+              overrides={voiceMap.defaultSettings}
               onSet={(field, value) =>
                 setDefaultSettings({ [field]: value } as Partial<VoiceSettings>)
+              }
+              onResetField={(field) =>
+                setDefaultSettings({ [field]: undefined } as Partial<VoiceSettings>)
               }
               onReset={clearDefaultSettings}
               canReset={!settingsAreEmpty(voiceMap.defaultSettings)}
@@ -364,10 +394,14 @@ export default function VoiceOverPanel() {
                   group={g}
                   voices={voices}
                   voiceMap={voiceMap}
+                  baseline={baselineFor(voiceMap.assignments[g.templateKey] || voiceMap.defaultVoiceId)}
                   defaultVoiceLabel={voiceMap.defaultVoiceId ? voiceName(voiceMap.defaultVoiceId) : ""}
                   onAssign={(voiceId) => setAssignment(g.templateKey, voiceId)}
                   onSet={(field, value) =>
                     setMobSettings(g.templateKey, { [field]: value } as Partial<VoiceSettings>)
+                  }
+                  onResetField={(field) =>
+                    setMobSettings(g.templateKey, { [field]: undefined } as Partial<VoiceSettings>)
                   }
                   onReset={() => clearMobSettings(g.templateKey)}
                 />
@@ -496,9 +530,11 @@ interface MobAssignmentRowProps {
   group: MobGroup;
   voices: ElevenLabsVoice[];
   voiceMap: VoiceMap;
+  baseline: Required<VoiceSettings>;
   defaultVoiceLabel: string;
   onAssign: (voiceId: string) => void;
   onSet: (field: keyof VoiceSettings, value: number | boolean) => void;
+  onResetField: (field: keyof VoiceSettings) => void;
   onReset: () => void;
 }
 
@@ -506,15 +542,18 @@ function MobAssignmentRow({
   group,
   voices,
   voiceMap,
+  baseline,
   defaultVoiceLabel,
   onAssign,
   onSet,
+  onResetField,
   onReset,
 }: MobAssignmentRowProps) {
   const [expanded, setExpanded] = useState(false);
   const assigned = voiceMap.assignments[group.templateKey] ?? "";
-  const customized = !settingsAreEmpty(voiceMap.settings[group.templateKey]);
-  const effective = effectiveSettings(resolveVoiceSettings(voiceMap, group.templateKey));
+  const overrides = voiceMap.settings[group.templateKey] ?? {};
+  const customized = !settingsAreEmpty(overrides);
+  const effective = fillRequired(resolveVoiceSettings(voiceMap, group.templateKey), baseline);
 
   return (
     <li className="rounded border border-border-muted bg-bg-primary">
@@ -556,7 +595,9 @@ function MobAssignmentRow({
         <div className="border-t border-border-muted px-2.5 py-2">
           <VoiceSettingsEditor
             effective={effective}
+            overrides={overrides}
             onSet={onSet}
+            onResetField={onResetField}
             onReset={onReset}
             canReset={customized}
           />
@@ -568,36 +609,66 @@ function MobAssignmentRow({
 
 interface VoiceSettingsEditorProps {
   effective: Required<VoiceSettings>;
+  /** The stored partial for this scope — which fields are explicit overrides. */
+  overrides: VoiceSettings;
   onSet: (field: keyof VoiceSettings, value: number | boolean) => void;
+  onResetField: (field: keyof VoiceSettings) => void;
   onReset: () => void;
   canReset: boolean;
 }
 
-function VoiceSettingsEditor({ effective, onSet, onReset, canReset }: VoiceSettingsEditorProps) {
+function VoiceSettingsEditor({
+  effective,
+  overrides,
+  onSet,
+  onResetField,
+  onReset,
+  canReset,
+}: VoiceSettingsEditorProps) {
+  const boostOverridden = overrides.useSpeakerBoost !== undefined;
   return (
     <div className="flex flex-col gap-2">
-      {VOICE_SETTING_FIELDS.map((f) => (
-        <div key={f.key} className="flex items-center gap-2">
-          <label className="w-20 shrink-0 text-2xs text-text-muted" title={f.hint}>
-            {f.label}
-          </label>
-          <input
-            type="range"
-            min={f.min}
-            max={f.max}
-            step={f.step}
-            value={effective[f.key] as number}
-            onChange={(e) => onSet(f.key, parseFloat(e.target.value))}
-            className="h-1.5 flex-1 accent-accent"
-            aria-label={f.label}
-          />
-          <span className="w-9 shrink-0 text-right font-mono text-3xs text-text-secondary">
-            {(effective[f.key] as number).toFixed(2)}
-          </span>
-        </div>
-      ))}
+      {VOICE_SETTING_FIELDS.map((f) => {
+        const overridden = overrides[f.key] !== undefined;
+        return (
+          <div key={f.key} className="flex items-center gap-2">
+            <label
+              className={`w-20 shrink-0 text-2xs ${overridden ? "text-accent" : "text-text-muted"}`}
+              title={f.hint}
+            >
+              {f.label}
+            </label>
+            <input
+              type="range"
+              min={f.min}
+              max={f.max}
+              step={f.step}
+              value={effective[f.key] as number}
+              onChange={(e) => onSet(f.key, parseFloat(e.target.value))}
+              className="h-1.5 flex-1 accent-accent"
+              aria-label={f.label}
+            />
+            <span className="w-9 shrink-0 text-right font-mono text-3xs text-text-secondary">
+              {(effective[f.key] as number).toFixed(2)}
+            </span>
+            <button
+              onClick={() => onResetField(f.key)}
+              disabled={!overridden}
+              title={overridden ? "Reset to voice default" : "At voice default"}
+              aria-label={`Reset ${f.label} to voice default`}
+              className="focus-ring h-4 w-4 shrink-0 rounded text-3xs text-text-muted transition hover:text-text-primary disabled:opacity-20"
+            >
+              &times;
+            </button>
+          </div>
+        );
+      })}
       <div className="flex items-center justify-between gap-2 pt-0.5">
-        <label className="flex cursor-pointer items-center gap-1.5 text-2xs text-text-muted">
+        <label
+          className={`flex cursor-pointer items-center gap-1.5 text-2xs ${
+            boostOverridden ? "text-accent" : "text-text-muted"
+          }`}
+        >
           <input
             type="checkbox"
             checked={effective.useSpeakerBoost}
@@ -605,17 +676,31 @@ function VoiceSettingsEditor({ effective, onSet, onReset, canReset }: VoiceSetti
             className="accent-accent"
           />
           Speaker boost
+          {boostOverridden && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onResetField("useSpeakerBoost");
+              }}
+              title="Reset to voice default"
+              className="focus-ring ml-0.5 text-3xs hover:text-text-primary"
+            >
+              &times;
+            </button>
+          )}
         </label>
         <button
           onClick={onReset}
           disabled={!canReset}
           className="focus-ring rounded border border-border-default px-2 py-0.5 text-3xs text-text-muted transition hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-40"
-          title="Clear overrides for this scope"
+          title="Reset all fields to the voice default"
         >
-          Reset
+          Reset all
         </button>
       </div>
-      <p className="text-3xs text-text-muted/60">Unset values fall back to ElevenLabs defaults.</p>
+      <p className="text-3xs text-text-muted/60">
+        Sliders start at the voice's own defaults; accent labels are your overrides. × resets a field.
+      </p>
     </div>
   );
 }

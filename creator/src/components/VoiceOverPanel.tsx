@@ -218,7 +218,8 @@ export default function VoiceOverPanel() {
     if (url) playClip(url);
   };
 
-  const voiceName = (voiceId: string) => voices.find((v) => v.voiceId === voiceId)?.name ?? voiceId;
+  const voiceName = (voiceId: string) =>
+    voices.find((v) => v.voiceId === voiceId)?.name ?? voiceMap.voiceNames[voiceId] ?? voiceId;
 
   // Slider baseline for a voice: its own ElevenLabs defaults, falling back to
   // the generic defaults until they've been fetched.
@@ -326,12 +327,11 @@ export default function VoiceOverPanel() {
               className="rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
             >
               <option value="">{loadingVoices ? "Loading voices…" : "— select —"}</option>
-              {voices.map((v) => (
-                <option key={v.voiceId} value={v.voiceId}>
-                  {v.name}
-                  {v.category ? ` (${v.category})` : ""}
-                </option>
-              ))}
+              <VoiceOptions
+                voices={voices}
+                voiceNames={voiceMap.voiceNames}
+                selectedId={voiceMap.defaultVoiceId}
+              />
             </select>
           </label>
 
@@ -536,6 +536,56 @@ export default function VoiceOverPanel() {
   );
 }
 
+/** Shared <option> set for the voice <select>s: custom (mob-specific) voices
+ *  first, premade voices grouped below, and any assigned-but-deleted voice
+ *  surfaced under "Unavailable" so its assignment stays visible and selectable
+ *  even after it's been removed from ElevenLabs. */
+function VoiceOptions({
+  voices,
+  voiceNames,
+  selectedId,
+}: {
+  voices: ElevenLabsVoice[];
+  voiceNames: Record<string, string>;
+  selectedId: string;
+}) {
+  const custom = voices
+    .filter((v) => v.category !== "premade")
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const premade = voices
+    .filter((v) => v.category === "premade")
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const known = new Set(voices.map((v) => v.voiceId));
+  const orphanId = selectedId && !known.has(selectedId) ? selectedId : null;
+  return (
+    <>
+      {custom.length > 0 && (
+        <optgroup label="Custom voices">
+          {custom.map((v) => (
+            <option key={v.voiceId} value={v.voiceId}>
+              {v.name}
+            </option>
+          ))}
+        </optgroup>
+      )}
+      {premade.length > 0 && (
+        <optgroup label="Premade voices">
+          {premade.map((v) => (
+            <option key={v.voiceId} value={v.voiceId}>
+              {v.name}
+            </option>
+          ))}
+        </optgroup>
+      )}
+      {orphanId && (
+        <optgroup label="Unavailable">
+          <option value={orphanId}>{voiceNames[orphanId] ?? orphanId} (deleted)</option>
+        </optgroup>
+      )}
+    </>
+  );
+}
+
 interface MobAssignmentRowProps {
   group: MobGroup;
   voices: ElevenLabsVoice[];
@@ -582,11 +632,7 @@ function MobAssignmentRow({
           className="w-48 rounded border border-border-default bg-bg-secondary px-2 py-1 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
         >
           <option value="">Default{defaultVoiceLabel ? ` (${defaultVoiceLabel})` : ""}</option>
-          {voices.map((v) => (
-            <option key={v.voiceId} value={v.voiceId}>
-              {v.name}
-            </option>
-          ))}
+          <VoiceOptions voices={voices} voiceNames={voiceMap.voiceNames} selectedId={assigned} />
         </select>
         <button
           onClick={() => setExpanded((x) => !x)}

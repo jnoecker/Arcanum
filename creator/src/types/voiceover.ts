@@ -71,6 +71,10 @@ export interface VoiceMap {
   defaultSettings: VoiceSettings;
   /** templateKey → per-mob delivery overrides. */
   settings: Record<string, VoiceSettings>;
+  /** voiceId → last-known display name. Cached so a voice deleted from
+   *  ElevenLabs still shows a real label (and keeps its assignment) instead of
+   *  collapsing to a raw id. */
+  voiceNames: Record<string, string>;
 }
 
 /** ElevenLabs' own defaults, shown in sliders when nothing is set. */

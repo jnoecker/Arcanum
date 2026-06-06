@@ -28,6 +28,7 @@ const EMPTY_MAP: VoiceMap = {
   assignments: {},
   defaultSettings: {},
   settings: {},
+  voiceNames: {},
 };
 
 /** Drop generated results for a mob's lines so changed voice/settings show as
@@ -132,6 +133,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
           assignments: map.assignments ?? {},
           defaultSettings: map.defaultSettings ?? {},
           settings: map.settings ?? {},
+          voiceNames: map.voiceNames ?? {},
         },
         loadedDir: dir,
         results: new Map(),
@@ -283,7 +285,20 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
     set({ loadingVoices: true, voicesError: null });
     try {
       const voices = await invoke<ElevenLabsVoice[]>("elevenlabs_list_voices");
-      set({ voices, loadingVoices: false });
+      // Cache each voice's name so an assignment whose voice is later deleted
+      // from ElevenLabs still renders a real label instead of a raw id. Names
+      // only accumulate (never pruned), so deleted voices stay labelled.
+      set((s) => ({
+        voices,
+        loadingVoices: false,
+        voiceMap: {
+          ...s.voiceMap,
+          voiceNames: {
+            ...s.voiceMap.voiceNames,
+            ...Object.fromEntries(voices.map((v) => [v.voiceId, v.name])),
+          },
+        },
+      }));
     } catch (e) {
       set({ loadingVoices: false, voicesError: String(e) });
     }

@@ -58,6 +58,12 @@ pub struct VoiceMap {
     /// `default_settings` when unset).
     #[serde(default)]
     pub settings: HashMap<String, VoiceSettings>,
+    /// voiceId → last-known display name. Cached so a voice deleted from
+    /// ElevenLabs (e.g. to free a custom-voice slot once its lines are
+    /// generated) still shows a meaningful label and keeps its assignment,
+    /// instead of collapsing to a raw id.
+    #[serde(default)]
+    pub voice_names: HashMap<String, String>,
 }
 
 fn voice_map_path(project_dir: &str) -> PathBuf {

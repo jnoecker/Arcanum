@@ -63,9 +63,10 @@ export interface LineState {
 
 interface VoiceStore {
   voiceMap: VoiceMap;
-  /** True once the voice map has been read from disk, so remounts don't
-   *  reload and clobber unsaved in-memory edits. */
-  mapLoaded: boolean;
+  /** Project dir the in-memory voice map was loaded for. Remounting the panel
+   *  for the same project must not reload (and clobber unsaved edits), but
+   *  switching projects must — so we key on the dir, not a one-shot boolean. */
+  loadedDir: string | null;
   voices: ElevenLabsVoice[];
   loadingVoices: boolean;
   voicesError: string | null;
@@ -105,7 +106,7 @@ function projectDir(): string | undefined {
 
 export const useVoiceStore = create<VoiceStore>((set, get) => ({
   voiceMap: EMPTY_MAP,
-  mapLoaded: false,
+  loadedDir: null,
   voices: [],
   loadingVoices: false,
   voicesError: null,
@@ -116,11 +117,12 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
   lastPublish: null,
 
   loadVoiceMap: async () => {
-    // Only read from disk once per session — remounting the panel must not
-    // overwrite in-memory edits with the (older) saved file.
-    if (get().mapLoaded) return;
     const dir = projectDir();
     if (!dir) return;
+    // Already loaded for this project — remounting must not clobber in-memory
+    // edits with the (older) saved file. A different dir means the project was
+    // switched, so fall through and reload (and drop the old project's clips).
+    if (get().loadedDir === dir) return;
     try {
       const map = await invoke<VoiceMap>("load_voice_map", { projectDir: dir });
       set({
@@ -131,7 +133,9 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
           defaultSettings: map.defaultSettings ?? {},
           settings: map.settings ?? {},
         },
-        mapLoaded: true,
+        loadedDir: dir,
+        results: new Map(),
+        lastPublish: null,
       });
     } catch (e) {
       console.error("Failed to load voice map", e);
@@ -140,7 +144,10 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
 
   saveVoiceMap: async () => {
     const dir = projectDir();
-    if (!dir) return;
+    // Only persist a map we actually loaded for this same project. Guards the
+    // autosave/unmount-flush from writing a stale (previous-project) map to a
+    // newly-opened project's path before its own map has loaded.
+    if (!dir || get().loadedDir !== dir) return;
     await invoke("save_voice_map", { projectDir: dir, map: get().voiceMap });
   },
 
@@ -160,17 +167,31 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
     } catch {
       return;
     }
+    // `voice_clip_status` reports the cache key for each line's *current* voice/
+    // model/settings/text and whether that clip is on disk. Treating it as the
+    // source of truth lets a global change (default voice, model, delivery
+    // settings) — none of which prune per-mob — invalidate now-stale clips, not
+    // just text edits. Without this, changing the default voice and publishing
+    // would ship audio synthesized with the old voice while the row says "ready".
     set((s) => {
       const results = new Map(s.results);
       for (const st of statuses) {
         const cur = results.get(st.key);
-        // Only fill lines we don't already have richer state for, so we never
-        // clobber an in-progress, freshly-generated, or errored entry.
-        if (st.present && (!cur || cur.status === "idle")) {
-          results.set(st.key, {
-            status: "done",
-            clip: { cacheHash: st.cacheHash, textSha8: st.textSha8 },
-          });
+        if (st.present) {
+          // A clip for the current config exists. Mark done unless we hold a
+          // richer transient state (generating/error) or the identical done.
+          const matchesCurrent = cur?.status === "done" && cur.clip?.cacheHash === st.cacheHash;
+          if (!cur || cur.status === "idle" || (cur.status === "done" && !matchesCurrent)) {
+            results.set(st.key, {
+              status: "done",
+              clip: { cacheHash: st.cacheHash, textSha8: st.textSha8 },
+            });
+          }
+        } else if (cur?.status === "done" && cur.clip && cur.clip.cacheHash !== st.cacheHash) {
+          // The stored clip was generated for a different voice/model/settings/
+          // text and no clip exists for the current config — drop it so it
+          // neither shows "ready" nor publishes stale audio.
+          results.delete(st.key);
         }
       }
       return { results };

@@ -87,7 +87,7 @@ export default function VoiceOverPanel() {
   const publishing = useVoiceStore((s) => s.publishing);
   const lastPublish = useVoiceStore((s) => s.lastPublish);
 
-  const mapLoaded = useVoiceStore((s) => s.mapLoaded);
+  const loadedDir = useVoiceStore((s) => s.loadedDir);
   const loadVoiceMap = useVoiceStore((s) => s.loadVoiceMap);
   const saveVoiceMap = useVoiceStore((s) => s.saveVoiceMap);
   const rehydrate = useVoiceStore((s) => s.rehydrate);
@@ -164,23 +164,23 @@ export default function VoiceOverPanel() {
   }, [lines]);
 
   // Auto-save the voice map shortly after any change so assignments and
-  // settings survive closing the panel or restarting the app. Gated on
-  // mapLoaded so we never persist the empty default over a real saved file
-  // before the on-disk map has loaded.
+  // settings survive closing the panel or restarting the app. Gated on the map
+  // having loaded for *this* project so we never persist the empty default (or
+  // a previous project's map) over a real saved file.
   useEffect(() => {
-    if (!projectDir || !mapLoaded) return;
+    if (!projectDir || loadedDir !== projectDir) return;
     const t = setTimeout(() => {
       saveVoiceMap().catch(() => {});
     }, 600);
     return () => clearTimeout(t);
-  }, [voiceMap, projectDir, mapLoaded, saveVoiceMap]);
+  }, [voiceMap, projectDir, loadedDir, saveVoiceMap]);
 
   // Final flush on unmount, so an edit made within the debounce window is still
-  // persisted if the panel closes immediately after.
+  // persisted if the panel closes immediately after. saveVoiceMap self-guards
+  // on the loaded dir, so it's a no-op if the project already switched.
   useEffect(() => {
     return () => {
-      const s = useVoiceStore.getState();
-      if (s.mapLoaded) s.saveVoiceMap().catch(() => {});
+      useVoiceStore.getState().saveVoiceMap().catch(() => {});
     };
   }, []);
 

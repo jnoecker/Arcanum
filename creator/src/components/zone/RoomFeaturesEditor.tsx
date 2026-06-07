@@ -18,6 +18,7 @@ import {
   CheckboxInput,
   CommitTextarea,
   FieldRow,
+  NumberInput,
   SelectInput,
   TextInput,
 } from "@/components/ui/FormWidgets";
@@ -312,6 +313,25 @@ function ContainerFields({ world, feature, onPatch }: ContainerFieldsProps) {
         onCommit={(v) => onPatch({ resetWithZone: v ? undefined : false })}
         label="Reset with zone"
       />
+      <FieldRow
+        label="Respawn (s)"
+        hint="Refills loot and resets state on this timer. Leave blank for any chest players store items in — a timer wipes and replaces the contents each cycle."
+      >
+        <NumberInput
+          value={feature.respawnSeconds}
+          onCommit={(v) => onPatch({ respawnSeconds: v })}
+          placeholder="Default"
+          min={0}
+          dense
+        />
+      </FieldRow>
+      {feature.respawnSeconds != null && feature.respawnSeconds > 0 && (
+        <p className="text-2xs leading-snug text-status-warning">
+          Loot chests only — this refills every {feature.respawnSeconds}s and replaces its
+          contents, so anything a player stores here vanishes. Player-house vaults persist
+          separately and aren't affected.
+        </p>
+      )}
       <div className="mt-1">
         <div className="mb-1 flex items-center justify-between">
           <span className="font-display text-2xs uppercase tracking-widest text-text-muted">
@@ -381,6 +401,18 @@ function LeverFields({
         onCommit={(v) => onPatch({ resetWithZone: v ? undefined : false })}
         label="Reset with zone"
       />
+      <FieldRow
+        label="Respawn (s)"
+        hint="Reset this lever's state on its own timer. Blank = only resets with the zone."
+      >
+        <NumberInput
+          value={feature.respawnSeconds}
+          onCommit={(v) => onPatch({ respawnSeconds: v })}
+          placeholder="Default"
+          min={0}
+          dense
+        />
+      </FieldRow>
     </>
   );
 }

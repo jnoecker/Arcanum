@@ -6,7 +6,7 @@ import {
   setExitAchievementGate,
   setExitDoor,
 } from "@/lib/zoneEdits";
-import { CheckboxInput, SelectInput, TextInput } from "@/components/ui/FormWidgets";
+import { CheckboxInput, NumberInput, SelectInput, TextInput } from "@/components/ui/FormWidgets";
 import { useConfigStore } from "@/stores/configStore";
 
 interface ExitDoorEditorProps {
@@ -153,6 +153,16 @@ export function ExitDoorEditor({
               onCommit={(v) => patchDoor({ resetWithZone: v ? undefined : false })}
               label="Reset with zone"
             />
+            <div className="flex items-center gap-1.5 text-2xs">
+              <span className="w-20 shrink-0 text-text-muted">Respawn (s)</span>
+              <NumberInput
+                value={door?.respawnSeconds}
+                onCommit={(v) => patchDoor({ respawnSeconds: v })}
+                placeholder="Default"
+                min={0}
+                dense
+              />
+            </div>
           </div>
         )}
       </div>

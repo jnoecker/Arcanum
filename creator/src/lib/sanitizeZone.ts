@@ -109,6 +109,7 @@ function normalizeDoorFile(door?: DoorFile): DoorFile | undefined {
   if (keyItemId) normalized.keyItemId = keyItemId;
   if (door.keyConsumed != null) normalized.keyConsumed = door.keyConsumed;
   if (door.resetWithZone != null) normalized.resetWithZone = door.resetWithZone;
+  if (door.respawnSeconds != null) normalized.respawnSeconds = door.respawnSeconds;
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
@@ -125,10 +126,12 @@ function normalizeFeatureFile(feature: FeatureFile): FeatureFile {
     if (feature.keyItemId) out.keyItemId = feature.keyItemId;
     if (feature.keyConsumed != null) out.keyConsumed = feature.keyConsumed;
     if (feature.resetWithZone != null) out.resetWithZone = feature.resetWithZone;
+    if (feature.respawnSeconds != null) out.respawnSeconds = feature.respawnSeconds;
     if (feature.items && feature.items.length > 0) out.items = [...feature.items];
   } else if (type === "LEVER") {
     if (feature.initialState) out.initialState = feature.initialState;
     if (feature.resetWithZone != null) out.resetWithZone = feature.resetWithZone;
+    if (feature.respawnSeconds != null) out.respawnSeconds = feature.respawnSeconds;
   } else if (type === "SIGN") {
     if (feature.text != null) out.text = feature.text;
   }

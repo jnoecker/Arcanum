@@ -508,6 +508,35 @@ describe("sanitizeZone — output cleanup", () => {
     expect(exit.door).toEqual({ initialState: "locked", keyItemId: "iron_key" });
   });
 
+  it("preserves per-entity respawnSeconds on doors, features, and ground items", () => {
+    const world: WorldFile = {
+      zone: "test",
+      startRoom: "room_a",
+      rooms: {
+        room_a: {
+          title: "A",
+          description: "A",
+          exits: {
+            n: { to: "room_b", door: { initialState: "closed", respawnSeconds: 90 } },
+          },
+          features: {
+            chest: { type: "CONTAINER", displayName: "Chest", keyword: "chest", respawnSeconds: 300, items: ["coin"] },
+            lever: { type: "LEVER", displayName: "Lever", keyword: "lever", respawnSeconds: 45 },
+          },
+        },
+        room_b: { title: "B", description: "B" },
+      },
+      items: { coin: { displayName: "Coin", room: "room_a", respawnSeconds: 30 } },
+    };
+
+    const result = sanitizeZone(world);
+    const exit = result.rooms.room_a.exits!.n as { door: { respawnSeconds?: number } };
+    expect(exit.door.respawnSeconds).toBe(90);
+    expect(result.rooms.room_a.features!.chest!.respawnSeconds).toBe(300);
+    expect(result.rooms.room_a.features!.lever!.respawnSeconds).toBe(45);
+    expect(result.items!.coin!.respawnSeconds).toBe(30);
+  });
+
   it("strips legacy room audio field on output", () => {
     const result = sanitizeZone(makeWorld({
       rooms: {

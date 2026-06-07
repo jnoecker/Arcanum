@@ -183,6 +183,10 @@ function validateDoor(
   if (keyItemId && !itemIds.has(keyItemId)) {
     addIssue(issues, "error", entity, `${label} key "${keyItemId}" is not a known item in this zone`);
   }
+
+  if (door.respawnSeconds != null && door.respawnSeconds <= 0) {
+    addIssue(issues, "error", entity, `${label} respawn seconds must be greater than 0`);
+  }
 }
 
 function validateFeature(
@@ -227,6 +231,10 @@ function validateFeature(
     default:
       addIssue(issues, "error", entity, `Feature "${featureId}" has unknown type "${feature.type}"`);
       break;
+  }
+
+  if (feature.respawnSeconds != null && feature.respawnSeconds <= 0) {
+    addIssue(issues, "error", entity, `Feature "${featureId}" respawn seconds must be greater than 0`);
   }
 }
 
@@ -664,6 +672,12 @@ export function validateZone(
     }
     if (item.room?.trim() && item.mob?.trim()) {
       addIssue(issues, "error", entity, "Item cannot be placed in both a room and a mob");
+    }
+    if (item.respawnSeconds != null && item.respawnSeconds <= 0) {
+      addIssue(issues, "error", entity, "respawnSeconds must be greater than 0");
+    }
+    if (item.respawnSeconds != null && !item.room?.trim()) {
+      addIssue(issues, "warning", entity, "respawnSeconds only applies to ground items — set a room or it is ignored");
     }
     if (item.onUse) {
       if ((item.onUse.healHp ?? 0) < 0) addIssue(issues, "error", entity, "onUse.healHp must be >= 0");

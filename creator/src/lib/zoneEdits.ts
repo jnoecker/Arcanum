@@ -555,6 +555,7 @@ function cleanDoor(door: DoorFile): DoorFile | undefined {
   if (door.keyItemId) out.keyItemId = door.keyItemId;
   if (door.keyConsumed != null) out.keyConsumed = door.keyConsumed;
   if (door.resetWithZone != null) out.resetWithZone = door.resetWithZone;
+  if (door.respawnSeconds != null) out.respawnSeconds = door.respawnSeconds;
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
@@ -723,10 +724,12 @@ function cleanFeature(feature: FeatureFile): FeatureFile {
     if (feature.keyItemId) out.keyItemId = feature.keyItemId;
     if (feature.keyConsumed != null) out.keyConsumed = feature.keyConsumed;
     if (feature.resetWithZone != null) out.resetWithZone = feature.resetWithZone;
+    if (feature.respawnSeconds != null) out.respawnSeconds = feature.respawnSeconds;
     if (feature.items && feature.items.length > 0) out.items = [...feature.items];
   } else if (type === "LEVER") {
     if (feature.initialState) out.initialState = feature.initialState;
     if (feature.resetWithZone != null) out.resetWithZone = feature.resetWithZone;
+    if (feature.respawnSeconds != null) out.respawnSeconds = feature.respawnSeconds;
   } else if (type === "SIGN") {
     if (feature.text != null) out.text = feature.text;
   }

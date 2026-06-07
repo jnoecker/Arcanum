@@ -237,6 +237,19 @@ export function ItemEditor({
             placeholder="— unplaced —"
           />
         </FieldRow>
+        {item.room && (
+          <FieldRow
+            label="Respawn (s)"
+            hint="Seconds to respawn this ground item after it's looted. Blank = only repops on the full zone reset."
+          >
+            <NumberInput
+              value={item.respawnSeconds}
+              onCommit={(v) => patch({ respawnSeconds: v })}
+              placeholder="Default"
+              min={0}
+            />
+          </FieldRow>
+        )}
       </EntityHeader>
 
       <TabBar tabs={ITEM_TABS} active={activeTab} onChange={setActiveTab} />

@@ -502,6 +502,13 @@ describe("setExitDoor", () => {
       "does not exist",
     );
   });
+
+  it("preserves respawnSeconds through the door allowlist", () => {
+    let world = makeWorld();
+    world = setExitDoor(world, "room1", "n", { initialState: "closed", respawnSeconds: 120 });
+    const exit = world.rooms.room1.exits?.n as any;
+    expect(exit.door.respawnSeconds).toBe(120);
+  });
 });
 
 describe("removeExitDoor", () => {
@@ -617,6 +624,17 @@ describe("updateFeature", () => {
     const f = world.rooms.room1.features?.chest;
     expect(f?.items).toEqual(["sword"]);
     expect(f?.keyItemId).toBe("sword");
+  });
+
+  it("preserves respawnSeconds through the feature allowlist", () => {
+    let world = makeWorld();
+    world = addFeature(world, "room1", "chest", defaultFeature("CONTAINER", "chest"));
+    world = updateFeature(world, "room1", "chest", { respawnSeconds: 300 });
+    expect(world.rooms.room1.features?.chest?.respawnSeconds).toBe(300);
+
+    world = addFeature(world, "room1", "lever", defaultFeature("LEVER", "lever"));
+    world = updateFeature(world, "room1", "lever", { respawnSeconds: 45 });
+    expect(world.rooms.room1.features?.lever?.respawnSeconds).toBe(45);
   });
 });
 

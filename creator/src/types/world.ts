@@ -137,6 +137,12 @@ export interface DoorFile {
   keyItemId?: string;
   keyConsumed?: boolean;
   resetWithZone?: boolean;
+  /**
+   * Per-door respawn timer in seconds. When set, the door's state resets on
+   * this individual cadence instead of waiting for the full zone reset. Blank
+   * = only resets with the zone.
+   */
+  respawnSeconds?: number;
   /** Legacy alias; normalized to `initialState` on output. */
   closed?: boolean;
   /** Legacy alias; normalized to `initialState` on output. */
@@ -155,6 +161,13 @@ export interface FeatureFile {
   keyItemId?: string;
   keyConsumed?: boolean;
   resetWithZone?: boolean;
+  /**
+   * Per-feature respawn timer in seconds. When set, the feature's state — and a
+   * CONTAINER's contents — reset on this individual cadence instead of waiting
+   * for the full zone reset. Blank = only resets with the zone. CONTAINER and
+   * LEVER only.
+   */
+  respawnSeconds?: number;
   /** Initial item IDs inside a CONTAINER. */
   items?: string[];
   /** Text content for SIGN type. */
@@ -344,6 +357,13 @@ export interface ItemFile {
   onUse?: ItemOnUse;
   room?: string;
   mob?: string;
+  /**
+   * Ground-item respawn timer in seconds. When this item is placed on the
+   * ground (`room` set), it respawns this many seconds after being looted
+   * instead of waiting for the full zone reset. Blank = only repops on zone
+   * reset. Ignored for equipment, loot-table, and container-content items.
+   */
+  respawnSeconds?: number;
   matchByKey?: boolean;
   basePrice?: number;
   image?: string;

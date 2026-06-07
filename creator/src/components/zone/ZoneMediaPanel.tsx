@@ -176,9 +176,7 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
                 context={{ zone: zoneId, entity_type: "zone", entity_id: "zone_intro" }}
                 variantGroup={`zone-media:${zoneId}:zone_intro`}
                 markActive
-                onAccept={() => {
-                  /* saved as a generated asset; no zone-level field to set */
-                }}
+                onAccept={(fileName) => onWorldChange({ ...world, video: fileName })}
               />
               {!zoneImagePath && (
                 <p className="text-2xs italic text-text-muted">

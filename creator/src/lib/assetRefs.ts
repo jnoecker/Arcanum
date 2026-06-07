@@ -88,6 +88,7 @@ export function normalizeWorldAssetRefs(world: WorldFile): WorldFile {
     ...world,
     image: hasEntries(imageDefaults) ? imageDefaults : undefined,
     audio: hasEntries(audioDefaults) ? audioDefaults : undefined,
+    video: normalizeAssetRef(world.video),
     rooms: mapEntries(world.rooms, (room) =>
       compactObject({
         ...room,

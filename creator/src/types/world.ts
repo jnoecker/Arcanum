@@ -67,6 +67,10 @@ export interface WorldFile {
   puzzles?: Record<string, PuzzleFile>;
   image?: ZoneImageDefaults;
   audio?: ZoneAudioDefaults;
+  /** Zone intro cinematic — a content-addressed video filename the server
+   *  resolves under the videos base URL. Auto-plays on a player's first entry
+   *  to the zone and is replayable from the World Map. */
+  video?: string;
   rooms: Record<string, RoomFile>;
   mobs?: Record<string, MobFile>;
   items?: Record<string, ItemFile>;

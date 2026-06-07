@@ -10,6 +10,10 @@ import {
   EmptyState,
 } from "@/components/ui/FormWidgets";
 import { MISC_COIN } from "@/assets/ui";
+import { LotteryPanel } from "./LotteryPanel";
+import { GamblingPanel } from "./GamblingPanel";
+
+type CurrTab = "currencies" | "lottery" | "gambling";
 
 function normalizeId(raw: string): string {
   return raw.trim().toLowerCase().replace(/[^a-z0-9_]+/g, "_");
@@ -41,6 +45,32 @@ function extractGlyph(displayName: string): { glyph: string; rest: string } {
 // ─── Panel ──────────────────────────────────────────────────────────
 
 export function CurrenciesPanel({ config, onChange }: ConfigPanelProps) {
+  const [tab, setTab] = useState<CurrTab>("currencies");
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex gap-1 rounded-full border border-border-muted bg-bg-secondary/60 p-1">
+        {(["currencies", "lottery", "gambling"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 rounded-full px-3 py-1.5 text-xs font-display tracking-wide transition-colors ${
+              tab === t ? "bg-accent/20 text-accent" : "text-text-muted hover:text-text-secondary"
+            }`}
+          >
+            {t === "currencies" ? "Currencies" : t === "lottery" ? "Lottery" : "Dice Game"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "currencies" && <CurrenciesManager config={config} onChange={onChange} />}
+      {tab === "lottery" && <LotteryPanel config={config} onChange={onChange} />}
+      {tab === "gambling" && <GamblingPanel config={config} onChange={onChange} />}
+    </div>
+  );
+}
+
+function CurrenciesManager({ config, onChange }: ConfigPanelProps) {
   const currencies = { definitions: {}, ...config.currencies };
   const defs = currencies.definitions ?? {};
   const [newName, setNewName] = useState("");

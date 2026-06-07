@@ -17,6 +17,7 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
   const p = config.progression;
   const recall = config.navigation.recall;
   const death = config.death;
+  const combat = config.combat;
 
   const setStartRoom = (v: string) =>
     onChange({ world: { ...config.world, startRoom: v } });
@@ -49,6 +50,13 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
 
   const patchDeathMessages = (patch: Partial<AppConfig["death"]["messages"]>) =>
     patchDeath({ messages: { ...death.messages, ...patch } });
+
+  const patchCombat = (patch: Partial<AppConfig["combat"]>) =>
+    onChange({ combat: { ...combat, ...patch } });
+
+  const patchCombatFeedback = (
+    patch: Partial<AppConfig["combat"]["feedback"]>,
+  ) => patchCombat({ feedback: { ...combat.feedback, ...patch } });
 
   return (
     <div className="world-panel">
@@ -247,9 +255,55 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           </div>
         </OrnateCard>
 
-        {/* 7 — Recall */}
+        {/* 7 — Combat */}
         <OrnateCard
           number={7}
+          title="Combat"
+          description="Combat pacing and on-screen feedback. Each tick processes one round of attacks for all active fights."
+        >
+          <div className="flex flex-col gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
+              <IconField
+                label="Tick (ms)"
+                layout="column"
+                hint="2000 = classic · 1500 = faster · 3000 = strategic"
+              >
+                <NumberInput
+                  value={combat.tickMillis}
+                  onCommit={(v) => patchCombat({ tickMillis: v ?? 2000 })}
+                  min={100}
+                  dense
+                />
+              </IconField>
+              <IconField
+                label="Max / Tick"
+                layout="column"
+                hint="Max simultaneous combats per tick. 20 suits most MUDs."
+              >
+                <NumberInput
+                  value={combat.maxCombatsPerTick}
+                  onCommit={(v) => patchCombat({ maxCombatsPerTick: v ?? 20 })}
+                  min={1}
+                  dense
+                />
+              </IconField>
+            </div>
+            <Toggle
+              checked={combat.feedback.enabled}
+              onChange={(v) => patchCombatFeedback({ enabled: v })}
+              label="Enable combat feedback"
+            />
+            <Toggle
+              checked={combat.feedback.roomBroadcastEnabled}
+              onChange={(v) => patchCombatFeedback({ roomBroadcastEnabled: v })}
+              label="Broadcast to room"
+            />
+          </div>
+        </OrnateCard>
+
+        {/* 8 — Recall */}
+        <OrnateCard
+          number={8}
           title="Recall"
           description="Controls the recall ability cooldown."
         >
@@ -266,9 +320,9 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           </IconField>
         </OrnateCard>
 
-        {/* 8 — Recall Messages */}
+        {/* 9 — Recall Messages */}
         <OrnateCard
-          number={8}
+          number={9}
           title="Recall Messages"
           description="Customize the messages players see during recall. Use {seconds} for the cooldown placeholder."
         >
@@ -326,9 +380,9 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           </div>
         </OrnateCard>
 
-        {/* 9 — Sanctum & Death */}
+        {/* 10 — Sanctum & Death */}
         <OrnateCard
-          number={9}
+          number={10}
           title="Sanctum & Death"
           description="Where players return after death. HP/Mana values are fractions of max (0–1.0). XP penalty is a fraction of total XP lost (0–0.5)."
         >
@@ -380,9 +434,9 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           </div>
         </OrnateCard>
 
-        {/* 10 — Sanctum Messages */}
+        {/* 11 — Sanctum Messages */}
         <OrnateCard
-          number={10}
+          number={11}
           title="Sanctum Messages"
           description="Customize messages related to the sanctum, departure, and edge cases."
         >

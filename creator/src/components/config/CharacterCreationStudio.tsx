@@ -8,6 +8,12 @@ import type {
 import { CreationHero } from "./creation/CreationHero";
 import { GenderTab } from "./creation/GenderTab";
 import { StarterEquipmentTab } from "./creation/StarterEquipmentTab";
+import { EconomyPanel } from "./panels/EconomyPanel";
+import { PrestigePanel } from "./panels/PrestigePanel";
+import { RespecPanel } from "./panels/RespecPanel";
+import { RegenPanel } from "./panels/RegenPanel";
+
+type CCTab = "creation" | "equipment" | "regen";
 
 function normalizeId(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
@@ -24,6 +30,8 @@ export function CharacterCreationStudio({
     const first = Object.keys(config.genders)[0];
     return first ?? null;
   });
+
+  const [tab, setTab] = useState<CCTab>("creation");
 
   const patchCC = useCallback(
     (p: Partial<AppConfig["characterCreation"]>) =>
@@ -90,19 +98,43 @@ export function CharacterCreationStudio({
 
   return (
     <div className="flex flex-col gap-5">
-      <CreationHero config={config} onPatch={patchCC} />
+      <div className="flex gap-1 rounded-full border border-border-muted bg-bg-secondary/60 p-1">
+        {(["creation", "equipment", "regen"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 rounded-full px-3 py-1.5 text-xs font-display tracking-wide transition-colors ${
+              tab === t ? "bg-accent/20 text-accent" : "text-text-muted hover:text-text-secondary"
+            }`}
+          >
+            {t === "creation" ? "Creation" : t === "equipment" ? "Default Equipment" : "Regen"}
+          </button>
+        ))}
+      </div>
 
-      <StarterEquipmentTab classes={config.classes} onPatchClass={patchClass} />
+      {tab === "creation" && (
+        <>
+          <CreationHero config={config} onPatch={patchCC} />
+          <EconomyPanel config={config} onChange={onChange} />
+          <PrestigePanel config={config} onChange={onChange} />
+          <RespecPanel config={config} onChange={onChange} />
+          <GenderTab
+            genders={config.genders}
+            selected={selectedGender}
+            onSelect={setSelectedGender}
+            onAdd={addGender}
+            onPatch={patchGender}
+            onDelete={deleteGender}
+            onRename={renameGender}
+          />
+        </>
+      )}
 
-      <GenderTab
-        genders={config.genders}
-        selected={selectedGender}
-        onSelect={setSelectedGender}
-        onAdd={addGender}
-        onPatch={patchGender}
-        onDelete={deleteGender}
-        onRename={renameGender}
-      />
+      {tab === "equipment" && (
+        <StarterEquipmentTab classes={config.classes} onPatchClass={patchClass} />
+      )}
+
+      {tab === "regen" && <RegenPanel config={config} onChange={onChange} />}
     </div>
   );
 }

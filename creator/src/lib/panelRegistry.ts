@@ -90,9 +90,7 @@ const WORLD_PANELS: PanelDef[] = [
 // ─── Systems panels ────────────────────────────────────────────────
 
 const SYSTEMS_PANELS: PanelDef[] = [
-  { id: "currencies", label: "Currencies", host: "config", kicker: "Economy", title: "Secondary currencies", description: "Quest points, honor, crafting tokens, and other non-gold currencies.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F4B0}" },
-  { id: "lottery", label: "Lottery", host: "config", kicker: "Economy", title: "Lottery", description: "Server lottery: ticket cost, drawing interval, and jackpot seeding.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F3AB}" },
-  { id: "gambling", label: "Dice Gambling", host: "config", kicker: "Economy", title: "Dice gambling", description: "Tavern dice game: bet range, win chance, payout multiplier, and cooldown.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F3B2}" },
+  { id: "currencies", label: "Currencies", host: "config", kicker: "Economy", title: "Secondary currencies", description: "Quest points, honor, crafting tokens, plus the server lottery and tavern dice game.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F4B0}" },
   { id: "crafting", label: "Crafting", host: "config", kicker: "Crafting", title: "Crafting & gathering", description: "Skill leveling, station types, gathering, and recipes.", maxWidth: "max-w-7xl", island: "orrery", glyph: "\u{1F4DC}" },
   { id: "enchanting", label: "Enchanting", host: "config", kicker: "Enchanting", title: "Enchanting system", description: "Enchantment definitions, materials, stat bonuses, and target slots.", maxWidth: "max-w-7xl", island: "orrery", glyph: "\u2728" },
   { id: "guilds", label: "Guilds", host: "config", kicker: "Guilds", title: "Guild system", description: "Guild ranks, permissions, friends, and defaults.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F3DB}\uFE0F" },

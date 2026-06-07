@@ -158,6 +158,7 @@ const BASE_CONFIG: AppConfig = {
     trainer_icon: "trainer_icon.png",
     bank_vault: "bank_vault.png",
     lottery_board_widget: "lottery_board_widget.png",
+    dice_table_widget: "dice_table_widget.png",
     dungeon_portal_widget: "dungeon_portal_widget.png",
     auction_hall_widget: "auction_hall_widget.png",
     duel_arena_widget: "duel_arena_widget.png",

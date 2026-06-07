@@ -34,6 +34,8 @@ import { EnchantingPanel } from "./panels/EnchantingPanel";
 import { WorldEventsPanel } from "./panels/WorldEventsPanel";
 import { WeatherEnvironmentPanel } from "./panels/WeatherEnvironmentPanel";
 import { CurrenciesPanel } from "./panels/CurrenciesPanel";
+import { LotteryPanel } from "./panels/LotteryPanel";
+import { GamblingPanel } from "./panels/GamblingPanel";
 
 import { AchievementDesigner } from "./AchievementDesigner";
 import { QuestsStudio } from "./QuestsStudio";
@@ -105,6 +107,10 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <WeatherEnvironmentPanel config={config} onChange={onChange} />;
     case "currencies":
       return <CurrenciesPanel config={config} onChange={onChange} />;
+    case "lottery":
+      return <LotteryPanel config={config} onChange={onChange} />;
+    case "gambling":
+      return <GamblingPanel config={config} onChange={onChange} />;
 
     // Content
     case "achievements":

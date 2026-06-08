@@ -97,6 +97,16 @@ export function normalizeWorldAssetRefs(world: WorldFile): WorldFile {
         music: normalizeAssetRef(room.music),
         ambient: normalizeAssetRef(room.ambient),
         audio: normalizeAssetRef(room.audio),
+        features: room.features
+          ? mapEntries(room.features, (feature) =>
+              feature.plateImage || feature.handleImage
+                ? compactObject({
+                    ...feature,
+                    plateImage: normalizeAssetRef(feature.plateImage),
+                    handleImage: normalizeAssetRef(feature.handleImage),
+                  })
+                : feature)
+          : undefined,
       })),
     mobs: mapOptionalEntries(world.mobs, (mob) =>
       compactObject({

@@ -132,6 +132,11 @@ function normalizeFeatureFile(feature: FeatureFile): FeatureFile {
     if (feature.initialState) out.initialState = feature.initialState;
     if (feature.resetWithZone != null) out.resetWithZone = feature.resetWithZone;
     if (feature.respawnSeconds != null) out.respawnSeconds = feature.respawnSeconds;
+    if (feature.plateImage) out.plateImage = feature.plateImage;
+    if (feature.handleImage) out.handleImage = feature.handleImage;
+    if (feature.leverPivot) out.leverPivot = { x: feature.leverPivot.x, y: feature.leverPivot.y };
+    if (feature.upAngle != null) out.upAngle = feature.upAngle;
+    if (feature.downAngle != null) out.downAngle = feature.downAngle;
   } else if (type === "SIGN") {
     if (feature.text != null) out.text = feature.text;
   }

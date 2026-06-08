@@ -368,6 +368,7 @@ export function SharedAssetsPanel({ config, onChange }: ConfigPanelProps) {
         filename: globalAssets[spec.key] ?? "",
         fallback: BUNDLED_GLOBAL_ASSETS[spec.key],
         generateSpec: spec,
+        optional: spec.optional,
         scope: "global" as const,
       })),
     [globalAssets],

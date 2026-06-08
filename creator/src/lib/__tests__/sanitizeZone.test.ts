@@ -537,6 +537,39 @@ describe("sanitizeZone — output cleanup", () => {
     expect(result.items!.coin!.respawnSeconds).toBe(30);
   });
 
+  it("round-trips layered lever art fields", () => {
+    const world: WorldFile = {
+      zone: "test",
+      startRoom: "room_a",
+      rooms: {
+        room_a: {
+          title: "A",
+          description: "A",
+          features: {
+            lever: {
+              type: "LEVER",
+              displayName: "an ostentatious brass lever",
+              keyword: "lever",
+              initialState: "up",
+              plateImage: "plate.png",
+              handleImage: "handle.png",
+              leverPivot: { x: 0.5, y: 0.85 },
+              upAngle: -28,
+              downAngle: 32,
+            },
+          },
+        },
+      },
+    };
+
+    const lever = sanitizeZone(world).rooms.room_a.features!.lever!;
+    expect(lever.plateImage).toBe("plate.png");
+    expect(lever.handleImage).toBe("handle.png");
+    expect(lever.leverPivot).toEqual({ x: 0.5, y: 0.85 });
+    expect(lever.upAngle).toBe(-28);
+    expect(lever.downAngle).toBe(32);
+  });
+
   it("strips legacy room audio field on output", () => {
     const result = sanitizeZone(makeWorld({
       rooms: {

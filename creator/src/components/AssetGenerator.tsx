@@ -30,7 +30,7 @@ interface AssetCategory {
 }
 
 const ASSET_CATEGORIES: AssetCategory[] = [
-  { label: "World",      types: ["room", "zone_map", "gathering_node", "background"] },
+  { label: "World",      types: ["room", "zone_map", "gathering_node", "lever_handle", "lever_plate", "background"] },
   { label: "Characters",  types: ["mob", "pet", "player_sprite", "entity_portrait", "class_portrait", "race_portrait"] },
   { label: "Items",       types: ["item", "ability_icon", "ability_sprite", "status_effect_icon"] },
   { label: "Lore",        types: ["lore_character", "lore_location", "lore_organization", "lore_species", "lore_item", "lore_event", "lore_map"] },

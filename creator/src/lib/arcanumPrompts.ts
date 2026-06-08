@@ -153,6 +153,8 @@ export const FORMAT_BY_ASSET_TYPE: Partial<Record<AssetType, string>> = {
   pet: FORMAT_BY_TYPE.mob,
   item: FORMAT_BY_TYPE.item,
   gathering_node: FORMAT_BY_TYPE.gathering_node,
+  lever_plate: "1:1 square sprite of a single lever mounting plate viewed straight head-on, centered, the whole plate in frame with padding, no handle arm, no wall, no characters, clean flat background",
+  lever_handle: "1:1 square sprite of a single lever handle/arm oriented vertically pointing straight up, centered, the pivot end at the bottom and the grip at the top, the whole handle in frame with padding, no mounting plate, no wall, no characters, clean flat background",
   player_sprite: FORMAT_BY_TYPE.mob,
   race_portrait: FORMAT_BY_TYPE.race_portrait,
   class_portrait: FORMAT_BY_TYPE.class_portrait,
@@ -196,6 +198,8 @@ export const BG_REMOVAL_ASSET_TYPES: ReadonlySet<string> = new Set([
   "pet",
   "entity_portrait",
   "gathering_node",
+  "lever_plate",
+  "lever_handle",
   "ability_sprite",
   "player_sprite",
 ]);
@@ -439,6 +443,20 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
     templates: {
       arcanum: `A solitary interactable resource node grounded on a dark cosmic-stone floor — perhaps an aurum-veined ore outcrop, a cluster of luminous crystalline herbs, a glowing tide-pool, or a hollow at the base of an ancient tree — rendered with faithful material detail in the Arcanum palette, warm aurum-gold light pooling on the harvestable surfaces with soft bloom, baroque energy filaments curling from the node like delicate scrollwork tendrils, deep cosmic indigo and abyssal navy void surrounding it, blue-violet atmospheric mist drifting around the base, the silhouette is clearly readable as something a player would walk up to and gather from, centered square composition with the node grounded at the lower third of the frame, painterly oil technique, extremely detailed, no characters, no hands, no UI`,
       gentle_magic: `A solitary interactable resource node resting on a soft mossy patch of ground — perhaps a pale silver ore vein in a weathered stone, a cluster of luminous lavender mushrooms, a small herb patch with dusty rose blossoms, or a calm reflective pool flecked with soft gold — rendered with warm gentle detail in the Gentle Magic palette, source-ambiguous diffused light with no harsh shadows, faint floating motes of warm gold drifting upward from the harvestable surfaces, pale blue and lavender atmospheric haze fading to deep mist behind, tiny moss-green tufts and dusty rose buds at the base, the silhouette is clearly readable as something a player would walk up to and gather from, centered square composition with the node grounded at the lower third of the frame, painterly, luminous, dreamlike, no characters, no hands, no UI`,
+    },
+  },
+  lever_handle: {
+    label: "Lever Handle",
+    templates: {
+      arcanum: `A single ornate lever handle rendered as an isolated game sprite, oriented vertically and pointing straight up in a neutral upright pose — a slender polished shaft of dark metal chased with aurum-gold filigree rising from a rounded pivot knuckle at its base, crowned by a gripable orb finial at the top, warm aurum-gold light pooling along the shaft with soft bloom, cool blue-violet accents in the shadows, NO mounting plate, NO wall, NO floor, NO other hardware — only the handle arm itself, centered upright with the pivot end at the bottom, painterly, luminous, extremely detailed`,
+      gentle_magic: `A single charming lever handle rendered as an isolated game sprite, oriented vertically and pointing straight up in a neutral upright pose — a gently curved shaft of weathered brass or carved wood rising from a smooth rounded pivot knuckle at its base, topped by a rounded gripable knob, soft source-ambiguous light with a faint warm glow, lavender and pale-gold undertones, NO mounting plate, NO wall, NO floor, NO other hardware — only the handle arm itself, centered upright with the pivot end at the bottom, painterly, luminous, dreamlike`,
+    },
+  },
+  lever_plate: {
+    label: "Lever Plate",
+    templates: {
+      arcanum: `A single lever mounting plate rendered as an isolated game sprite, viewed straight head-on — an ornate circular or shield-shaped backing plate of dark metal with aurum-gold baroque scrollwork around its rim and a central pivot socket at its middle where a handle would attach, warm golden bloom around the socket, cool blue-violet ambient fill in the recesses, NO handle, NO arm, NO lever shaft present, NO wall, NO floor, only the plate, centered with padding on all sides, painterly, luminous, extremely detailed`,
+      gentle_magic: `A single lever mounting plate rendered as an isolated game sprite, viewed straight head-on — a gently rounded backing plate of weathered brass or carved wood with soft decorative trim and a central pivot socket at its middle where a handle would attach, faint warm inner glow, lavender and pale-gold undertones, NO handle, NO arm, NO lever shaft present, NO wall, NO floor, only the plate, centered with padding on all sides, painterly, luminous, dreamlike`,
     },
   },
   faction_emblem: {

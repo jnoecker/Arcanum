@@ -150,6 +150,7 @@ const BASE_CONFIG: AppConfig = {
     feature_door: "feature_door.png",
     feature_container: "feature_container.png",
     feature_lever: "feature_lever.png",
+    feature_sign: "feature_sign.png",
     dialog_indicator: "dialog_indicator.png",
     aggro_indicator: "aggro_indicator.png",
     quest_available_indicator: "quest_available_indicator.png",

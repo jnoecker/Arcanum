@@ -52,6 +52,8 @@ export type AssetType =
   | "pet"
   | "item"
   | "gathering_node"
+  | "lever_plate"
+  | "lever_handle"
   | "player_sprite"
   | "race_portrait"
   | "class_portrait"
@@ -290,6 +292,8 @@ export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; 
   pet: { width: 1024, height: 1024, label: "1024×1024 (Portrait)" },
   item: { width: 1024, height: 1024, label: "1024×1024 (Icon)" },
   gathering_node: { width: 1024, height: 1024, label: "1024×1024 (Sprite)" },
+  lever_plate: { width: 1024, height: 1024, label: "1024×1024 (Sprite)" },
+  lever_handle: { width: 1024, height: 1024, label: "1024×1024 (Sprite)" },
   ability: { width: 1024, height: 1024, label: "1024×1024 (Icon)" },
   shop: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   dungeon: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },

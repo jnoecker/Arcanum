@@ -793,6 +793,18 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: false,
   },
   {
+    key: "bank_bg",
+    defaultFilename: "bank_bg.png",
+    label: "Bank Vault Background",
+    description: "Backdrop behind the bank card — the \"Vault\". A marble-and-brass treasury interior; the gold balance and item-vault drawers render on top. Falls back to the procedural panel when absent. (The bank_vault door icon doubles as the panel emblem.)",
+    assetType: "background",
+    defaultPrompt:
+      "A dim treasury vault interior filling the frame edge to edge — polished marble walls and floor, gleaming brass fittings and a great round vault door suggested in the background, rows of safety-deposit drawers along one side, warm aurum-gold light pooling softly, deep secure atmosphere, no coins in focus, no figures, no readable text, suitable as a backdrop behind a bank panel.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
     key: "trainer_bg",
     defaultFilename: "trainer_bg.png",
     label: "Trainer Board Texture",

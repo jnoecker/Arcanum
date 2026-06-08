@@ -862,10 +862,10 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     defaultFilename: "who_examine_btn.png",
     label: "Who — Examine Button",
     description:
-      "Small square per-row button on the who panel that examines the selected player. Falls back to a carved CSS button.",
-    assetType: "ornament",
+      "Small square per-row icon on the who panel that examines the selected player. Bold silhouette that reads at small size; CSS provides the button chrome. Falls back to a CSS button.",
+    assetType: "ability_icon",
     defaultPrompt:
-      "A single small square carved-wood and brass UI button with a centered magnifying-glass / eye motif and a cool blue gem accent, soft inner glow, isolated decorative button element, transparent background, no readable text.",
+      "A single magnifying glass, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -874,10 +874,10 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     defaultFilename: "who_tell_btn.png",
     label: "Who — Send Tell Button",
     description:
-      "Small square per-row button on the who panel that opens a private tell to the selected player. Falls back to a carved CSS button.",
-    assetType: "ornament",
+      "Small square per-row icon on the who panel that opens a private tell to the selected player. Bold silhouette that reads at small size; CSS provides the button chrome. Falls back to a CSS button.",
+    assetType: "ability_icon",
     defaultPrompt:
-      "A single small square carved-wood and brass UI button with a centered sealed-letter / speech-bubble motif and a warm violet gem accent, soft inner glow, isolated decorative button element, transparent background, no readable text.",
+      "A single speech-bubble icon, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },

@@ -26,6 +26,7 @@ import {
 } from "@/lib/exportMud";
 import type { AppConfig } from "@/types/config";
 import { YAML_OPTS } from "@/lib/yamlOpts";
+import { WORLD_POOL_FILES, WORLD_SECTION_HOMES, type WorldSectionKey } from "@/lib/projectPaths";
 
 function sanitizeAdminConfigForSave(admin: AppConfig["admin"]): AppConfig["admin"] {
   return {
@@ -86,7 +87,10 @@ function cleanObj(obj: Record<string, unknown>): Record<string, unknown> {
 }
 
 /**
- * Save config to 11 separate YAML files in config/ directory.
+ * Save config to the split YAML files in config/ directory. World-pool
+ * sections are grouped into their canonical files per WORLD_SECTION_HOMES;
+ * the Record<WorldSectionKey, unknown> type keeps the section list and the
+ * homes map from drifting apart.
  */
 async function saveSplitConfig(projectDir: string): Promise<void> {
   const state = useConfigStore.getState();
@@ -97,7 +101,88 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
   const write = (name: string, data: unknown) =>
     writeTextFile(`${dir}/${name}.yaml`, stringify(data, YAML_OPTS));
 
+  const worldSections: Record<WorldSectionKey, unknown> = {
+    mode: config.mode,
+    server: config.server,
+    admin: sanitizeAdminConfigForSave(config.admin),
+    observability: config.observability,
+    logging: cleanObj({
+      level: config.logging.level,
+      packageLevels: Object.keys(config.logging.packageLevels).length > 0
+        ? config.logging.packageLevels
+        : undefined,
+    }),
+    persistence: config.persistence,
+    login: config.login,
+    transport: config.transport,
+    demo: config.demo,
+    database: config.database,
+    redis: config.redis,
+    grpc: config.grpc,
+    gateway: config.gateway,
+    sharding: config.sharding,
+
+    commands: Object.keys(config.commands).length > 0 ? config.commands : undefined,
+
+    group: config.group,
+    guildRanks: {
+      founderRank: config.guild.founderRank,
+      defaultRank: config.guild.defaultRank,
+      ranks: config.guildRanks,
+    },
+    friends: config.friends,
+    genders: config.genders,
+    characterCreation: config.characterCreation,
+    emotePresets: config.emotePresets.presets.length > 0 ? config.emotePresets : undefined,
+
+    bank: config.bank.maxItems !== 50 ? config.bank : undefined,
+    currencies: normalizeCurrenciesConfig(config.currencies),
+    lottery: normalizeLotteryConfig(config.lottery),
+    gambling: normalizeGamblingConfig(config.gambling),
+    stylist: normalizeStylistConfig(config.stylist),
+    respec: normalizeRespecConfig(config.respec),
+    housing: (config.housing.enabled || Object.keys(config.housing.templates).length > 0)
+      ? housingToPlain(config.housing) : undefined,
+    guildHalls: normalizeGuildHallsConfig(config.guildHalls),
+
+    dailyQuests: normalizeDailyQuestsConfig(config.dailyQuests),
+    autoQuests: normalizeAutoQuestsConfig(config.autoQuests),
+    globalQuests: normalizeGlobalQuestsConfig(config.globalQuests),
+    questObjectiveTypes: { types: config.questObjectiveTypes },
+    questCompletionTypes: { types: config.questCompletionTypes },
+    achievementCategories: { categories: config.achievementCategories },
+    achievementCriterionTypes: { types: config.achievementCriterionTypes },
+
+    world: config.world,
+    classStartRooms: Object.keys(config.classStartRooms).length > 0 ? config.classStartRooms : undefined,
+    navigation: config.navigation,
+    death: config.death,
+    worldTime: config.worldTime,
+    weather: {
+      minTransitionMs: config.weather.minTransitionMs,
+      maxTransitionMs: config.weather.maxTransitionMs,
+      ...(Object.keys(config.weather.types).length > 0 ? { types: config.weather.types } : {}),
+    },
+    environment: (config.environment.defaultTheme.moteColors.length > 0 || Object.keys(config.environment.zones).length > 0)
+      ? config.environment : undefined,
+    worldEvents: Object.keys(config.worldEvents.definitions).length > 0
+      ? config.worldEvents : undefined,
+    factions: config.factions,
+    prestige: config.prestige,
+    leaderboard: config.leaderboard,
+  };
+
+  const poolWrites = WORLD_POOL_FILES.map((file) => {
+    const out: Record<string, unknown> = {};
+    for (const [key, home] of Object.entries(WORLD_SECTION_HOMES)) {
+      if (home === file) out[key] = worldSections[key as WorldSectionKey];
+    }
+    return write(file, cleanObj(out));
+  });
+
   await Promise.all([
+    ...poolWrites,
+
     write("classes", {
       definitions: mapEntries(config.classes, classToPlain),
     }),
@@ -173,72 +258,6 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
       economy: config.economy,
       regen: config.regen,
     }),
-
-    write("world", cleanObj({
-      mode: config.mode,
-      server: config.server,
-      admin: sanitizeAdminConfigForSave(config.admin),
-      observability: config.observability,
-      logging: cleanObj({
-        level: config.logging.level,
-        packageLevels: Object.keys(config.logging.packageLevels).length > 0
-          ? config.logging.packageLevels
-          : undefined,
-      }),
-      world: config.world,
-      classStartRooms: Object.keys(config.classStartRooms).length > 0 ? config.classStartRooms : undefined,
-      navigation: config.navigation,
-      death: config.death,
-      commands: Object.keys(config.commands).length > 0 ? config.commands : undefined,
-      group: config.group,
-      guildRanks: {
-        founderRank: config.guild.founderRank,
-        defaultRank: config.guild.defaultRank,
-        ranks: config.guildRanks,
-      },
-      friends: config.friends,
-      genders: config.genders,
-      characterCreation: config.characterCreation,
-      emotePresets: config.emotePresets.presets.length > 0 ? config.emotePresets : undefined,
-      achievementCategories: { categories: config.achievementCategories },
-      achievementCriterionTypes: { types: config.achievementCriterionTypes },
-      questObjectiveTypes: { types: config.questObjectiveTypes },
-      questCompletionTypes: { types: config.questCompletionTypes },
-      housing: (config.housing.enabled || Object.keys(config.housing.templates).length > 0)
-        ? housingToPlain(config.housing) : undefined,
-      bank: config.bank.maxItems !== 50 ? config.bank : undefined,
-      worldTime: config.worldTime,
-      weather: {
-        minTransitionMs: config.weather.minTransitionMs,
-        maxTransitionMs: config.weather.maxTransitionMs,
-        ...(Object.keys(config.weather.types).length > 0 ? { types: config.weather.types } : {}),
-      },
-      environment: (config.environment.defaultTheme.moteColors.length > 0 || Object.keys(config.environment.zones).length > 0)
-        ? config.environment : undefined,
-      worldEvents: Object.keys(config.worldEvents.definitions).length > 0
-        ? config.worldEvents : undefined,
-      lottery: normalizeLotteryConfig(config.lottery),
-      gambling: normalizeGamblingConfig(config.gambling),
-      stylist: normalizeStylistConfig(config.stylist),
-      respec: normalizeRespecConfig(config.respec),
-      prestige: config.prestige,
-      dailyQuests: normalizeDailyQuestsConfig(config.dailyQuests),
-      autoQuests: normalizeAutoQuestsConfig(config.autoQuests),
-      globalQuests: normalizeGlobalQuestsConfig(config.globalQuests),
-      guildHalls: normalizeGuildHallsConfig(config.guildHalls),
-      factions: config.factions,
-      leaderboard: config.leaderboard,
-      currencies: normalizeCurrenciesConfig(config.currencies),
-      persistence: config.persistence,
-      login: config.login,
-      transport: config.transport,
-      demo: config.demo,
-      database: config.database,
-      redis: config.redis,
-      grpc: config.grpc,
-      gateway: config.gateway,
-      sharding: config.sharding,
-    })),
 
     write("assets", cleanObj({
       images: cleanObj({

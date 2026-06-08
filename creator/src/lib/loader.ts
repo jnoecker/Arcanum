@@ -21,6 +21,8 @@ import {
   DEFAULT_ENVIRONMENT_THEME,
 } from "@/lib/configDefaults";
 import { normalizeAbilityManaCost } from "@/lib/abilityMana";
+import { ENTITY_CONFIG_FILES, WORLD_SECTION_HOMES, type WorldPoolFileName } from "@/lib/projectPaths";
+import { useToastStore } from "@/stores/toastStore";
 
 /**
  * Load all zone YAML files from the world directory.
@@ -1418,8 +1420,86 @@ async function readYaml(path: string): Promise<Record<string, unknown>> {
   }
 }
 
+interface WorldPoolFile {
+  name: string;
+  data: Record<string, unknown>;
+}
+
 /**
- * Load config from 11 separate YAML files in config/ directory.
+ * Merge top-level sections from world-pool config files. A section's
+ * canonical file (per WORLD_SECTION_HOMES) wins over any other file;
+ * among non-canonical files the alphabetically first wins. Every
+ * duplicate produces a warning.
+ */
+export function mergeWorldPool(
+  files: WorldPoolFile[],
+): { merged: Record<string, unknown>; warnings: string[] } {
+  const merged: Record<string, unknown> = {};
+  const sources = new Map<string, { file: string; canonical: boolean }>();
+  const warnings: string[] = [];
+  const homes = WORLD_SECTION_HOMES as Record<string, WorldPoolFileName | undefined>;
+
+  const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name));
+  for (const { name, data } of sorted) {
+    for (const [key, value] of Object.entries(data)) {
+      const home = homes[key];
+      const canonical = home !== undefined && `${home}.yaml` === name;
+      const existing = sources.get(key);
+      if (!existing) {
+        merged[key] = value;
+        sources.set(key, { file: name, canonical });
+        continue;
+      }
+      const winner = canonical && !existing.canonical ? name : existing.file;
+      warnings.push(
+        `Config section "${key}" appears in both ${existing.file} and ${name} — using the copy in ${winner}.`,
+      );
+      if (winner === name) {
+        merged[key] = value;
+        sources.set(key, { file: name, canonical });
+      }
+    }
+  }
+
+  return { merged, warnings };
+}
+
+/**
+ * Read every world-pool YAML file in config/ (anything that isn't an
+ * entity file) and merge their top-level sections.
+ */
+async function loadWorldPool(dir: string): Promise<Record<string, unknown>> {
+  const entityNames = new Set<string>(ENTITY_CONFIG_FILES.map((n) => `${n}.yaml`));
+  let names: string[] = [];
+  try {
+    const entries = await readDir(dir);
+    names = entries
+      .map((e) => (!e.isDirectory && e.name?.endsWith(".yaml") && !entityNames.has(e.name) ? e.name : null))
+      .filter((n): n is string => n !== null);
+  } catch {
+    return {};
+  }
+
+  const files = await Promise.all(
+    names.map(async (name) => ({ name, data: await readYaml(`${dir}/${name}`) })),
+  );
+  const { merged, warnings } = mergeWorldPool(files);
+  if (warnings.length > 0) {
+    for (const w of warnings) console.warn(`[config] ${w}`);
+    useToastStore.getState().show(
+      {
+        kicker: "Config",
+        message: warnings.length === 1 ? warnings[0]! : `${warnings.length} duplicate config sections found — see console for details.`,
+        variant: "ember",
+      },
+      6000,
+    );
+  }
+  return merged;
+}
+
+/**
+ * Load config from the split YAML files in config/ directory.
  */
 async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
   const dir = `${projectDir}/config`;
@@ -1448,7 +1528,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       readYaml(`${dir}/combat.yaml`),
       readYaml(`${dir}/crafting.yaml`),
       readYaml(`${dir}/progression.yaml`),
-      readYaml(`${dir}/world.yaml`),
+      loadWorldPool(dir),
       readYaml(`${dir}/assets.yaml`),
       readYaml(`${dir}/pets.yaml`),
     ]);
@@ -1472,7 +1552,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
     );
 
     const config: AppConfig = {
-      // world.yaml
+      // world pool (server/commands/social/economy/quests/world.yaml + drop-ins)
       mode: parseDeploymentMode(worldRaw.mode),
       server: parseServerConfig(worldRaw.server),
       admin: parseAdminConfig(worldRaw.admin),

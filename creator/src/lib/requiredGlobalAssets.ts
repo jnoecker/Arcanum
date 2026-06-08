@@ -888,6 +888,101 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: false,
     aspect: "landscape",
   },
+  // Character panel — the "Woodland Fae Cabinet". A layered set: the cabinet
+  // backdrop is the hero cover; the niche is the sprite alcove; frame/plaque/
+  // charm are carved chrome the readouts sit in; the two gem buttons open the
+  // achievements and prestige panels. Each resolves authored key → carved-CSS
+  // fallback, so they can ship incrementally. The world's visual style is
+  // applied on top, so non-fae worlds get a themed variant.
+  {
+    key: "character_bg",
+    defaultFilename: "character_bg.png",
+    label: "Character Cabinet Backdrop",
+    description:
+      "The hero backdrop for the character panel — the full carved-wood cabinet (outer frame, vines, crystals, brass corners, ambient forest). Fills the sheet as a cover and bakes in the non-interactive chrome; the cards overlay it. Falls back to a carved CSS panel.",
+    assetType: "background",
+    defaultPrompt:
+      "An ornate carved-wood cabinet backdrop filling the frame edge to edge — a grand frame of dark polished wood wrapped in living vines and tiny mushrooms, glowing crystals and brass corner fittings, a soft enchanted forest in the depths, warm magical light, an open uncluttered center where character cards overlay, wide landscape composition, no figures, no readable text.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "character_niche",
+    defaultFilename: "character_niche.png",
+    label: "Character Sprite Niche",
+    description:
+      "The arched forest-diorama alcove the player sprite stands in (left showcase). The live sprite renders centered in front; author transparency outside the arch (or let the cabinet frame mask it). Falls back to a carved CSS alcove.",
+    assetType: "background",
+    defaultPrompt:
+      "An arched forest-diorama alcove viewed head-on — a tall rounded archway opening onto a misty enchanted woodland glade with dappled light, soft glowing motes, ferns and luminous flowers receding into the trees, portrait composition, an empty center where a character figure will stand in front, no figures, no readable text.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
+    key: "character_frame",
+    defaultFilename: "character_frame.png",
+    label: "Character Panel Frame",
+    description:
+      "Reusable carved panel frame bounding the identity + vitals cards. Used as a 9-slice (~48px corner insets) with a transparent center. Falls back to a carved CSS border.",
+    assetType: "ornament",
+    defaultPrompt:
+      "A single ornate carved-wood panel frame filling the canvas edge to edge, the border carved with vines and leaves with small brass corner fittings, an open empty center, isolated decorative frame element, transparent background, no scene, no readable text.",
+    transparent: true,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "character_plaque",
+    defaultFilename: "character_plaque.png",
+    label: "Character Readout Plaque",
+    description:
+      "Darker carved recess behind grouped readouts (the STATS column and the damage/armor/dodge strip). Used as a 9-slice (~24px insets) with a semi-opaque dark-wood center so light text reads. Falls back to a carved CSS recess.",
+    assetType: "ornament",
+    defaultPrompt:
+      "A single dark carved-wood plaque, a sunken recessed panel with a semi-opaque dark-wood center for light text to read against, a carved leafy border with small brass studs, isolated decorative element, transparent outside the plaque, no scene, no readable text.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "character_charm",
+    defaultFilename: "character_charm.png",
+    label: "Active-Effect Charm",
+    description:
+      "Carved charm/locket holder behind each active-effect icon (~96px square, transparent socket center). CSS tints the glow per effect color. Falls back to a carved CSS socket.",
+    assetType: "ornament",
+    defaultPrompt:
+      "A single small carved-wood charm or locket holder, a round socket frame of dark wood and brass with a leaf motif and an empty transparent center where an effect icon sits, isolated decorative element, transparent background, no scene, no readable text.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "char_btn_achievements",
+    defaultFilename: "char_btn_achievements.png",
+    label: "Achievements Button",
+    description:
+      "Ornate emerald/green gem button that opens the achievements browser. Wide button (usable as 9-slice); the label is rendered in CSS over it for i18n. Falls back to a carved CSS gem button.",
+    assetType: "ornament",
+    defaultPrompt:
+      "A single ornate horizontal UI button set with a large faceted emerald-green gem, a dark carved-wood and brass frame with leaf flourishes and a soft green inner glow, isolated decorative button element, transparent background, blank face, no readable text.",
+    transparent: true,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "char_btn_prestige",
+    defaultFilename: "char_btn_prestige.png",
+    label: "Prestige Button",
+    description:
+      "Ornate amethyst/purple gem button that opens the prestige panel. Wide button (usable as 9-slice); the label is rendered in CSS over it for i18n. Falls back to a carved CSS gem button.",
+    assetType: "ornament",
+    defaultPrompt:
+      "A single ornate horizontal UI button set with a large faceted amethyst-purple gem, a dark carved-wood and brass frame with leaf flourishes and a soft violet inner glow, isolated decorative button element, transparent background, blank face, no readable text.",
+    transparent: true,
+    aspect: "landscape",
+    optional: true,
+  },
   // Inn (recall) modal: a card backdrop plus the hangable key.
   {
     key: "inn_bg",

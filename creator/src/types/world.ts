@@ -173,6 +173,15 @@ export interface FeatureFile {
   /** Text content for SIGN type. */
   text?: string;
   /**
+   * Optional per-feature backdrop. Works on all three feature types
+   * (CONTAINER / LEVER / SIGN). The web client renders this behind the
+   * feature card — the container's contents list, the sign's text, or the
+   * lever's plate+handle sit on top. Content-addressed filename, resolved
+   * against the world image base. Resolution order per feature:
+   * `backgroundImage` → `<type>_bg` global asset → polished CSS fallback.
+   */
+  backgroundImage?: string;
+  /**
    * LEVER art (layered, procedurally animated). The handle sprite rotates
    * around `leverPivot` between `upAngle` and `downAngle`; the optional plate
    * sprite is drawn behind it and never moves. All LEVER-only; renderers fall

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/FormWidgets";
 import { FEATURE_ICONS } from "@/assets/ui";
 import { LeverArtEditor } from "./LeverArtEditor";
+import { FeatureBackgroundEditor } from "./FeatureBackgroundEditor";
 
 interface RoomFeaturesEditorProps {
   world: WorldFile;
@@ -246,6 +247,15 @@ const FeatureRow = memo(function FeatureRow({
           />
         )}
         {type === "SIGN" && <SignFields feature={feature} onPatch={patch} />}
+
+        <FeatureBackgroundEditor
+          world={world}
+          roomId={roomId}
+          featureId={featureId}
+          type={type}
+          feature={feature}
+          onPatch={patch}
+        />
       </div>
     </div>
   );

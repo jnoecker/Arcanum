@@ -738,6 +738,8 @@ function cleanFeature(feature: FeatureFile): FeatureFile {
   } else if (type === "SIGN") {
     if (feature.text != null) out.text = feature.text;
   }
+  // Optional per-feature backdrop — valid on every feature type.
+  if (feature.backgroundImage) out.backgroundImage = feature.backgroundImage;
   return out;
 }
 

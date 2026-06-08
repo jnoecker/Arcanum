@@ -855,6 +855,17 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "guild_widget",
+    defaultFilename: "guild_widget.png",
+    label: "Guild Panel",
+    description: "Services-menu nav button that opens the guild panel. Optional; falls back to a CSS button.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single heraldic guild crest — a banner or shield emblem with a simple charge, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
     key: "trainer_bg",
     defaultFilename: "trainer_bg.png",
     label: "Trainer Board Texture",

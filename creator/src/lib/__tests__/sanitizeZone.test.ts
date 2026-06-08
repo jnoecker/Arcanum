@@ -649,6 +649,8 @@ describe("sanitizeZone — output cleanup", () => {
                 leafImage: "leaf.webp",
                 hinge: "right",
                 openAngle: 120,
+                leafScale: 0.66,
+                leafOffsetY: 0.05,
               },
             },
           },
@@ -662,6 +664,8 @@ describe("sanitizeZone — output cleanup", () => {
     expect(door.leafImage).toBe("leaf.webp");
     expect(door.hinge).toBe("right");
     expect(door.openAngle).toBe(120);
+    expect(door.leafScale).toBe(0.66);
+    expect(door.leafOffsetY).toBe(0.05);
   });
 
   it("strips legacy room audio field on output", () => {

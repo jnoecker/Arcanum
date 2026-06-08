@@ -158,6 +158,17 @@ export interface DoorFile {
   hinge?: "left" | "right";
   /** Leaf rotation in degrees when the door is open. Closed is always 0. Default 100. */
   openAngle?: number;
+  /**
+   * Leaf size as a fraction (0..1) of the frame box, so the leaf sits inside
+   * the frame's opening rather than overflowing it. Ornate frames have a small
+   * central opening, so this is usually < 1. Default 0.72.
+   */
+  leafScale?: number;
+  /**
+   * Vertical placement of the leaf within the frame as a fraction (-1..1) of
+   * the box; positive nudges down so the leaf rests on the threshold. Default 0.04.
+   */
+  leafOffsetY?: number;
   /** Legacy alias; normalized to `initialState` on output. */
   closed?: boolean;
   /** Legacy alias; normalized to `initialState` on output. */

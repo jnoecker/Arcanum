@@ -11,6 +11,8 @@ import { useConfigStore } from "@/stores/configStore";
 export const DOOR_ART_DEFAULTS = {
   hinge: "left" as const,
   openAngle: 100,
+  leafScale: 0.72,
+  leafOffsetY: 0.04,
 };
 
 interface DoorArtEditorProps {
@@ -37,6 +39,8 @@ export function DoorArtEditor({ world, roomId, direction, door, onPatch }: DoorA
 
   const hinge = door.hinge ?? DOOR_ART_DEFAULTS.hinge;
   const openAngle = door.openAngle ?? DOOR_ART_DEFAULTS.openAngle;
+  const leafScale = door.leafScale ?? DOOR_ART_DEFAULTS.leafScale;
+  const leafOffsetY = door.leafOffsetY ?? DOOR_ART_DEFAULTS.leafOffsetY;
 
   // Fall back to the world-default door sprites (Global Assets) when this door
   // doesn't define its own — matches how the MUD renders it.
@@ -68,29 +72,41 @@ export function DoorArtEditor({ world, roomId, direction, door, onPatch }: DoorA
               style={{ perspective: "600px" }}
               aria-label="Door preview"
             >
-              {leafSrc ? (
-                <img
-                  src={leafSrc}
-                  alt=""
-                  className="pointer-events-none absolute inset-0 h-full w-full object-contain"
-                  style={{
-                    transformOrigin: hinge === "left" ? "left center" : "right center",
-                    transform: `rotateY(${angle}deg)`,
-                    transition: "transform 0.5s cubic-bezier(0.34, 1.2, 0.64, 1)",
-                  }}
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center px-2 text-center text-2xs italic text-text-muted">
-                  No leaf art yet — generate below or set a world default in Global Assets
-                </div>
-              )}
-              {/* Frame drawn on top so the leaf reads as swinging within it. */}
+              {/* Frame drawn first so it sits behind the leaf — the door opens
+                  toward the viewer, so the swinging leaf passes in front. */}
               {frameSrc && (
                 <img
                   src={frameSrc}
                   alt=""
                   className="pointer-events-none absolute inset-0 h-full w-full object-contain"
                 />
+              )}
+              {leafSrc ? (
+                <div
+                  className="pointer-events-none absolute"
+                  style={{
+                    left: "50%",
+                    top: "50%",
+                    width: `${leafScale * 100}%`,
+                    height: `${leafScale * 100}%`,
+                    transform: `translate(-50%, calc(-50% + ${leafOffsetY * 100}%))`,
+                  }}
+                >
+                  <img
+                    src={leafSrc}
+                    alt=""
+                    className="h-full w-full object-contain"
+                    style={{
+                      transformOrigin: hinge === "left" ? "left center" : "right center",
+                      transform: `rotateY(${angle}deg)`,
+                      transition: "transform 0.5s cubic-bezier(0.34, 1.2, 0.64, 1)",
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center px-2 text-center text-2xs italic text-text-muted">
+                  No leaf art yet — generate below or set a world default in Global Assets
+                </div>
               )}
             </div>
             <button
@@ -136,12 +152,37 @@ export function DoorArtEditor({ world, roomId, direction, door, onPatch }: DoorA
               max={160}
               onChange={(v) => onPatch({ openAngle: v })}
             />
+            <AngleSlider
+              label="Leaf size"
+              value={leafScale}
+              min={0.4}
+              max={1}
+              step={0.02}
+              format={(v) => `${Math.round(v * 100)}%`}
+              onChange={(v) => onPatch({ leafScale: v })}
+            />
+            <AngleSlider
+              label="Leaf offset Y"
+              value={leafOffsetY}
+              min={-0.2}
+              max={0.2}
+              step={0.01}
+              format={(v) => v.toFixed(2)}
+              onChange={(v) => onPatch({ leafOffsetY: v })}
+            />
             <button
               type="button"
-              onClick={() => onPatch({ hinge: undefined, openAngle: undefined })}
+              onClick={() =>
+                onPatch({
+                  hinge: undefined,
+                  openAngle: undefined,
+                  leafScale: undefined,
+                  leafOffsetY: undefined,
+                })
+              }
               className="focus-ring self-start rounded px-1 text-2xs text-text-muted hover:text-text-primary"
             >
-              ↺ Reset hinge &amp; angle
+              ↺ Reset hinge, angle &amp; fit
             </button>
             <p className="text-2xs leading-snug text-text-muted">
               The locked-state ward seal is a world asset — set{" "}
@@ -198,20 +239,23 @@ interface AngleSliderProps {
   value: number;
   min: number;
   max: number;
+  step?: number;
+  format?: (v: number) => string;
   onChange: (v: number) => void;
 }
 
-function AngleSlider({ label, value, min, max, onChange }: AngleSliderProps) {
+function AngleSlider({ label, value, min, max, step = 1, format, onChange }: AngleSliderProps) {
   return (
     <label className="flex flex-col gap-0.5">
       <span className="flex items-center justify-between text-2xs text-text-muted">
         <span>{label}</span>
-        <span className="font-mono text-text-secondary">{value}°</span>
+        <span className="font-mono text-text-secondary">{format ? format(value) : `${value}°`}</span>
       </span>
       <input
         type="range"
         min={min}
         max={max}
+        step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="accent-accent"

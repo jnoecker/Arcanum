@@ -560,6 +560,8 @@ function cleanDoor(door: DoorFile): DoorFile | undefined {
   if (door.leafImage) out.leafImage = door.leafImage;
   if (door.hinge) out.hinge = door.hinge;
   if (door.openAngle != null) out.openAngle = door.openAngle;
+  if (door.leafScale != null) out.leafScale = door.leafScale;
+  if (door.leafOffsetY != null) out.leafOffsetY = door.leafOffsetY;
   return Object.keys(out).length > 0 ? out : undefined;
 }
 

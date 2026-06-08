@@ -195,7 +195,8 @@ interface CommandRowProps {
 }
 
 function CommandRow({ id, cmd, selected, onSelect }: CommandRowProps) {
-  const displayName = cmd.usage.split(/\s/)[0] || id;
+  // usage comes from user-editable YAML and may be missing on malformed entries
+  const displayName = cmd.usage?.split(/\s/)[0] || id;
   return (
     <li>
       <button

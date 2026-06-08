@@ -122,7 +122,9 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
     gateway: config.gateway,
     sharding: config.sharding,
 
-    commands: Object.keys(config.commands).length > 0 ? config.commands : undefined,
+    // Wrapped in `entries` to match the server's CommandsConfig shape, so
+    // commands.yaml is drop-in interchangeable with the MUD side
+    commands: Object.keys(config.commands).length > 0 ? { entries: config.commands } : undefined,
 
     group: config.group,
     guildRanks: {

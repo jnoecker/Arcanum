@@ -639,4 +639,12 @@ export interface PuzzleFile {
   successMessage?: string;
   cooldownMs?: number;
   resetOnFail?: boolean;
+  /**
+   * Optional backdrop for the puzzle card (the "Conundrum Codex" tome). The
+   * web client renders it behind the riddle page; the question text and the
+   * answer input sit on top. Content-addressed filename, resolved against the
+   * world image base. Resolution order: `backgroundImage` → `puzzle_bg` global
+   * asset → polished CSS fallback.
+   */
+  backgroundImage?: string;
 }

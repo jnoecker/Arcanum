@@ -136,6 +136,13 @@ export function normalizeWorldAssetRefs(world: WorldFile): WorldFile {
         ...recipe,
         image: normalizeAssetRef(recipe.image),
       })),
+    puzzles: mapOptionalEntries(world.puzzles, (puzzle) =>
+      puzzle.backgroundImage
+        ? compactObject({
+            ...puzzle,
+            backgroundImage: normalizeAssetRef(puzzle.backgroundImage),
+          })
+        : puzzle),
   };
 }
 

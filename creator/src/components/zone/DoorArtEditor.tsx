@@ -8,11 +8,13 @@ import { useConfigStore } from "@/stores/configStore";
 /** Layered-door defaults — the renderer (and the MUD web client) fall back to
  *  these when a door omits the field. The leaf sprite swings on its `hinge`
  *  edge between closed (0°) and `openAngle`. */
+// Match the door art distributed with the MUD so the editor preview reflects
+// the real fit whenever an author hasn't overridden these per-door.
 export const DOOR_ART_DEFAULTS = {
-  hinge: "left" as const,
-  openAngle: 100,
-  leafScale: 0.72,
-  leafOffsetY: 0.04,
+  hinge: "right" as const,
+  openAngle: 60,
+  leafScale: 0.76,
+  leafOffsetY: 0.09,
 };
 
 interface DoorArtEditorProps {

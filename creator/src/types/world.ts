@@ -143,6 +143,21 @@ export interface DoorFile {
    * = only resets with the zone.
    */
   respawnSeconds?: number;
+  /**
+   * Door art (layered, procedurally animated — the "Warded Threshold"). The
+   * leaf sprite swings on its hinge between closed (0°) and `openAngle`; the
+   * static frame sprite is drawn behind it and never moves. The world-default
+   * `door_lock` seal overlay renders on top while locked. All optional;
+   * renderers fall back to `door_frame`/`door_leaf` globals, then a CSS card.
+   */
+  /** Static frame/portal sprite, drawn behind the leaf (optional). */
+  frameImage?: string;
+  /** Swinging leaf sprite, drawn closed in a neutral upright pose (optional). */
+  leafImage?: string;
+  /** Which edge the leaf is hinged on. Default "left". */
+  hinge?: "left" | "right";
+  /** Leaf rotation in degrees when the door is open. Closed is always 0. Default 100. */
+  openAngle?: number;
   /** Legacy alias; normalized to `initialState` on output. */
   closed?: boolean;
   /** Legacy alias; normalized to `initialState` on output. */

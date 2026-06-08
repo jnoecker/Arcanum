@@ -54,6 +54,8 @@ export type AssetType =
   | "gathering_node"
   | "lever_plate"
   | "lever_handle"
+  | "door_frame"
+  | "door_leaf"
   | "player_sprite"
   | "race_portrait"
   | "class_portrait"
@@ -294,6 +296,8 @@ export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; 
   gathering_node: { width: 1024, height: 1024, label: "1024×1024 (Sprite)" },
   lever_plate: { width: 1024, height: 1024, label: "1024×1024 (Sprite)" },
   lever_handle: { width: 1024, height: 1024, label: "1024×1024 (Sprite)" },
+  door_frame: { width: 1024, height: 1536, label: "1024×1536 (Portrait)" },
+  door_leaf: { width: 1024, height: 1536, label: "1024×1536 (Portrait)" },
   container_bg: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   sign_bg: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   lever_bg: { width: 1024, height: 1536, label: "1024×1536 (Portrait)" },

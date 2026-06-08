@@ -108,6 +108,19 @@ export function normalizeWorldAssetRefs(world: WorldFile): WorldFile {
                   })
                 : feature)
           : undefined,
+        exits: room.exits
+          ? mapEntries(room.exits, (exit) =>
+              typeof exit !== "string" && exit.door && (exit.door.frameImage || exit.door.leafImage)
+                ? {
+                    ...exit,
+                    door: compactObject({
+                      ...exit.door,
+                      frameImage: normalizeAssetRef(exit.door.frameImage),
+                      leafImage: normalizeAssetRef(exit.door.leafImage),
+                    }),
+                  }
+                : exit)
+          : undefined,
       })),
     mobs: mapOptionalEntries(world.mobs, (mob) =>
       compactObject({

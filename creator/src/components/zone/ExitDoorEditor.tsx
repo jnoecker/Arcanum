@@ -8,6 +8,7 @@ import {
 } from "@/lib/zoneEdits";
 import { CheckboxInput, NumberInput, SelectInput, TextInput } from "@/components/ui/FormWidgets";
 import { useConfigStore } from "@/stores/configStore";
+import { DoorArtEditor } from "./DoorArtEditor";
 
 interface ExitDoorEditorProps {
   world: WorldFile;
@@ -163,6 +164,13 @@ export function ExitDoorEditor({
                 dense
               />
             </div>
+            <DoorArtEditor
+              world={world}
+              roomId={roomId}
+              direction={direction}
+              door={door!}
+              onPatch={patchDoor}
+            />
           </div>
         )}
       </div>

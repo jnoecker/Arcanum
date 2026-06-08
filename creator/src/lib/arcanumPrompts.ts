@@ -155,6 +155,8 @@ export const FORMAT_BY_ASSET_TYPE: Partial<Record<AssetType, string>> = {
   gathering_node: FORMAT_BY_TYPE.gathering_node,
   lever_plate: "1:1 square sprite of a single lever mounting plate viewed straight head-on, centered, the whole plate in frame with padding, no handle arm, no wall, no characters, clean flat background",
   lever_handle: "1:1 square sprite of a single lever handle/arm oriented vertically pointing straight up, centered, the pivot end at the bottom and the grip at the top, the whole handle in frame with padding, no mounting plate, no wall, no characters, clean flat background",
+  door_frame: "2:3 portrait sprite of a single empty doorway frame viewed straight head-on, the opening hollow and empty (no door panel inside), centered with padding, no door leaf, no wall around it, no characters, clean flat background",
+  door_leaf: "2:3 portrait sprite of a single closed door panel/leaf viewed straight head-on, the whole leaf in frame with padding, no surrounding frame, no wall, no characters, clean flat background",
   player_sprite: FORMAT_BY_TYPE.mob,
   race_portrait: FORMAT_BY_TYPE.race_portrait,
   class_portrait: FORMAT_BY_TYPE.class_portrait,
@@ -200,6 +202,8 @@ export const BG_REMOVAL_ASSET_TYPES: ReadonlySet<string> = new Set([
   "gathering_node",
   "lever_plate",
   "lever_handle",
+  "door_frame",
+  "door_leaf",
   "ability_sprite",
   "player_sprite",
 ]);
@@ -457,6 +461,20 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
     templates: {
       arcanum: `A single lever mounting plate rendered as an isolated game sprite, viewed straight head-on — an ornate circular or shield-shaped backing plate of dark metal with aurum-gold baroque scrollwork around its rim and a central pivot socket at its middle where a handle would attach, warm golden bloom around the socket, cool blue-violet ambient fill in the recesses, NO handle, NO arm, NO lever shaft present, NO wall, NO floor, only the plate, centered with padding on all sides, painterly, luminous, extremely detailed`,
       gentle_magic: `A single lever mounting plate rendered as an isolated game sprite, viewed straight head-on — a gently rounded backing plate of weathered brass or carved wood with soft decorative trim and a central pivot socket at its middle where a handle would attach, faint warm inner glow, lavender and pale-gold undertones, NO handle, NO arm, NO lever shaft present, NO wall, NO floor, only the plate, centered with padding on all sides, painterly, luminous, dreamlike`,
+    },
+  },
+  door_leaf: {
+    label: "Door Leaf",
+    templates: {
+      arcanum: `A single closed door panel rendered as an isolated game sprite, viewed straight head-on — a tall slab of dark timber bound with aurum-gold iron banding and studs, a chased filigree handle and a faint warded keyhole, warm aurum-gold light pooling along the metalwork with soft bloom, cool blue-violet accents in the grain, NO surrounding frame, NO doorway arch, NO wall, NO floor, only the door leaf itself, centered upright with padding on all sides, painterly, luminous, extremely detailed`,
+      gentle_magic: `A single closed door panel rendered as an isolated game sprite, viewed straight head-on — a tall plank of weathered wood with gentle grain, soft rounded iron bands, a simple rounded handle and a small keyhole, faint source-ambiguous warm glow, lavender and pale-gold undertones, NO surrounding frame, NO doorway arch, NO wall, NO floor, only the door leaf itself, centered upright with padding on all sides, painterly, luminous, dreamlike`,
+    },
+  },
+  door_frame: {
+    label: "Door Frame",
+    templates: {
+      arcanum: `A single empty doorway frame rendered as an isolated game sprite, viewed straight head-on — an ornate arched portal of dark cosmic stone edged with aurum-gold baroque scrollwork, the opening hollow and empty with nothing inside it, warm golden bloom tracing the inner edge, cool blue-violet ambient fill in the recesses, NO door panel, NO leaf, NO wall around it, NO floor, only the frame, centered with even padding, painterly, luminous, extremely detailed`,
+      gentle_magic: `A single empty doorway frame rendered as an isolated game sprite, viewed straight head-on — a gently arched portal of weathered stone or carved wood with soft decorative trim, the opening hollow and empty with nothing inside it, faint warm inner glow tracing the edge, lavender and pale-gold undertones, NO door panel, NO leaf, NO wall around it, NO floor, only the frame, centered with even padding, painterly, luminous, dreamlike`,
     },
   },
   faction_emblem: {

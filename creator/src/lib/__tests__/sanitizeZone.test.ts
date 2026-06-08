@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { sanitizeZone, sanitizeId, buildIdRemap } from "../sanitizeZone";
-import type { WorldFile } from "@/types/world";
+import type { ExitValue, WorldFile } from "@/types/world";
 
 // ─── sanitizeId ───────────────────────────────────────────────────
 
@@ -630,6 +630,38 @@ describe("sanitizeZone — output cleanup", () => {
 
     const result = sanitizeZone(world) as WorldFile;
     expect(result.puzzles!.sphinx!.backgroundImage).toBe("codex.webp");
+  });
+
+  it("preserves per-door layered art fields on output", () => {
+    const world: WorldFile = {
+      zone: "test",
+      startRoom: "room_a",
+      rooms: {
+        room_a: {
+          title: "A",
+          description: "A",
+          exits: {
+            east: {
+              to: "room_b",
+              door: {
+                initialState: "closed",
+                frameImage: "frame.webp",
+                leafImage: "leaf.webp",
+                hinge: "right",
+                openAngle: 120,
+              },
+            },
+          },
+        },
+        room_b: { title: "B", description: "B" },
+      },
+    };
+
+    const door = (sanitizeZone(world).rooms.room_a.exits!.east as ExitValue).door!;
+    expect(door.frameImage).toBe("frame.webp");
+    expect(door.leafImage).toBe("leaf.webp");
+    expect(door.hinge).toBe("right");
+    expect(door.openAngle).toBe(120);
   });
 
   it("strips legacy room audio field on output", () => {

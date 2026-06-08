@@ -556,6 +556,10 @@ function cleanDoor(door: DoorFile): DoorFile | undefined {
   if (door.keyConsumed != null) out.keyConsumed = door.keyConsumed;
   if (door.resetWithZone != null) out.resetWithZone = door.resetWithZone;
   if (door.respawnSeconds != null) out.respawnSeconds = door.respawnSeconds;
+  if (door.frameImage) out.frameImage = door.frameImage;
+  if (door.leafImage) out.leafImage = door.leafImage;
+  if (door.hinge) out.hinge = door.hinge;
+  if (door.openAngle != null) out.openAngle = door.openAngle;
   return Object.keys(out).length > 0 ? out : undefined;
 }
 

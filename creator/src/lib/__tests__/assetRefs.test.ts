@@ -89,4 +89,38 @@ describe("normalizeWorldAssetRefs", () => {
     expect(world.puzzles?.sphinx?.answer).toBe("footsteps");
     expect(world.puzzles?.sphinx?.reward.type).toBe("give_gold");
   });
+
+  it("normalizes an exit door's frame/leaf refs", () => {
+    const world = normalizeWorldAssetRefs({
+      zone: "tutorial_glade",
+      startRoom: "entrance",
+      rooms: {
+        entrance: {
+          title: "Entrance",
+          description: "",
+          exits: {
+            east: {
+              to: "hall",
+              door: {
+                initialState: "closed",
+                hinge: "right",
+                frameImage: "C:\\assets\\images\\frame.png",
+                leafImage: "/images/doors/leaf.png",
+              },
+            },
+            west: "outside",
+          },
+        },
+        hall: { title: "Hall", description: "" },
+      },
+    });
+
+    const east = world.rooms.entrance?.exits?.east;
+    const door = typeof east === "string" ? undefined : east?.door;
+    expect(door?.frameImage).toBe("frame.png");
+    expect(door?.leafImage).toBe("/images/doors/leaf.png");
+    // Non-image door fields and string exits survive untouched.
+    expect(door?.hinge).toBe("right");
+    expect(world.rooms.entrance?.exits?.west).toBe("outside");
+  });
 });

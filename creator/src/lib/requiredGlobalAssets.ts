@@ -170,6 +170,62 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     aspect: "portrait",
     optional: true,
   },
+  // World-default door art (layered, procedurally animated — the "Warded
+  // Threshold"). The leaf swings on its hinge over the static frame; the seal
+  // overlay glows while locked and shatters on unlock. A door may override the
+  // frame/leaf per-exit; the seal + backdrop are world-wide. All optional —
+  // each falls back to the polished CSS card when absent.
+  {
+    key: "door_frame",
+    defaultFilename: "door_frame.png",
+    label: "Default Door Frame",
+    description:
+      "World-default doorway frame drawn behind any door that doesn't define its own. The leaf swings within it. Optional.",
+    assetType: "door_frame",
+    defaultPrompt:
+      "A single empty doorway frame viewed straight head-on, an ornate arched portal with the opening hollow and empty, isolated as a sprite, no door panel, no wall, transparent background.",
+    transparent: true,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
+    key: "door_leaf",
+    defaultFilename: "door_leaf.png",
+    label: "Default Door Leaf",
+    description:
+      "World-default swinging door panel for any door that doesn't define its own. Rotates on its hinge between closed and open. Optional.",
+    assetType: "door_leaf",
+    defaultPrompt:
+      "A single closed door panel viewed straight head-on, a tall slab of timber with iron banding and a handle, isolated as a sprite, no surrounding frame, no wall, transparent background.",
+    transparent: true,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
+    key: "door_lock",
+    defaultFilename: "door_lock.png",
+    label: "Door Ward Seal",
+    description:
+      "Warded-seal overlay drawn over a locked door — a glowing rune-sigil that shatters into motes when the door is unlocked. Centered overlay. Optional; falls back to a CSS lock glyph.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single circular arcane ward-seal sigil, glowing concentric runic rings around a central locked glyph, centered, soft magical bloom, no door, no readable text, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "door_bg",
+    defaultFilename: "door_bg.png",
+    label: "Door Card Background",
+    description:
+      "Backdrop behind the door card — a threshold wall or passage. The framed door renders on top. Optional; falls back to a CSS panel.",
+    assetType: "background",
+    defaultPrompt:
+      "A dimly lit threshold wall of weathered stone or timber with a recessed alcove where a doorway sits, soft ambient torch glow, deep atmospheric depth, wide landscape backdrop, no door panel, no figures, no readable text.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
   {
     key: "dialog_indicator",
     defaultFilename: "dialog_indicator.png",

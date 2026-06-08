@@ -110,6 +110,10 @@ function normalizeDoorFile(door?: DoorFile): DoorFile | undefined {
   if (door.keyConsumed != null) normalized.keyConsumed = door.keyConsumed;
   if (door.resetWithZone != null) normalized.resetWithZone = door.resetWithZone;
   if (door.respawnSeconds != null) normalized.respawnSeconds = door.respawnSeconds;
+  if (door.frameImage) normalized.frameImage = door.frameImage;
+  if (door.leafImage) normalized.leafImage = door.leafImage;
+  if (door.hinge) normalized.hinge = door.hinge;
+  if (door.openAngle != null) normalized.openAngle = door.openAngle;
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }

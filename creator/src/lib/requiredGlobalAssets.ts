@@ -841,6 +841,48 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     aspect: "landscape",
     optional: true,
   },
+  // Who panel (online-player roster): a painted backdrop plus the two per-row
+  // action buttons (examine, send tell). All optional; each resolves authored
+  // key → CSS fallback.
+  {
+    key: "who_bg",
+    defaultFilename: "who_bg.png",
+    label: "Who Panel Background",
+    description:
+      "Fully painted backdrop for the who panel — the roster of online players. The name list and per-row action buttons overlay it. Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "An ornate carved-wood roster board backdrop filling the frame edge to edge — a grand timber frame wrapped in vines and wildflowers, brass fittings and corner studs, a soft hanging lantern glow, an open uncluttered central area where a list of player names overlays, warm magical light, wide landscape composition, no figures, no readable text.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "who_examine_btn",
+    defaultFilename: "who_examine_btn.png",
+    label: "Who — Examine Button",
+    description:
+      "Per-row button on the who panel that examines the selected player. The label/icon is rendered in CSS over it. Falls back to a carved CSS button.",
+    assetType: "ornament",
+    defaultPrompt:
+      "A single ornate carved-wood and brass UI button with a faceted blue gem and a faint magnifying-glass / eye motif, soft cool inner glow, isolated decorative button element, transparent background, blank face, no readable text.",
+    transparent: true,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "who_tell_btn",
+    defaultFilename: "who_tell_btn.png",
+    label: "Who — Send Tell Button",
+    description:
+      "Per-row button on the who panel that opens a private tell to the selected player. The label/icon is rendered in CSS over it. Falls back to a carved CSS button.",
+    assetType: "ornament",
+    defaultPrompt:
+      "A single ornate carved-wood and brass UI button with a faceted violet gem and a faint sealed-letter / speech-bubble motif, soft warm inner glow, isolated decorative button element, transparent background, blank face, no readable text.",
+    transparent: true,
+    aspect: "landscape",
+    optional: true,
+  },
   {
     key: "trainer_bg",
     defaultFilename: "trainer_bg.png",

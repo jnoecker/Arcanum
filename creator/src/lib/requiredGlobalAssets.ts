@@ -29,6 +29,12 @@ export interface RequiredGlobalAsset {
   transparent: boolean;
   /** Generation aspect ratio. Defaults to "square" (1024×1024) when omitted. */
   aspect?: "square" | "landscape" | "portrait";
+  /**
+   * Optional assets have a sensible built-in/derived fallback, so leaving them
+   * unassigned is not flagged as a validation warning. They still appear in the
+   * Global Assets panel so authors can override the default look.
+   */
+  optional?: boolean;
 }
 
 export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
@@ -85,6 +91,39 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     assetType: "ability_icon",
     defaultPrompt: "A single iron lever on a mounting plate, centered, soft outline.",
     transparent: true,
+  },
+  {
+    key: "feature_sign",
+    defaultFilename: "feature_sign.png",
+    label: "Sign Badge",
+    description: "Overlay placed on rooms that have a sign players can read.",
+    assetType: "ability_icon",
+    defaultPrompt: "A single hand-carved wooden signpost with a blank face, centered, soft outline, no text.",
+    transparent: true,
+  },
+  {
+    key: "lever_handle",
+    defaultFilename: "lever_handle.png",
+    label: "Default Lever Handle",
+    description:
+      "World-default handle sprite for any lever that doesn't define its own. Rotates around the pivot between the up (ready) and down (pulled) angles.",
+    assetType: "lever_handle",
+    defaultPrompt:
+      "A single ornate lever handle in a neutral upright pose, the grip at the top and the pivot/mount end at the bottom, isolated as a sprite, no mounting plate, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "lever_plate",
+    defaultFilename: "lever_plate.png",
+    label: "Default Lever Plate",
+    description:
+      "World-default mounting plate drawn behind any lever that doesn't define its own. Optional — the handle alone is enough.",
+    assetType: "lever_plate",
+    defaultPrompt:
+      "A single lever mounting plate viewed head-on with a central pivot socket where a handle would attach, isolated as a sprite, no handle arm, transparent background.",
+    transparent: true,
+    optional: true,
   },
   {
     key: "dialog_indicator",
@@ -939,9 +978,10 @@ export const REQUIRED_GLOBAL_ASSET_KEYS: ReadonlySet<string> = new Set(
   REQUIRED_GLOBAL_ASSETS.map((a) => a.key),
 );
 
-/** Returns the keys missing or unassigned (empty value) in the given map. */
+/** Returns the keys missing or unassigned (empty value) in the given map.
+ *  Optional assets (which have a built-in/derived fallback) are never reported. */
 export function missingRequiredGlobalAssets(
   assets: Record<string, string>,
 ): RequiredGlobalAsset[] {
-  return REQUIRED_GLOBAL_ASSETS.filter((a) => !assets[a.key]?.trim());
+  return REQUIRED_GLOBAL_ASSETS.filter((a) => !a.optional && !assets[a.key]?.trim());
 }

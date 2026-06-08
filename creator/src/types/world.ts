@@ -172,6 +172,22 @@ export interface FeatureFile {
   items?: string[];
   /** Text content for SIGN type. */
   text?: string;
+  /**
+   * LEVER art (layered, procedurally animated). The handle sprite rotates
+   * around `leverPivot` between `upAngle` and `downAngle`; the optional plate
+   * sprite is drawn behind it and never moves. All LEVER-only; renderers fall
+   * back to a built-in vector lever when `handleImage` is unset.
+   */
+  /** Static base/housing sprite filename, drawn behind the handle (optional). */
+  plateImage?: string;
+  /** Rotating handle sprite filename, drawn in a neutral upright pose (optional). */
+  handleImage?: string;
+  /** Pivot on the handle sprite as fractions [0..1] of its width/height. Default { x: 0.5, y: 0.94 }. */
+  leverPivot?: { x: number; y: number };
+  /** Handle rotation in degrees when the lever is "up" (ready). Default -28. */
+  upAngle?: number;
+  /** Handle rotation in degrees when the lever is "down" (pulled). Default 28. */
+  downAngle?: number;
 }
 
 /**

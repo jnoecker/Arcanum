@@ -124,6 +124,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         type: "panel",
         title: panel.label,
         subtitle: panel.description,
+        searchText: panel.searchText,
         action: () => openTab(panelTab(panel.id)),
       });
     }

@@ -36,6 +36,9 @@ export interface PanelDef {
   glyph?: string;
   /** Panel requires AI features and is hidden in the community build. */
   aiOnly?: boolean;
+  /** Extra terms matched by the command palette but not displayed — aliases,
+   *  former names, common synonyms. */
+  searchText?: string;
 }
 
 // ─── Studio panels ──────────────────────────────────────────────────
@@ -130,7 +133,7 @@ const OPERATIONS_PANELS: PanelDef[] = [
   { id: "services", label: "Services", host: "config", kicker: "Operations", title: "Services", description: "Provider API keys and per-project AI pipeline.", maxWidth: "max-w-5xl", island: "settings", glyph: "\u{1F511}" },
   { id: "r2Settings", label: "Cloudflare R2", host: "config", kicker: "Operations", title: "Cloudflare R2", description: "Asset CDN credentials for self-hosted deployments.", maxWidth: "max-w-5xl", island: "settings", glyph: "\u2601\uFE0F" },
   { id: "deployment", label: "Deployment", host: "config", kicker: "Operations", title: "Deployment", description: "Export, sync, and deploy your MUD.", maxWidth: "max-w-5xl", island: "spire", glyph: "\u{1F680}" },
-  { id: "sharedAssets", label: "Shared Assets", host: "config", kicker: "Operations", title: "Shared assets", description: "Global asset keys and image configuration.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F4E6}" },
+  { id: "sharedAssets", label: "Global Assets", host: "config", kicker: "Operations", title: "Global assets", description: "Global asset keys and image configuration.", maxWidth: "max-w-5xl", island: "livingWorld", glyph: "\u{1F4E6}", searchText: "shared assets" },
   { id: "rawYaml", label: "Raw YAML", host: "config", kicker: "Advanced", title: "Raw configuration", description: "Inspect or edit the exact serialized YAML when the structured editors are not enough.", maxWidth: "max-w-6xl", island: "settings", glyph: "\u{1F4DD}" },
   { id: "versionControl", label: "Version Control", host: "config", kicker: "Operations", title: "Version control", description: "Git status, commits, push/pull, and conflict resolution for standalone projects.", maxWidth: "max-w-5xl", island: "settings", glyph: "\u{1F33F}" },
   { id: "backup", label: "Backups", host: "command", kicker: "Operations", title: "Backups & Snapshots", description: "Autosave, periodic snapshots, and zip archives. A safety net beyond git.", maxWidth: "max-w-5xl", island: "settings", glyph: "\u{1F5C4}\uFE0F" },

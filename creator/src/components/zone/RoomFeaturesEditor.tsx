@@ -23,6 +23,7 @@ import {
   TextInput,
 } from "@/components/ui/FormWidgets";
 import { FEATURE_ICONS } from "@/assets/ui";
+import { LeverArtEditor } from "./LeverArtEditor";
 
 interface RoomFeaturesEditorProps {
   world: WorldFile;
@@ -235,7 +236,15 @@ const FeatureRow = memo(function FeatureRow({
         {type === "CONTAINER" && (
           <ContainerFields world={world} feature={feature} onPatch={patch} />
         )}
-        {type === "LEVER" && <LeverFields feature={feature} onPatch={patch} />}
+        {type === "LEVER" && (
+          <LeverFields
+            world={world}
+            roomId={roomId}
+            featureId={featureId}
+            feature={feature}
+            onPatch={patch}
+          />
+        )}
         {type === "SIGN" && <SignFields feature={feature} onPatch={patch} />}
       </div>
     </div>
@@ -380,9 +389,15 @@ function ContainerFields({ world, feature, onPatch }: ContainerFieldsProps) {
 }
 
 function LeverFields({
+  world,
+  roomId,
+  featureId,
   feature,
   onPatch,
 }: {
+  world: WorldFile;
+  roomId: string;
+  featureId: string;
   feature: FeatureFile;
   onPatch: (p: Partial<FeatureFile>) => void;
 }) {
@@ -413,6 +428,13 @@ function LeverFields({
           dense
         />
       </FieldRow>
+      <LeverArtEditor
+        world={world}
+        roomId={roomId}
+        featureId={featureId}
+        feature={feature}
+        onPatch={onPatch}
+      />
     </>
   );
 }

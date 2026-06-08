@@ -227,6 +227,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "door_portal",
+    defaultFilename: "door_portal.png",
+    label: "Door Portal",
+    description:
+      "Swirling portal shown in the doorway behind the leaf, revealed as the door opens. Fills the doorway opening (the frame and leaf composite on top). Global only; falls back to a CSS vortex.",
+    assetType: "background",
+    defaultPrompt:
+      "A swirling arcane portal vortex filling the frame — concentric rings of glowing energy spiraling into a luminous depth, soft magical bloom and drifting motes, cool blue-violet and warm aurum-gold tones, portrait composition sized to fill a doorway opening, no door, no frame, no figures, no readable text.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
     key: "dialog_indicator",
     defaultFilename: "dialog_indicator.png",
     label: "Dialog Indicator",

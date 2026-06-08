@@ -468,6 +468,8 @@ export interface RegenConfig {
   minIntervalMillis: number;
   regenPercent: number;
   inCombatMultiplier: number;
+  /** Regen multiplier applied in inn rooms (hp5/mp5 boost). Must be >= 1.0. Default 2.0. */
+  innMultiplier: number;
   mana: {
     baseIntervalMillis: number;
     minIntervalMillis: number;

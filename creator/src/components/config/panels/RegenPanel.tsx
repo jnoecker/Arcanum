@@ -52,6 +52,14 @@ export function RegenPanel({ config, onChange }: ConfigPanelProps) {
               step={0.05}
             />
           </FieldRow>
+          <FieldRow label="Inn Multiplier" hint="Multiplier applied to HP/MP regen in rooms flagged as inns. 2.0 doubles regen so resting at an inn is meaningfully faster. Must be >= 1.0.">
+            <NumberInput
+              value={r.innMultiplier}
+              onCommit={(v) => patch({ innMultiplier: v ?? 2.0 })}
+              min={1}
+              step={0.5}
+            />
+          </FieldRow>
         </div>
       </Section>
 

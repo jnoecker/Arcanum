@@ -1056,6 +1056,14 @@ export const FIELD_METADATA: Record<string, FieldMeta> = {
     max: 1,
     impact: "high",
   },
+  "regen.innMultiplier": {
+    label: "Inn Regen Multiplier",
+    description:
+      "Multiplier applied to HP/MP regen in rooms flagged as inns. 2.0 doubles regen so resting at an inn is meaningfully faster than the field. Must be >= 1.0.",
+    section: TuningSection.WorldSocial,
+    min: 1,
+    impact: "medium",
+  },
   "regen.mana.baseIntervalMillis": {
     label: "Mana Regen Base Interval",
     description: "Base milliseconds between mana regen ticks before stat reduction",

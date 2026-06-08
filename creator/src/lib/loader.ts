@@ -616,6 +616,7 @@ function parseRegenConfig(raw: unknown): AppConfig["regen"] {
     minIntervalMillis: asNumber(s.minIntervalMillis, 1000),
     regenPercent: asNumber(s.regenPercent, 0.05),
     inCombatMultiplier: asNumber(s.inCombatMultiplier, 0.5),
+    innMultiplier: asNumber(s.innMultiplier, 2.0),
     mana: {
       baseIntervalMillis: asNumber(mana.baseIntervalMillis, 3000),
       minIntervalMillis: asNumber(mana.minIntervalMillis, 1000),

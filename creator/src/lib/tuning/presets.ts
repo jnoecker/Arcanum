@@ -281,6 +281,7 @@ export const CASUAL_PRESET: TuningPreset = {
       minIntervalMillis: 800,
       regenPercent: 0.25,
       inCombatMultiplier: 0.6,
+      innMultiplier: 2.0,
       mana: {
         baseIntervalMillis: 3000,
         minIntervalMillis: 800,
@@ -625,6 +626,7 @@ export const BALANCED_PRESET: TuningPreset = {
       minIntervalMillis: 1000,
       regenPercent: 0.15,
       inCombatMultiplier: 0.33,
+      innMultiplier: 2.0,
       mana: {
         baseIntervalMillis: 4000,
         minIntervalMillis: 1000,
@@ -968,6 +970,7 @@ export const HARDCORE_PRESET: TuningPreset = {
       minIntervalMillis: 2800,
       regenPercent: 0.08,
       inCombatMultiplier: 0,
+      innMultiplier: 2.0,
       mana: {
         baseIntervalMillis: 5500,
         minIntervalMillis: 2800,
@@ -1115,7 +1118,7 @@ export const SOLO_STORY_PRESET: TuningPreset = {
     globalQuests: { enabled: true, intervalMs: 3600000, durationMs: 1800000 },
     // 7.5%/2000ms = 6 HP/s on a 160-HP starter — sandbox forgiveness.
     // In-combat multiplier 0.5 keeps boss fights from feeling trivial.
-    regen: { maxPlayersPerTick: 20, baseIntervalMillis: 2000, minIntervalMillis: 500, regenPercent: 0.075, inCombatMultiplier: 0.5, mana: { baseIntervalMillis: 2000, minIntervalMillis: 500, regenPercent: 0.067 } },
+    regen: { maxPlayersPerTick: 20, baseIntervalMillis: 2000, minIntervalMillis: 500, regenPercent: 0.075, inCombatMultiplier: 0.5, innMultiplier: 2.0, mana: { baseIntervalMillis: 2000, minIntervalMillis: 500, regenPercent: 0.067 } },
     worldTime: { cycleLengthMs: 1200000, dawnHour: 5, dayHour: 7, duskHour: 18, nightHour: 20 },
     weather: { minTransitionMs: 120000, maxTransitionMs: 300000 },
     group: { maxSize: 6, inviteTimeoutMs: 60000, xpBonusPerMember: 0.20 },
@@ -1198,7 +1201,7 @@ export const PVP_ARENA_PRESET: TuningPreset = {
     // 3.7%/4800ms ≈ 1.0 HP/s on a 135-HP starter — PvE recovery is light;
     // in-combat regen is disabled so PvP duels are decided by burst, not
     // by waiting out a regen war.
-    regen: { maxPlayersPerTick: 10, baseIntervalMillis: 4800, minIntervalMillis: 1300, regenPercent: 0.037, inCombatMultiplier: 0, mana: { baseIntervalMillis: 4800, minIntervalMillis: 1300, regenPercent: 0.032 } },
+    regen: { maxPlayersPerTick: 10, baseIntervalMillis: 4800, minIntervalMillis: 1300, regenPercent: 0.037, inCombatMultiplier: 0, innMultiplier: 2.0, mana: { baseIntervalMillis: 4800, minIntervalMillis: 1300, regenPercent: 0.032 } },
     worldTime: { cycleLengthMs: 1800000, dawnHour: 5, dayHour: 7, duskHour: 18, nightHour: 20 },
     weather: { minTransitionMs: 180000, maxTransitionMs: 600000 },
     group: { maxSize: 4, inviteTimeoutMs: 30000, xpBonusPerMember: 0.15 },
@@ -1280,7 +1283,7 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
     // 15%/1200ms = 25 HP/s on a 200-HP starter — explorer-grade self-healing.
     // In-combat multiplier 1.0 means combat is pure flavor; nothing short of
     // a boss can drop you.
-    regen: { maxPlayersPerTick: 25, baseIntervalMillis: 1200, minIntervalMillis: 280, regenPercent: 0.15, inCombatMultiplier: 1, mana: { baseIntervalMillis: 1200, minIntervalMillis: 280, regenPercent: 0.125 } },
+    regen: { maxPlayersPerTick: 25, baseIntervalMillis: 1200, minIntervalMillis: 280, regenPercent: 0.15, inCombatMultiplier: 1, innMultiplier: 2.0, mana: { baseIntervalMillis: 1200, minIntervalMillis: 280, regenPercent: 0.125 } },
     worldTime: { cycleLengthMs: 900000, dawnHour: 5, dayHour: 7, duskHour: 18, nightHour: 20 },
     weather: { minTransitionMs: 60000, maxTransitionMs: 180000 },
     group: { maxSize: 8, inviteTimeoutMs: 120000, xpBonusPerMember: 0.25 },

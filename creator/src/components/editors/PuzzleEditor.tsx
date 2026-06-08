@@ -22,6 +22,7 @@ import {
   CompactField,
 } from "@/components/ui/FormWidgets";
 import { DeleteEntityButton } from "./EditorShared";
+import { PuzzleBackgroundEditor } from "./PuzzleBackgroundEditor";
 
 interface PuzzleEditorProps {
   puzzleId: string;
@@ -361,6 +362,15 @@ export function PuzzleEditor({
             </FieldRow>
           )}
         </div>
+      </Section>
+
+      <Section title="Appearance" defaultExpanded={false}>
+        <PuzzleBackgroundEditor
+          world={world}
+          puzzleId={puzzleId}
+          puzzle={puzzle}
+          onPatch={patch}
+        />
       </Section>
 
       <Section title="Settings" defaultExpanded={false}>

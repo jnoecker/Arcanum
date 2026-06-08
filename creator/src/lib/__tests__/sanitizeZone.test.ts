@@ -610,6 +610,28 @@ describe("sanitizeZone — output cleanup", () => {
     expect(features.sign!.backgroundImage).toBe("sign_bg.webp");
   });
 
+  it("preserves a puzzle's backgroundImage on output", () => {
+    const world: WorldFile = {
+      zone: "test",
+      startRoom: "room_a",
+      rooms: {
+        room_a: { title: "A", description: "A" },
+      },
+      puzzles: {
+        sphinx: {
+          type: "riddle",
+          roomId: "room_a",
+          answer: "footsteps",
+          reward: { type: "give_gold", gold: 10 },
+          backgroundImage: "codex.webp",
+        },
+      },
+    };
+
+    const result = sanitizeZone(world) as WorldFile;
+    expect(result.puzzles!.sphinx!.backgroundImage).toBe("codex.webp");
+  });
+
   it("strips legacy room audio field on output", () => {
     const result = sanitizeZone(makeWorld({
       rooms: {

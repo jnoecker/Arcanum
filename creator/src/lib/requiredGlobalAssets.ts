@@ -777,6 +777,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: false,
     aspect: "landscape",
   },
+  {
+    key: "puzzle_bg",
+    defaultFilename: "puzzle_bg.png",
+    label: "Puzzle Codex Page",
+    description:
+      "Backdrop behind the puzzle card — the \"Conundrum Codex\". An open grimoire/parchment spread with a clear blank writable page; the riddle text and the answer input render on top. Falls back to a procedural tome page when absent. A puzzle may override its own via the per-puzzle background field.",
+    assetType: "background",
+    defaultPrompt:
+      "An open leather-bound grimoire viewed from above, two facing aged-parchment pages with a soft shadowed center gutter, a clean flat blank writable area in the center for a riddle and answer to overlay, warm paper with subtle fibers and gentle wear, faint arcane illumination and gilt flourishes in the margins, leather binding edges, no writing, no ruled lines, no figures, no readable text, suitable as a backdrop behind a riddle page.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
   // Terminal writing-desk: a desk-surface texture plus the resting quill.
   {
     key: "terminal_bg",

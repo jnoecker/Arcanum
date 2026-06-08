@@ -65,4 +65,28 @@ describe("normalizeWorldAssetRefs", () => {
     expect(world.rooms.entrance?.music).toBe("theme.mp3");
     expect(world.mobs?.guide?.image).toBe("/images/mobs/guide.png");
   });
+
+  it("normalizes a puzzle's backgroundImage ref", () => {
+    const world = normalizeWorldAssetRefs({
+      zone: "tutorial_glade",
+      startRoom: "entrance",
+      rooms: {
+        entrance: { title: "Entrance", description: "" },
+      },
+      puzzles: {
+        sphinx: {
+          type: "riddle",
+          roomId: "entrance",
+          answer: "footsteps",
+          reward: { type: "give_gold", amount: 10 },
+          backgroundImage: "C:\\assets\\images\\codex.png",
+        },
+      },
+    });
+
+    expect(world.puzzles?.sphinx?.backgroundImage).toBe("codex.png");
+    // Untouched fields survive the pass-through.
+    expect(world.puzzles?.sphinx?.answer).toBe("footsteps");
+    expect(world.puzzles?.sphinx?.reward.type).toBe("give_gold");
+  });
 });

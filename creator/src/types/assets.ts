@@ -297,6 +297,7 @@ export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; 
   container_bg: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   sign_bg: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   lever_bg: { width: 1024, height: 1536, label: "1024×1536 (Portrait)" },
+  puzzle_bg: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   ability: { width: 1024, height: 1024, label: "1024×1024 (Icon)" },
   shop: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   dungeon: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },

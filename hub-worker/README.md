@@ -34,9 +34,9 @@ npm run db:init:remote     # prod
 wrangler secret put HUB_ADMIN_KEY         # admin dashboard master key
 wrangler secret put RESEND_API_KEY        # transactional email (https://resend.com)
 wrangler secret put TURNSTILE_SECRET_KEY  # CF Turnstile (pair with TURNSTILE_SITE_KEY in [vars])
-wrangler secret put RUNWARE_API_KEY       # image generation
-wrangler secret put OPENROUTER_API_KEY    # text LLM
-wrangler secret put ANTHROPIC_API_KEY     # vision LLM
+wrangler secret put RUNWARE_API_KEY       # image generation (/ai/image/generate)
+wrangler secret put ANTHROPIC_API_KEY     # text + vision LLM — Claude Sonnet 4.6 (/ai/llm/*)
+wrangler secret put OPENROUTER_API_KEY    # legacy LLM fallback (text completion no longer routes here by default)
 wrangler secret put VOYAGE_API_KEY        # embeddings (/ai/embed, lore RAG)
 
 # Dev server on http://127.0.0.1:8787:

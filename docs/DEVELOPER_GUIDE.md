@@ -21,7 +21,7 @@ If you're a user trying to install and run Arcanum, the top-level [`README.md`](
 | Desktop shell | Tauri 2 (WebView2 on Windows) |
 | Frontend | React 19, TypeScript 5.8, Vite 6, Tailwind CSS 4 |
 | State | Zustand 5 + zundo (undo/redo middleware) |
-| Graphs | XY Flow (React Flow) + dagre |
+| Graphs | XY Flow (`@xyflow/react` 12) + dagre |
 | Rich text | TipTap 3 |
 | Maps | Leaflet 1.9 + react-leaflet 5 (CRS.Simple) |
 | Charts | Recharts 3 (used by the balance simulation lab) |
@@ -29,7 +29,9 @@ If you're a user trying to install and run Arcanum, the top-level [`README.md`](
 | Backend | Rust 2021 edition, Tokio, `reqwest`, `image`, `webp`, `ffmpeg-sidecar` |
 | Asset CDN | Cloudflare R2 (S3-compatible, AWS SigV4 signing — no SDK) |
 | Image generation | DeepInfra, Runware, OpenAI |
-| LLM | Anthropic Claude, OpenRouter |
+| LLM | Anthropic Claude, OpenRouter, OpenAI |
+| Embeddings (lore RAG) | Voyage AI (`voyage-3-lite`) |
+| Voice-over | ElevenLabs (NPC dialogue TTS) |
 | Testing | Vitest (data-layer only) |
 | Package managers | Bun (creator), npm (showcase / hub-worker / hub-admin) |
 | Fonts | Cinzel, Crimson Pro, JetBrains Mono (via Fontsource) |
@@ -56,10 +58,14 @@ If you're a user trying to install and run Arcanum, the top-level [`README.md`](
 Only required if you're touching the features that use them:
 
 - **DeepInfra / Runware / OpenAI** — image generation. API keys set in user settings inside the app.
-- **Anthropic** — Claude vision for map analysis. API key set in user settings.
-- **OpenRouter** — LLM prompt enhancement. API key set in user settings.
-- **Cloudflare R2** — asset CDN. Account ID, bucket, access key, secret, custom domain set in project settings.
+- **Anthropic** — Claude text + vision (map analysis, lore writing). API key set in user settings.
+- **OpenRouter / OpenAI** — LLM prompt enhancement and generation. API keys set in user settings.
+- **Voyage AI** — embeddings for the lore RAG index (`voyage-3-lite`). Key set in the Lore Index settings panel.
+- **ElevenLabs** — text-to-speech for NPC dialogue voice-over. Key set in user settings.
+- **Cloudflare R2** — asset CDN (images + voice clips). Account ID, bucket, access key, secret, custom domain set in project settings.
 - **Cloudflare D1 + Workers + Pages** — only if you're developing against the hub.
+
+All of these AI providers can be bypassed by enabling the **Hub AI proxy** (one Hub key routes image, LLM, vision, and embedding calls through the Hub's providers).
 
 None of these are needed to build and launch Arcanum. You can explore the full UI without any keys configured; only the AI and publishing features will be gated. For a keys-free build, see the Community Edition section below.
 
@@ -153,15 +159,15 @@ AmbonArcanum/
 ├── creator/                 # Arcanum desktop app
 │   ├── src/                 #   React frontend (TypeScript)
 │   │   ├── components/      #     UI — AppShell, editors, panels, lore, zone, wizard, ...
-│   │   ├── stores/          #     Zustand stores (~15 independent stores)
-│   │   ├── lib/             #     Pure utilities — YAML I/O, validation, prompt templates, edit functions
+│   │   ├── stores/          #     Zustand stores (~17 independent stores)
+│   │   ├── lib/             #     Pure utilities — YAML I/O, validation, prompt templates, edit functions, rag/ (lore embedding index)
 │   │   ├── types/           #     TypeScript types — mirrors the AmbonMUD server's YAML DTOs
 │   │   ├── assets/          #     Background images for UI surfaces
 │   │   ├── App.tsx          #     Root component (welcome vs AppShell)
 │   │   ├── main.tsx         #     Vite entry point
 │   │   └── index.css        #     Tailwind 4 + design tokens (@theme block)
 │   ├── src-tauri/           #   Rust backend
-│   │   ├── src/             #     Tauri commands (~30 modules)
+│   │   ├── src/             #     Tauri commands (~36 modules)
 │   │   ├── Cargo.toml
 │   │   └── tauri.conf.json  #     Window size, identifier, CSP, bundle config
 │   ├── package.json
@@ -233,15 +239,15 @@ Deep details live in [`CLAUDE.md`](../CLAUDE.md). The one-page version:
 
 **Frontend-heavy.** Most business logic is TypeScript — the Rust backend is a thin service layer (file I/O, HTTP clients, asset management, git operations, FFmpeg integration). They talk through Tauri's `invoke()` IPC with every command returning `Result<T, String>`.
 
-**Independent Zustand stores.** No middleware chaining, no cross-store subscriptions. Stores read each other via `useOtherStore.getState()` when they need to. Always select individual fields (`useProjectStore((s) => s.project)`), never the whole store — this is what prevents re-render cascades.
+**Independent Zustand stores.** ~17 of them, no middleware chaining, no cross-store subscriptions. Stores read each other via `useOtherStore.getState()` when they need to. Always select individual fields (`useProjectStore((s) => s.project)`), never the whole store — this is what prevents re-render cascades.
 
 **Unified undo/redo.** A single shared action dispatches Ctrl+Z/Ctrl+Y to whichever store owns the currently focused surface: zones use zundo (100-entry history), lore uses snapshot-based history (50 entries, via `snapshotLore(s)` inside `set()` callbacks), and stories/config plug into the same dispatcher. When adding a new undoable surface, wire it into the shared dispatcher — don't invent a new keyboard handler.
 
 **YAML is load-bearing.** Zone files and `application.yaml` are edited with the `yaml` package's CST mode so comments and field ordering survive round-trips. Loaders live in `creator/src/lib/loader.ts`; savers in `saveZone.ts` and `saveConfig.ts`.
 
-**Two project formats.** "Legacy" is a Gradle-based AmbonMUD checkout with a monolithic `application.yaml`. "Standalone" is a flat directory with 11 split config files plus `zones/<name>/zone.yaml`. The format is detected by the `validate_project` Rust command and every loader/saver dispatches on `project.format`.
+**Two project formats.** "Legacy" is a Gradle-based AmbonMUD checkout with a monolithic `application.yaml`. "Standalone" is a flat directory with split config under `config/` (11 entity files + 6 world-pool files; see `projectPaths.ts`) plus `zones/<name>/zone.yaml`. The format is detected by the `validate_project` Rust command and every loader/saver dispatches on `project.format`.
 
-**Panel registry drives navigation.** `creator/src/lib/panelRegistry.ts` defines ~60 panels across 7 groups. Each panel has a `host` type (`studio` / `config` / `lore` / `command`) that `MainArea.tsx` uses to route to the right container component.
+**Panel registry drives navigation.** `creator/src/lib/panelRegistry.ts` defines ~55 panels across 7 sidebar groups, each tagged with an `island` (the six World Map realms — arcanum, forge, loom, orrery, livingWorld, spire — plus `settings`). Each panel has a `host` type (`studio` / `config` / `lore` / `command`) that `MainArea.tsx` uses to route to the right container component. Navigation is via the World Map (Ctrl+M) island hotspots and the command palette (Ctrl+K); the left sidebar is for zone entities and lore articles.
 
 **Hub mode is transparent to the frontend.** `settings.use_hub_ai` is a user-level boolean. When on, the existing image/LLM/vision Tauri commands short-circuit to `hub_ai::*` before reaching their direct-provider code. The frontend doesn't branch on it.
 
@@ -253,14 +259,16 @@ A map of recent additions, in case you're trying to find one of them:
 
 | Feature | Primary location |
 |---|---|
-| Balance simulation lab (Tuning Wizard) | `creator/src/components/config/tuning/` + `tuningWizardStore` + `recharts` |
+| Balance simulation lab (Tuning Wizard) | `creator/src/components/tuning/` + `creator/src/lib/tuning/` + `tuningWizardStore` + `recharts` |
 | Showcase settings with AI art + live preview | `creator/src/components/config/panels/ShowcaseSettings*` + `exportShowcase.ts` |
-| World Planner (tab inside Maps panel) | `creator/src/components/lore/maps/WorldPlanner*` |
-| Offline backup (autosave, snapshots, zip) | `creator/src-tauri/src/project.rs` + backup scheduler in creator stores |
+| World Planner (tab inside Maps panel) | `creator/src/components/lore/WorldPlannerPanel.tsx` + `WorldPlannerMap.tsx` |
+| Offline backup (autosave, snapshots, zip) | `creator/src-tauri/src/snapshots.rs` + backup scheduler in creator stores |
 | Hub discovery (rich cards, OG meta, search) | `hub-worker/src/handlers/` + `showcase/src/pages/HubIndexPage.tsx` |
 | Unified undo/redo | shared dispatcher across `zoneStore`, `loreStore`, `storyStore`, `configStore` |
-| Playtest walker | `creator/src/components/zone/playtest/` |
-| Cross-zone entity search in command palette | `creator/src/components/command-palette/` |
+| Playtest walker | `creator/src/components/playtest/PlaytestPanel.tsx` |
+| Cross-zone entity search + cross-zone quest authoring | command palette UI + `questAuthoringStore` |
+| Lore RAG (embedding index over all lore) | `creator/src/lib/rag/` + `creator/src-tauri/src/embeddings.rs` + `rag.rs` |
+| Dialogue voice-over (ElevenLabs TTS) | `voiceStore` + `creator/src-tauri/src/elevenlabs.rs` + `voices.rs` + voice publish path in `r2.rs` |
 | Zone Layout Doctor | zone validation module + UI surface in the zone panel |
 | AI zone map generator | `creator/src-tauri/src/` image pipeline + zone art prompts |
 

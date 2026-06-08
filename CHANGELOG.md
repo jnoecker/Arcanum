@@ -4,9 +4,89 @@ All notable changes to Arcanum. Reconstructed from git history and release tags.
 
 This project uses ad-hoc semantic versioning — minor bumps for feature work, patch bumps for regressions and server-compat fixes.
 
-## [Unreleased]
+## [Unreleased] — v4.0 candidate
 
-_No unreleased changes at this time._
+The work since `v3.17.0` is a major release cycle: a full visual redesign around the six-island World Map, dialogue voice-over, a lore retrieval index (RAG) wired into every AI writing path, lore→gameplay scaffolding, and a combat/item authoring overhaul. Grouped by theme below; this section becomes `4.0.0` at tag time.
+
+### Added
+- **Dialogue voice-over** — synthesize NPC dialogue audio with ElevenLabs, with per-mob voice and delivery settings (sentence-pause control via break tags, per-voice slider defaults), and publish clips to R2 at a content-addressed hashed path so edited lines never serve stale audio. Voice config is emitted in the standalone MUD export. Backed by `voiceStore`, `elevenlabs.rs`, and `voices.rs`.
+- **Lore RAG index** — every article, timeline event, map pin, region, relationship, and entity description is chunked and embedded with Voyage AI (`voyage-3-lite`), stored locally per project, and auto-reindexed (debounced) on lore edits. Every AI writing path — article rewrite/generation, consistency audit, gap analysis, @mention suggestions, the "Ask your world" Archivist chat, and zone/quest generation — now retrieves from the index instead of stuffing the prompt. New Lore Index settings panel with rebuild/clear controls and status.
+- **Lore → gameplay scaffolding** — generate gameplay Class / Race, Talent / Creature Power, and a full zone directly from lore articles and the Lore Bible. Lore Ability split into Talent / Creature Power; Species/Profession split into Ancestry/Bestiary and Class/Occupation.
+- **Auto-derived World settings** — Overview, History, Geography, Magic System, Tech & Civilisation, and Visual Style are each auto-derived from lore, timeline, maps, and Forge art.
+- **OpenAI LLM provider** plus per-asset image-quality override.
+- **Large global-asset / HUD art pack** — minimap room stamps (per-terrain), torn-parchment minimap frames, vitals/room-sign HUD frames, inventory and mob action buttons, navigation compass, left-edge nav widgets, and themed panel backgrounds (shop, inn, trainer, journal, spellbook, quest board, mail, terminal, equipment, monster manual). Per-asset aspect ratio and horizontal-flip support for global asset slots.
+- **Item & combat authoring** — adaptive item stats (PRIMARY/SECONDARY/TERTIARY with skippable tertiary slot, 60/40 distribution), class `statPriorities`, accessory stat-budget readout, `itemType` / `questItem` / `takeable` / `healMana` fields, item rewards on quests (with turn-in-only quests), and a reworked melee combat formula with a zone level/mix wizard.
+- **Quest authoring** moved to a top-level cross-zone panel (`questAuthoringStore`); quest dialogue-flag gating and turn-in NPC override.
+- **Trainers folded into mobs** as a `role`, synthesized into the server-facing `trainers:` map on save. Mob templates split from spawn placements.
+- **Structured action picker** for dialogue choices; status-effect DOT/HOT tick-scaling preview mirroring the server.
+- **Sprite sheet export.**
+- **Per-entity `respawnSeconds`** on ground items, features, and doors.
+- **Standalone config split** — `world.yaml` split into thematic config files; `commands.yaml` made interchangeable with the MUD-side shape; lottery & dice-gambling config panels wired up.
+
+### Changed
+- **v4 visual redesign** — left sidebar rebuilt around the six islands (Arcanum, Forge, Loom, Orrery, Living World, Spire); world map and Loom art refreshed with a new hex layout; island maps wired as panel backgrounds. Article Editor redesigned around section-based composition (V2). Image generation consolidated into a unified Art Panel. Faction allegiance/reputation, timeline editor, Documents panel, World Settings, Housing, and Infrastructure panels all redesigned. Per-panel atmospheric art with an accessibility toggle. Default Claude model bumped to Sonnet 4.6.
+- **Tuning & balance** — zone rebalance rewritten as a deterministic restat with role + scaling awareness; multiclass, regen, sanctum/death tuning, and pet ratio scaling mirrored from the AmbonMUD server.
+- Ability damage/heal collapsed to a single field; spell/heal/buff schools unified onto one shape.
+
+### Fixed
+- Swept AI-slop / SaaS-dashboard tells and mojibake from visible surfaces across the creator.
+- ElevenLabs: retry transient 429/5xx, parse snake_case responses, survive deleted voices, restore generation status across restart.
+- Editor state no longer leaks across entities (RoomPanel/EntityPanel keyed by selection); atomic-write rename retries transient Windows `ERROR_ACCESS_DENIED`; R2 uploads retry with exponential backoff; vision calls compress images first (fixes >5 MB hub rejection).
+
+## [3.17.0] — 2026-05-08
+
+### Changed
+- Refreshed the world map and Loom art with a new hex layout.
+- Curated scene subjects for lore article art prompts.
+
+## [3.16.0] — 2026-05-08
+
+### Changed
+- Rebuilt the left sidebar around the six islands (Arcanum, Forge, Loom, Orrery, Living World, Spire).
+
+## [3.15.0] — 2026-05-08
+
+### Added
+- Quest dialogue-flag gating and a turn-in NPC override.
+
+### Changed
+- Split mob templates from spawn placements.
+- Sharpened the lore article art pipeline.
+
+### Fixed
+- Story sidebar; legacy `mob.room` migration now preserves key position.
+
+## [3.14.0] — 2026-04-25
+
+### Changed
+- Overhauled the zone rebalance wizard with role + scaling awareness.
+- Mirrored the MUD's sanctum-room and death tuning.
+- Slowed mob action cadence and eased skill-point pacing across presets.
+
+## [3.13.87] — 2026-04-23
+
+### Added
+- Rainbow butterflies drifting across the world map.
+
+## [3.12.0] — 2026-04-23
+
+### Added
+- `itemType` and `questItem` fields.
+
+## [3.11.0] — 2026-04-23
+
+### Fixed
+- Locked in archetype contract validation; corrected tuning presets to match verified AmbonMUD server semantics (including a preset that bloated `combat.maxDamage`).
+
+## [3.10.0] — 2026-04-23
+
+### Added
+- Inline editors for daily/weekly/global quest pools; daily/bounty/global quest knobs surfaced in Living World → Quests.
+- `MobRole` in the editor and validator; tier-computed mob stats surfaced with override flags.
+- Zone-level scaling and quest difficulty tiers surfaced in the editor.
+
+### Changed
+- Tightened diminishing returns across presets.
 
 ## [3.9.0] — 2026-04-22
 
@@ -38,6 +118,72 @@ _No unreleased changes at this time._
 
 ### Added
 - **Lore chat assistant ("Ask your world")** — a floating panel that answers natural-language questions about the current world by retrieving articles and relations and synthesising with the existing LLM dispatcher. Citations render as inline clickable links that open the referenced article. Reachable via Ctrl+/, the command palette, and a button in the lore toolbar. Conversation history persists per-world in `lore.yaml`.
+
+## [3.4.1] — 2026-04-16
+
+### Fixed
+- Tightened toolbar + sidebar layout for narrow widths.
+
+## [3.4.0] — 2026-04-16
+
+### Added
+- **Per-world output language** for AI text generation — generated lore and prose can target a language other than English.
+
+## [3.3.0] — 2026-04-16
+
+### Added
+- **Hub self-registration** — public signup and account management: in-app signup in onboarding, landing signup + account pages on the showcase, account status + upgrade flow in the creator settings panel. Hub gains signup/account endpoints and gates publish on email verification.
+- **Playtester tier** with decoupled quotas, plus GDPR self-delete.
+
+## [3.2.0] — 2026-04-16
+
+### Added
+- Linked lore articles are now fed into the zone generator for richer, world-consistent output.
+
+## [3.1.0] — 2026-04-16
+
+### Added
+- Generate a rich zone directly from a World Planner plan.
+
+### Changed
+- Replaced playtest panel emojis with Arcanum placeholder art.
+
+## [3.0.1] — 2026-04-16
+
+### Changed
+- Moved timeline era colors to CSS custom properties; lore fallback prompts defer to the world visual style.
+
+### Removed
+- Orphaned `serverStore`, `FactionsPanel`, and `LoreCodexPanel`.
+
+## [3.0.0] — 2026-04-15
+
+### Added
+- **World Planner overhaul** — region workshop and sketch canvas for planning zones, factions, and arcs before building them.
+
+### Changed
+- Detheme the showcase player + page surfaces; responsive pass on touch targets, table reflow, mobile grid steps, and scroll viewport.
+
+## [2.13.0] — 2026-04-15
+
+### Changed
+- Onboarding, accessibility, lore typography, theming tokens, and welcome-screen restraint polish (rolls in the internal 2.12.0 a11y/responsive pass).
+
+## [2.11.0] — 2026-04-15
+
+### Fixed
+- Modal accessibility and hub-admin visual alignment.
+
+## [2.10.0] — 2026-04-15
+
+### Added
+- **First-class factions & reputation** — reputation factions, enemy relationships, and quest rewards. (Server-side consumption tracked separately; shipped server-side in a later cycle.)
+- **Grid-first zone generation** with up/down layout handling, duplicate-zone + AI retheme, and a text↔layout doctor check.
+
+### Fixed
+- Lay out up/down-connected floors as separate islands.
+- Persist keyboard room/exit deletions to the `WorldFile`.
+- Maps/World Planner pill styling.
 
 ## [2.5.0] — 2026-04-14
 
@@ -240,7 +386,31 @@ Arcanum was bootstrapped in March 2026 as the creator tool for AmbonMUD. The pre
 
 From there the feature set broadened into art generation, lore articles, maps, timeline, relationship graph, tuning wizard, story editor, showcase publishing, Hub infrastructure, and the modern multi-realm shell — all before the 1.0 release candidate.
 
-[Unreleased]: https://github.com/jnoecker/AmbonArcanum/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/jnoecker/AmbonArcanum/compare/v3.17.0...HEAD
+[3.17.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.17.0
+[3.16.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.16.0
+[3.15.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.15.0
+[3.14.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.14.0
+[3.13.87]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.13.87
+[3.12.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.12.0
+[3.11.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.11.0
+[3.10.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.10.0
+[3.9.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.9.0
+[3.8.1]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.8.1
+[3.8.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.8.0
+[3.7.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.7.0
+[3.6.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.6.0
+[3.5.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.5.0
+[3.4.1]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.4.1
+[3.4.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.4.0
+[3.3.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.3.0
+[3.2.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.2.0
+[3.1.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.1.0
+[3.0.1]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.0.1
+[3.0.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v3.0.0
+[2.13.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v2.13.0
+[2.11.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v2.11.0
+[2.10.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v2.10.0
 [2.5.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v2.5.0
 [2.4.0]: https://github.com/jnoecker/AmbonArcanum/releases/tag/2.4.0
 [2.3.2]: https://github.com/jnoecker/AmbonArcanum/releases/tag/v2.3.2

@@ -862,12 +862,11 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     defaultFilename: "who_examine_btn.png",
     label: "Who — Examine Button",
     description:
-      "Per-row button on the who panel that examines the selected player. The label/icon is rendered in CSS over it. Falls back to a carved CSS button.",
+      "Small square per-row button on the who panel that examines the selected player. Falls back to a carved CSS button.",
     assetType: "ornament",
     defaultPrompt:
-      "A single ornate carved-wood and brass UI button with a faceted blue gem and a faint magnifying-glass / eye motif, soft cool inner glow, isolated decorative button element, transparent background, blank face, no readable text.",
+      "A single small square carved-wood and brass UI button with a centered magnifying-glass / eye motif and a cool blue gem accent, soft inner glow, isolated decorative button element, transparent background, no readable text.",
     transparent: true,
-    aspect: "landscape",
     optional: true,
   },
   {
@@ -875,12 +874,22 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     defaultFilename: "who_tell_btn.png",
     label: "Who — Send Tell Button",
     description:
-      "Per-row button on the who panel that opens a private tell to the selected player. The label/icon is rendered in CSS over it. Falls back to a carved CSS button.",
+      "Small square per-row button on the who panel that opens a private tell to the selected player. Falls back to a carved CSS button.",
     assetType: "ornament",
     defaultPrompt:
-      "A single ornate carved-wood and brass UI button with a faceted violet gem and a faint sealed-letter / speech-bubble motif, soft warm inner glow, isolated decorative button element, transparent background, blank face, no readable text.",
+      "A single small square carved-wood and brass UI button with a centered sealed-letter / speech-bubble motif and a warm violet gem accent, soft inner glow, isolated decorative button element, transparent background, no readable text.",
     transparent: true,
-    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "who_widget",
+    defaultFilename: "who_widget.png",
+    label: "Who Panel",
+    description: "Services-menu nav button that opens the who panel (online-player roster). Optional; falls back to a CSS button.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single roster / list-of-people icon — a small parchment scroll with a row of tiny figures or names, centered, soft outline, transparent background.",
+    transparent: true,
     optional: true,
   },
   {

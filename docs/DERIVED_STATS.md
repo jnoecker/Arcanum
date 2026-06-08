@@ -1,5 +1,33 @@
 # Derived Stats — Authoring Design
 
+> **Status (mostly shipped).** The core of this plan is implemented. The rest
+> of this document is the original design rationale, kept because the budget
+> math and calibration targets are still the reference. What actually shipped,
+> and where it diverged from the first draft below:
+>
+> - **Item authoring** — implemented as `tier` + `archetype` +
+>   `primaryStat`/`secondaryStat`/`tertiaryStat` (the "Item authoring shape"
+>   section), **not** the `rarity` + `role` taxonomy floated later in "Item
+>   authoring — proposed shape". Derivation lives in
+>   `creator/src/lib/tuning/itemBudget.ts` (`deriveItemStats`), wired into the
+>   item editor; tertiary slot is skippable (60/40). `ItemFile` carries
+>   `level`, `tier`, `archetype`, and the three stat slots
+>   (`creator/src/types/world.ts`).
+> - **Mob authoring** — implemented as a single `toughness` dial
+>   (`-2…+2` → `hpMult`/`dmgMult`/`xpMult`/`goldMult`) in
+>   `creator/src/lib/mobToughness.ts`, with the four raw mults behind a
+>   power-user disclosure.
+> - **Level scaling** — switched to multiplicative; see
+>   [`MULTIPLICATIVE_SCALING_SPEC.md`](MULTIPLICATIVE_SCALING_SPEC.md)
+>   (shipped server-side).
+> - **Server contract** — AmbonMUD round-trips the new item metadata fields as
+>   opaque data (`ItemFile.kt`). **Pending:** the mob `hpMult/dmgMult/xpMult/
+>   goldMult` fields are written by Arcanum but not yet added to the server's
+>   `MobFile` — harmless until the server consumes them.
+>
+> Treat the calibration tables and budget formula below as authoritative;
+> treat the "proposed shape" / "open questions" sections as historical.
+
 Arcanum is an authoring tool. AmbonMUD is a game server. The two have opposite
 shapes:
 

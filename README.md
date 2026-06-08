@@ -106,7 +106,7 @@ No account is required for either edition. If you don't want to manage AI provid
 
 ### Worldbuilding & lore
 
-- **Articles** built on a rich-text editor, with 11 built-in templates (character, location, organization, species, event, language, profession, ability, item, world setting, freeform) plus your own custom templates. @mention any other article to link them.
+- **Articles** built on a rich-text editor, with a dozen built-in templates (character, location, organization, ancestry, bestiary, class, occupation, item, event, language, world setting, freeform) plus a cinematic story format and your own custom templates. @mention any other article to link them.
 - **Interactive maps** — upload an image, drop colored pins linked to articles, and optionally let Claude vision analyze the map for you.
 - **Timeline** — calendar systems with named eras and importance-weighted events. AI can infer the timeline from article content.
 - **Relationship graph** — every @mention and explicit relation (allies, rivals, parent/child, affiliations) becomes an edge in an auto-laid-out visualization.
@@ -135,6 +135,7 @@ No account is required for either edition. If you don't want to manage AI provid
 - **World-defined visual style** — every project declares its own art style, and that style is folded into the prompt for every generated image so your world stays visually coherent.
 - **Dedicated studios** for portraits, ability icons, zone backgrounds, sprites, housing interiors, and AI-illustrated zone maps generated from their actual room data.
 - **Live-preview showcase settings** — tune your published site's art and hero imagery with an AI art generator that previews the result in-place.
+- **Dialogue voice-over** — synthesize spoken audio for NPC dialogue with ElevenLabs, with per-character voice and delivery settings, and publish the clips to your CDN alongside your art.
 - **Asset gallery** with type/zone filters, variant grouping, and one-click Cloudflare R2 sync for serving images from your own CDN.
 
 ### Retrieval-augmented writing (Full Edition)

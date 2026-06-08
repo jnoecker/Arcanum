@@ -1562,7 +1562,12 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       classStartRooms: parseClassStartRooms(worldRaw.classStartRooms),
       navigation: parseNavigationConfig(worldRaw.navigation),
       death: parseDeathConfig(worldRaw.death),
-      commands: withDefaults(asRecord(worldRaw.commands), DEFAULT_COMMANDS),
+      // Accept both the server's wrapped shape ({ entries: {...} }) and the
+      // flat map older split saves wrote
+      commands: withDefaults(
+        asRecord((worldRaw.commands as Record<string, unknown> | undefined)?.entries ?? worldRaw.commands),
+        DEFAULT_COMMANDS,
+      ),
       group: parseSimpleSection(worldRaw.group, { maxSize: 5, inviteTimeoutMs: 60000, xpBonusPerMember: 0.1 }),
       housing: parseHousingConfig(worldRaw.housing),
       bank: parseBankConfig(worldRaw.bank),

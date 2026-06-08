@@ -70,6 +70,20 @@ function BasicDetailsCard({
           </p>
         </FieldLabel>
 
+        <div className="md:col-span-2">
+          <FieldLabel label="Description">
+            <TextInput
+              value={cmd.description ?? ""}
+              onCommit={(v) => onPatch({ description: v || undefined })}
+              placeholder="What this command does"
+              dense
+            />
+            <p className="mt-0.5 text-2xs text-text-muted/70">
+              Shown to players in <code>help</code> output.
+            </p>
+          </FieldLabel>
+        </div>
+
         <FieldLabel label="Category" required>
           <SelectInput
             value={cmd.category}
@@ -203,9 +217,11 @@ function HelpPreviewCard({ id, cmd }: { id: string; cmd: CommandEntryConfig }) {
         {cmd.staff && (
           <p className="mt-1 text-warm">[Staff only]</p>
         )}
-        <p className="mt-2 text-text-muted/80">
-          Displays available help topics and command information.
-        </p>
+        {cmd.description ? (
+          <p className="mt-2 text-text-muted/80">{cmd.description}</p>
+        ) : (
+          <p className="mt-2 italic text-text-muted/50">No description set.</p>
+        )}
       </div>
       <p className="mt-2 text-2xs text-text-muted/70">
         Live preview of how players will see this command in <code>help</code>.

@@ -222,7 +222,13 @@ function CommandRow({ id, cmd, selected, onSelect }: CommandRowProps) {
             )}
           </div>
           <div className="mt-0.5 flex items-center gap-2 text-2xs text-text-muted/80">
-            <span className="truncate">{cmd.category || "—"}</span>
+            <span className="shrink-0">{cmd.category || "—"}</span>
+            {cmd.description && (
+              <>
+                <span aria-hidden="true" className="shrink-0 text-text-muted/40">·</span>
+                <span className="truncate text-text-muted/60">{cmd.description}</span>
+              </>
+            )}
           </div>
         </div>
       </button>

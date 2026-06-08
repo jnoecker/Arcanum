@@ -983,6 +983,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     aspect: "landscape",
     optional: true,
   },
+  {
+    key: "character_scribe_bg",
+    defaultFilename: "character_scribe_bg.png",
+    label: "Character Scribe Page",
+    description:
+      "Parchment/tome page the describe editor opens onto, where the player writes their character's roleplay tale. The text area renders over the writable page. Falls back to a procedural parchment when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "An open aged-parchment tome page filling the frame edge to edge — warm paper with soft fibers, faint stains and gentle wear, a clean blank writable area in the center, a delicate carved-wood and leaf border with faint gilt flourishes at the margins, soft ambient light, wide landscape composition, no writing, no ruled lines, no figures, no readable text, suitable as a backdrop behind a character description editor.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
   // Inn (recall) modal: a card backdrop plus the hangable key.
   {
     key: "inn_bg",

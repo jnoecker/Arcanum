@@ -842,6 +842,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "guild_bg",
+    defaultFilename: "guild_bg.png",
+    label: "Guild Panel Background",
+    description:
+      "Fully painted frame/backdrop for the guild panel. A carved-wood frame around an aged-parchment center where the guild roster and info overlay. Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "An ornate carved-wood frame backdrop filling the frame edge to edge — dark timber wrapped in moonlit vines and night-blooming wildflowers, brass fittings and corner studs, a soft hanging lantern glow, an aged-parchment central area where a guild roster overlays, cool night-fae tones with warm lantern accents, wide landscape composition, no figures, no readable text.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
     key: "trainer_bg",
     defaultFilename: "trainer_bg.png",
     label: "Trainer Board Texture",

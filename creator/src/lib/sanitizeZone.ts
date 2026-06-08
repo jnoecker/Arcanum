@@ -114,6 +114,8 @@ function normalizeDoorFile(door?: DoorFile): DoorFile | undefined {
   if (door.leafImage) normalized.leafImage = door.leafImage;
   if (door.hinge) normalized.hinge = door.hinge;
   if (door.openAngle != null) normalized.openAngle = door.openAngle;
+  if (door.leafScale != null) normalized.leafScale = door.leafScale;
+  if (door.leafOffsetY != null) normalized.leafOffsetY = door.leafOffsetY;
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }

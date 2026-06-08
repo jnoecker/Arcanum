@@ -438,6 +438,17 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
+    key: "chat_widget",
+    defaultFilename: "chat_widget.png",
+    label: "Chat Board",
+    description: "Services-menu nav button that opens the chat panel (the \"Social Board\"). Optional; falls back to a CSS button.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single small carved-wood bulletin / notice board with a pinned parchment note and a tiny quill, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
     key: "crafting_widget",
     defaultFilename: "crafting_widget.png",
     label: "Crafting Panel",
@@ -800,6 +811,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     assetType: "background",
     defaultPrompt:
       "A dim treasury vault interior filling the frame edge to edge — polished marble walls and floor, gleaming brass fittings and a great round vault door suggested in the background, rows of safety-deposit drawers along one side, warm aurum-gold light pooling softly, deep secure atmosphere, no coins in focus, no figures, no readable text, suitable as a backdrop behind a bank panel.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "chat_bg",
+    defaultFilename: "chat_bg.png",
+    label: "Chat Board Background",
+    description:
+      "Fully painted backdrop for the chat panel — the \"Social Board\". A carved-wood notice board; the channel buttons, message log, and input overlay it. Bakes in the non-interactive chrome (frame, lantern, pinned notes). Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "An ornate carved-wood social notice board backdrop filling the frame edge to edge — a grand timber frame wrapped in vines and wildflowers, a glowing hanging lantern, pinned aged-parchment notes, brass fittings and corner studs, warm magical light, an open uncluttered dark center where chat channels and a message log overlay, wide landscape composition, no figures, no readable text.",
     transparent: false,
     aspect: "landscape",
     optional: true,

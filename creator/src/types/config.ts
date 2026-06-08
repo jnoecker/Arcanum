@@ -707,6 +707,8 @@ export interface DeathConfig {
 
 export interface CommandEntryConfig {
   usage: string;
+  /** Shown to players in the in-game help output. */
+  description?: string;
   category: string;
   staff: boolean;
 }

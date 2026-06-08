@@ -125,6 +125,51 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
     optional: true,
   },
+  // World-default backdrops for the three interactive room features. Each is
+  // an optional full-card background the web client draws behind the feature
+  // (the container's contents, the sign's text, or the lever's plate+handle
+  // sit on top). A feature may override its own via the per-feature
+  // `backgroundImage` field; resolution is backgroundImage → <type>_bg →
+  // polished CSS fallback, so leaving these blank is fine.
+  {
+    key: "container_bg",
+    defaultFilename: "container_bg.png",
+    label: "Container Background",
+    description:
+      "World-default backdrop for the container card. An open chest works best — lid/back up top, open interior cavity in the lower ~55% where the contents list overlays. Optional; falls back to a CSS panel.",
+    assetType: "background",
+    defaultPrompt:
+      "An open treasure chest viewed head-on, the raised lid and curved back filling the upper portion, a deep open interior cavity occupying the lower 55% of the frame as a clear flat area for an items list to overlay, ornate iron banding and warm wood, soft ambient glow from within, centered composition, wide landscape backdrop, no items inside, no readable text.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "sign_bg",
+    defaultFilename: "sign_bg.png",
+    label: "Sign Background",
+    description:
+      "World-default backdrop for the sign card. A carved sign board or placard with a clear central writable area and a decorative frame — the sign text renders over the writable area. Optional; falls back to a CSS panel.",
+    assetType: "background",
+    defaultPrompt:
+      "A hand-carved wooden sign board or weathered placard centered in frame, a clean flat blank central panel for text to overlay, a decorative carved border of vines and flourishes framing the edges, warm aged wood, soft ambient light, wide landscape backdrop, blank face, no readable text, no letters.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "lever_bg",
+    defaultFilename: "lever_bg.png",
+    label: "Lever Background",
+    description:
+      "World-default backdrop box the lever sits inside — the plate and handle sprites render on top. Leave the center open. Optional; falls back to a CSS gradient.",
+    assetType: "background",
+    defaultPrompt:
+      "A decorative recessed backdrop box or alcove in portrait orientation, an open uncluttered center where a lever mechanism mounts, ornate carved stone or wood framing around the edges, soft ambient inner glow, warm muted tones, no lever, no handle, no readable text.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
   {
     key: "dialog_indicator",
     defaultFilename: "dialog_indicator.png",

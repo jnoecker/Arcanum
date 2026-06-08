@@ -570,6 +570,46 @@ describe("sanitizeZone — output cleanup", () => {
     expect(lever.downAngle).toBe(32);
   });
 
+  it("preserves per-feature backgroundImage on every feature type", () => {
+    const world: WorldFile = {
+      zone: "test",
+      startRoom: "room_a",
+      rooms: {
+        room_a: {
+          title: "A",
+          description: "A",
+          features: {
+            chest: {
+              type: "CONTAINER",
+              displayName: "a curio chest",
+              keyword: "chest",
+              items: ["coin"],
+              backgroundImage: "chest_bg.webp",
+            },
+            lever: {
+              type: "LEVER",
+              displayName: "a brass lever",
+              keyword: "lever",
+              backgroundImage: "lever_bg.webp",
+            },
+            sign: {
+              type: "SIGN",
+              displayName: "a carved sign",
+              keyword: "sign",
+              text: "Beware",
+              backgroundImage: "sign_bg.webp",
+            },
+          },
+        },
+      },
+    };
+
+    const features = sanitizeZone(world).rooms.room_a.features!;
+    expect(features.chest!.backgroundImage).toBe("chest_bg.webp");
+    expect(features.lever!.backgroundImage).toBe("lever_bg.webp");
+    expect(features.sign!.backgroundImage).toBe("sign_bg.webp");
+  });
+
   it("strips legacy room audio field on output", () => {
     const result = sanitizeZone(makeWorld({
       rooms: {

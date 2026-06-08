@@ -99,11 +99,12 @@ export function normalizeWorldAssetRefs(world: WorldFile): WorldFile {
         audio: normalizeAssetRef(room.audio),
         features: room.features
           ? mapEntries(room.features, (feature) =>
-              feature.plateImage || feature.handleImage
+              feature.plateImage || feature.handleImage || feature.backgroundImage
                 ? compactObject({
                     ...feature,
                     plateImage: normalizeAssetRef(feature.plateImage),
                     handleImage: normalizeAssetRef(feature.handleImage),
+                    backgroundImage: normalizeAssetRef(feature.backgroundImage),
                   })
                 : feature)
           : undefined,

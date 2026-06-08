@@ -854,6 +854,17 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "friends_widget",
+    defaultFilename: "friends_widget.png",
+    label: "Friends Panel",
+    description: "Services-menu nav button that opens the friends panel. Optional; falls back to a CSS button.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single pair of friendly person silhouettes standing side by side, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
     key: "chat_bg",
     defaultFilename: "chat_bg.png",
     label: "Chat Board Background",

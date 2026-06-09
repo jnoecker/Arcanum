@@ -1164,6 +1164,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "admin_bg",
+    defaultFilename: "admin_bg.png",
+    label: "Staff Admin Background",
+    description:
+      "Fully painted backdrop for the staff admin / control panel — a regal celestial cathedral. The admin controls and readouts overlay it. Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A regal celestial-cathedral backdrop filling the frame edge to edge — deep midnight-blue with ornate gold filigree framing, tall blue-and-violet stained-glass arched windows, winged sigil emblems, glowing crescent moons and a golden star compass, a faint starfield and soft gilt sparkles, an open uncluttered dark center where admin controls overlay, authoritative cool blue-and-gold glow, no figures, no readable text, suitable as a backdrop behind a staff control panel.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
     key: "dice_bg",
     defaultFilename: "dice_bg.png",
     label: "Dice Table Background",

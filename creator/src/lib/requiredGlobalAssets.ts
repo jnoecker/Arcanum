@@ -1125,6 +1125,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "auction_bg",
+    defaultFilename: "auction_bg.png",
+    label: "Auction House Background",
+    description:
+      "Fully painted backdrop for the auction house panel — a celestial midnight-fae hall. The inventory, selected-item, and listings panels overlay it. Falls back to the procedural panel when absent. (The auction_hall_widget icon doubles as the panel emblem.)",
+    assetType: "background",
+    defaultPrompt:
+      "A celestial midnight-fae auction hall backdrop filling the frame edge to edge — deep midnight-blue tones, ornate silver filigree and silver leafy vines framing the edges, a glowing crescent-moon emblem, floating violet and blue crystals, brass scales, candles and draped curtains, faint starfield and drifting motes, open uncluttered dark panel areas in the center where listing panels overlay, cool silver-and-violet glow, no figures, no readable text, suitable as a backdrop behind an auction house panel.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
     key: "dice_bg",
     defaultFilename: "dice_bg.png",
     label: "Dice Table Background",

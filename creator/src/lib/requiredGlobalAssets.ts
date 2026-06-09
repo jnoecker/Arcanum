@@ -979,6 +979,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "stylist_bg",
+    defaultFilename: "stylist_bg.png",
+    label: "Stylist Panel Background",
+    description:
+      "Fully painted backdrop for the stylist panel (appearance / race change) — the velvet purple dressing room. An ornate standing mirror amid draped fabric; the style options overlay the center. Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A plush velvet dressing-room backdrop filling the frame edge to edge — deep amethyst and violet tones, richly draped curtains and fabric, a tall ornate gilt-framed standing mirror, soft ambient glow with faint starlight sparkles on the glass, gentle atmospheric depth, an open uncluttered center where style options overlay, no figures, no reflection of a person, no readable text, suitable as a backdrop behind a stylist panel.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
     key: "group_widget",
     defaultFilename: "group_widget.png",
     label: "Group Panel",

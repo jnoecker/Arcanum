@@ -953,6 +953,30 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "group_bg",
+    defaultFilename: "group_bg.png",
+    label: "Group Panel Background",
+    description:
+      "Fully painted backdrop for the group/party panel. A carved-wood frame around an aged-parchment center where the party roster overlays. Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "An ornate carved-wood frame backdrop filling the frame edge to edge — dark timber wrapped in moonlit vines and night-blooming wildflowers, brass fittings and corner studs, a soft hanging lantern glow, an aged-parchment central area where a party roster overlays, cool night-fae tones with warm lantern accents, wide landscape composition, no figures, no readable text.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "group_widget",
+    defaultFilename: "group_widget.png",
+    label: "Group Panel",
+    description: "Services-menu nav button that opens the group/party panel. Optional; falls back to a CSS button.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single small party of three adventurer silhouettes grouped together, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
     key: "trainer_bg",
     defaultFilename: "trainer_bg.png",
     label: "Trainer Board Texture",

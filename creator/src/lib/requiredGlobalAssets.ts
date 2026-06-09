@@ -1137,6 +1137,164 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     aspect: "landscape",
     optional: true,
   },
+  // The Children of Aineroira — the dice for the dice game. Each die has a
+  // themed sprite plus an illustrated "max" face shown when it rolls its
+  // highest value. Two large (d20), two medium (d16), two small (d8), plus the
+  // Luneqrae coin (two faces). All optional sprites; fall back to CSS dice.
+  {
+    key: "dice_ophirae",
+    defaultFilename: "dice_ophirae.png",
+    label: "Dice — Ophirae (d20)",
+    description: "Large die (d20) for the dice game — whalebone, child of Aineroira. Its max face is the eastern dragon.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single large twenty-sided die (d20) carved from pale whalebone, smooth ivory tones with fine scrimshaw etching, isolated game sprite, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "dice_ophirae_max",
+    defaultFilename: "dice_ophirae_max.png",
+    label: "Dice — Ophirae Max (Dragon)",
+    description: "Ophirae's max face — shown when the d20 rolls its highest value.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single illustrated die face — a coiling eastern dragon emblem in scrimshaw style on a pale whalebone-ivory face, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "dice_mycorae",
+    defaultFilename: "dice_mycorae.png",
+    label: "Dice — Mycorae (d20)",
+    description: "Large die (d20) for the dice game — moss-green, fungal, root-carved, child of Aineroira. Its max face is the mushroom.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single large twenty-sided die (d20) carved from mossy root-wood, moss-green with tiny fungal growths and lichen across organic root-carved facets, isolated game sprite, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "dice_mycorae_max",
+    defaultFilename: "dice_mycorae_max.png",
+    label: "Dice — Mycorae Max (Mushroom)",
+    description: "Mycorae's max face — shown when the d20 rolls its highest value.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single illustrated die face — a glowing mushroom emblem on a mossy root-carved green face, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "dice_pyrae",
+    defaultFilename: "dice_pyrae.png",
+    label: "Dice — Pyrae (d16)",
+    description: "Medium die (d16) for the dice game — ember-red with flame-lit numerals, child of Aineroira. Its max face is the phoenix.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single medium sixteen-sided die (d16) of ember-red stone with glowing flame-lit numerals and a warm fiery glow, isolated game sprite, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "dice_pyrae_max",
+    defaultFilename: "dice_pyrae_max.png",
+    label: "Dice — Pyrae Max (Phoenix)",
+    description: "Pyrae's max face — shown when the d16 rolls its highest value.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single illustrated die face — a rising phoenix emblem in flame-lit gold on an ember-red face, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "dice_aetherae",
+    defaultFilename: "dice_aetherae.png",
+    label: "Dice — Aetherae (d16)",
+    description: "Medium die (d16) for the dice game — dark obsidian shadow-glass, made from Aineroira's shadow. Its max face is the ornate cloak.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single medium sixteen-sided die (d16) of dark obsidian shadow-glass, smoky translucent depths with a faint violet inner glow, isolated game sprite, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "dice_aetherae_max",
+    defaultFilename: "dice_aetherae_max.png",
+    label: "Dice — Aetherae Max (Cloak)",
+    description: "Aetherae's max face — shown when the d16 rolls its highest value.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single illustrated die face — an ornate flowing shadow-cloak emblem on a dark obsidian face with a faint violet glow, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "dice_lustriae",
+    defaultFilename: "dice_lustriae.png",
+    label: "Dice — Lustriae (d8)",
+    description: "Small die (d8) for the dice game — carved wood, rustic forest-fae theme, child of Aineroira. Its max face is the faerie.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single small eight-sided die (d8) of carved rustic forest wood with tiny fae leaf and vine carvings, warm woodland tones, isolated game sprite, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "dice_lustriae_max",
+    defaultFilename: "dice_lustriae_max.png",
+    label: "Dice — Lustriae Max (Faerie)",
+    description: "Lustriae's max face — shown when the d8 rolls its highest value.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single illustrated die face — a tiny winged faerie emblem carved on rustic forest wood, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "dice_aureliae",
+    defaultFilename: "dice_aureliae.png",
+    label: "Dice — Aureliae (d8)",
+    description: "Small die (d8) for the dice game — carved coral, jellyfish theme, child of Aineroira. Its max face is the jellyfish.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single small eight-sided die (d8) carved from pale coral with a soft translucent sheen, gentle aqua and rose tones, isolated game sprite, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "dice_aureliae_max",
+    defaultFilename: "dice_aureliae_max.png",
+    label: "Dice — Aureliae Max (Jellyfish)",
+    description: "Aureliae's max face — shown when the d8 rolls its highest value.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single illustrated die face — a drifting jellyfish emblem with a soft aqua glow on a pale coral face, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "coin_luneqrae_moon",
+    defaultFilename: "coin_luneqrae_moon.png",
+    label: "Coin — Luneqrae (Moon-Horse)",
+    description: "The Luneqrae coin's moon-horse face. Luneqrae, Aineroira's youngest child, bound to the moonlight horses.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single round coin face — a galloping moonlight horse emblem in silver-white on a dark coin with a soft lunar glow, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "coin_luneqrae_wind",
+    defaultFilename: "coin_luneqrae_wind.png",
+    label: "Coin — Luneqrae (Dark Wind)",
+    description: "The Luneqrae coin's dark-wind face — the reverse of the moon-horse face.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single round coin face — a swirling dark night-wind emblem on a dark coin with a faint violet glow, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
   // Character panel — the "Woodland Fae Cabinet". A layered set: the cabinet
   // backdrop is the hero cover; the niche is the sprite alcove; frame/plaque/
   // charm are carved chrome the readouts sit in; the two gem buttons open the

@@ -1377,6 +1377,74 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A single suit-of-armor breastplate with a small outward-pointing arrow, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
   },
+  // Player-inspection popout action buttons. Same tiny-silhouette treatment as
+  // the mob action buttons above. Optional — fall back to CSS glyphs.
+  {
+    key: "action_duel",
+    defaultFilename: "action_duel.png",
+    label: "Action — Duel",
+    description: "Icon on the Duel button in the player inspection popout.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "Two crossed slender dueling sabers, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "action_tell",
+    defaultFilename: "action_tell.png",
+    label: "Action — Tell",
+    description: "Icon on the Tell (private message) button in the player inspection popout.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single speech bubble with a small directed arrow, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "action_whisper",
+    defaultFilename: "action_whisper.png",
+    label: "Action — Whisper",
+    description: "Icon on the Whisper button in the player inspection popout.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single face silhouette with a finger raised to the lips in a hush gesture, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "action_give",
+    defaultFilename: "action_give.png",
+    label: "Action — Give",
+    description: "Icon on the Give (hand over an item) button in the player inspection popout.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single open hand holding out a small gift offered forward, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "action_groupinvite",
+    defaultFilename: "action_groupinvite.png",
+    label: "Action — Group Invite",
+    description: "Icon on the Invite to Group button in the player inspection popout.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A small group of figures with a plus sign, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "action_friend",
+    defaultFilename: "action_friend.png",
+    label: "Action — Add Friend",
+    description: "Icon on the Add Friend button in the player inspection popout.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single person silhouette with a small plus sign, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
 ] as const;
 
 /** Set of required keys for fast membership checks. */

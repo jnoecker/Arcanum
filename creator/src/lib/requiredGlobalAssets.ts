@@ -1098,6 +1098,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: false,
     aspect: "landscape",
   },
+  {
+    key: "housing_bg",
+    defaultFilename: "housing_bg.png",
+    label: "Housing Broker Background",
+    description:
+      "Fully painted backdrop for the housing broker / estates panel. A sunlit estate-garden scene; the estate list and room-template panels overlay it. Falls back to the procedural panel when absent. (The housing_broker room icon doubles as the panel emblem.)",
+    assetType: "background",
+    defaultPrompt:
+      "A grand sunlit estate-garden courtyard backdrop filling the frame edge to edge — a wisteria-draped wrought-iron arbor with hanging lanterns, blooming rose beds and cobblestone paths, a stately castle estate rising in the distance under a warm bright sky, lush greenery, an open uncluttered center where estate panels overlay, warm golden daylight, no figures, no readable text, suitable as a backdrop behind a housing broker panel.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
   // Character panel — the "Woodland Fae Cabinet". A layered set: the cabinet
   // backdrop is the hero cover; the niche is the sprite alcove; frame/plaque/
   // charm are carved chrome the readouts sit in; the two gem buttons open the

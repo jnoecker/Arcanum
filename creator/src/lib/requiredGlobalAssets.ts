@@ -1148,7 +1148,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "Large die (d20) for the dice game — whalebone, child of Aineroira. Its max face is the eastern dragon.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single large twenty-sided die (d20) carved from pale whalebone, smooth ivory tones with fine scrimshaw etching, isolated game sprite, centered, soft outline, transparent background.",
+      "A single large twenty-sided die (d20) carved from pale whalebone, smooth ivory tones with fine scrimshaw etching, the faces elaborately decorated but bearing no numbers, numerals, or pips, isolated game sprite, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -1159,7 +1159,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "Ophirae's max face — shown when the d20 rolls its highest value.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single illustrated die face — a coiling eastern dragon emblem in scrimshaw style on a pale whalebone-ivory face, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+      "A single illustrated die face — a coiling eastern dragon emblem in scrimshaw style on a pale whalebone-ivory face, elaborately decorated but bearing no numbers, numerals, or pips, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -1170,7 +1170,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "Large die (d20) for the dice game — moss-green, fungal, root-carved, child of Aineroira. Its max face is the mushroom.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single large twenty-sided die (d20) carved from mossy root-wood, moss-green with tiny fungal growths and lichen across organic root-carved facets, isolated game sprite, centered, soft outline, transparent background.",
+      "A single large twenty-sided die (d20) carved from mossy root-wood, moss-green with tiny fungal growths and lichen across organic root-carved facets, the faces elaborately decorated but bearing no numbers, numerals, or pips, isolated game sprite, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -1181,7 +1181,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "Mycorae's max face — shown when the d20 rolls its highest value.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single illustrated die face — a glowing mushroom emblem on a mossy root-carved green face, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+      "A single illustrated die face — a glowing mushroom emblem on a mossy root-carved green face, elaborately decorated but bearing no numbers, numerals, or pips, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -1189,10 +1189,10 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     key: "dice_pyrae",
     defaultFilename: "dice_pyrae.png",
     label: "Dice — Pyrae (d16)",
-    description: "Medium die (d16) for the dice game — ember-red with flame-lit numerals, child of Aineroira. Its max face is the phoenix.",
+    description: "Medium die (d16) for the dice game — ember-red, flame-lit, child of Aineroira. Its max face is the phoenix.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single medium sixteen-sided die (d16) of ember-red stone with glowing flame-lit numerals and a warm fiery glow, isolated game sprite, centered, soft outline, transparent background.",
+      "A single medium sixteen-sided die (d16) of ember-red stone with a warm fiery glow, the faces elaborately decorated but bearing no numbers, numerals, or pips, isolated game sprite, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -1203,7 +1203,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "Pyrae's max face — shown when the d16 rolls its highest value.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single illustrated die face — a rising phoenix emblem in flame-lit gold on an ember-red face, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+      "A single illustrated die face — a rising phoenix emblem in flame-lit gold on an ember-red face, elaborately decorated but bearing no numbers, numerals, or pips, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -1214,7 +1214,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "Medium die (d16) for the dice game — dark obsidian shadow-glass, made from Aineroira's shadow. Its max face is the ornate cloak.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single medium sixteen-sided die (d16) of dark obsidian shadow-glass, smoky translucent depths with a faint violet inner glow, isolated game sprite, centered, soft outline, transparent background.",
+      "A single medium sixteen-sided die (d16) of dark obsidian shadow-glass, smoky translucent depths with a faint violet inner glow, the faces elaborately decorated but bearing no numbers, numerals, or pips, isolated game sprite, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -1225,7 +1225,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "Aetherae's max face — shown when the d16 rolls its highest value.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single illustrated die face — an ornate flowing shadow-cloak emblem on a dark obsidian face with a faint violet glow, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+      "A single illustrated die face — an ornate flowing shadow-cloak emblem on a dark obsidian face with a faint violet glow, elaborately decorated but bearing no numbers, numerals, or pips, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -1236,7 +1236,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "Small die (d8) for the dice game — carved wood, rustic forest-fae theme, child of Aineroira. Its max face is the faerie.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single small eight-sided die (d8) of carved rustic forest wood with tiny fae leaf and vine carvings, warm woodland tones, isolated game sprite, centered, soft outline, transparent background.",
+      "A single small eight-sided die (d8) of carved rustic forest wood with tiny fae leaf and vine carvings, warm woodland tones, the faces elaborately decorated but bearing no numbers, numerals, or pips, isolated game sprite, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -1247,7 +1247,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "Lustriae's max face — shown when the d8 rolls its highest value.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single illustrated die face — a tiny winged faerie emblem carved on rustic forest wood, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+      "A single illustrated die face — a tiny winged faerie emblem carved on rustic forest wood, elaborately decorated but bearing no numbers, numerals, or pips, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -1258,7 +1258,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "Small die (d8) for the dice game — carved coral, jellyfish theme, child of Aineroira. Its max face is the jellyfish.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single small eight-sided die (d8) carved from pale coral with a soft translucent sheen, gentle aqua and rose tones, isolated game sprite, centered, soft outline, transparent background.",
+      "A single small eight-sided die (d8) carved from pale coral with a soft translucent sheen, gentle aqua and rose tones, the faces elaborately decorated but bearing no numbers, numerals, or pips, isolated game sprite, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -1269,7 +1269,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "Aureliae's max face — shown when the d8 rolls its highest value.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single illustrated die face — a drifting jellyfish emblem with a soft aqua glow on a pale coral face, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+      "A single illustrated die face — a drifting jellyfish emblem with a soft aqua glow on a pale coral face, elaborately decorated but bearing no numbers, numerals, or pips, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -1280,7 +1280,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "The Luneqrae coin's moon-horse face. Luneqrae, Aineroira's youngest child, bound to the moonlight horses.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single round coin face — a galloping moonlight horse emblem in silver-white on a dark coin with a soft lunar glow, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+      "A single round coin face — a galloping moonlight horse emblem in silver-white on a dark coin with a soft lunar glow, elaborately decorated but bearing no numbers, numerals, or pips, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },
@@ -1291,7 +1291,7 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     description: "The Luneqrae coin's dark-wind face — the reverse of the moon-horse face.",
     assetType: "ability_icon",
     defaultPrompt:
-      "A single round coin face — a swirling dark night-wind emblem on a dark coin with a faint violet glow, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+      "A single round coin face — a swirling dark night-wind emblem on a dark coin with a faint violet glow, elaborately decorated but bearing no numbers, numerals, or pips, bold silhouette that reads at small size, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },

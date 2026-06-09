@@ -829,6 +829,42 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "friends_bg",
+    defaultFilename: "friends_bg.png",
+    label: "Friends Panel Background",
+    description:
+      "Fully painted backdrop for the friends panel. A carved-wood frame around an aged-parchment center where the friends list overlays. Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "An ornate carved-wood frame backdrop filling the frame edge to edge — dark timber wrapped in moonlit vines and night-blooming wildflowers, brass fittings and corner studs, a soft hanging lantern glow, an aged-parchment central area where a list of friends overlays, cool night-fae tones with warm lantern accents, wide landscape composition, no figures, no readable text.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "who_friend_btn",
+    defaultFilename: "who_friend_btn.png",
+    label: "Who — Add Friend Button",
+    description:
+      "Small square per-row icon on the who panel that adds the selected player as a friend. Bold silhouette that reads at small size; CSS provides the button chrome. Falls back to a CSS button.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single person silhouette with a small plus sign, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "friends_widget",
+    defaultFilename: "friends_widget.png",
+    label: "Friends Panel",
+    description: "Services-menu nav button that opens the friends panel. Optional; falls back to a CSS button.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single pair of friendly person silhouettes standing side by side, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
     key: "chat_bg",
     defaultFilename: "chat_bg.png",
     label: "Chat Board Background",

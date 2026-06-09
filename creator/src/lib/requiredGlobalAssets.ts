@@ -1112,6 +1112,32 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "crafting_bg",
+    defaultFilename: "crafting_bg.png",
+    label: "Crafting Panel Background",
+    description:
+      "Fully painted backdrop for the crafting panel — an artisan's workshop. The recipe list and crafting UI overlay it. Falls back to the procedural panel when absent. (The crafting_station icon doubles as the panel emblem.)",
+    assetType: "background",
+    defaultPrompt:
+      "A cozy artisan workshop backdrop filling the frame edge to edge — a sturdy workbench with hammers, tongs and tools, an anvil and a warm hearth-forge glow off to one side, shelves of materials, warm amber lamplight and soft shadows, an open uncluttered center where the crafting UI overlays, inviting warm glow, no figures, no readable text, suitable as a backdrop behind a crafting panel.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "professions_bg",
+    defaultFilename: "professions_bg.png",
+    label: "Professions Panel Background",
+    description:
+      "Fully painted backdrop for the professions / trade-skills panel. The list of professions and skill progress overlay it. Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A warm artisan's trade-hall backdrop filling the frame edge to edge — a craftsman's study with shelves of trade tools and materials (a loom, mortar and pestle, fishing rod, gathering basket), an open ledger of skills on a worktable, warm lamplight and soft shadows, an open uncluttered center where the professions list overlays, inviting warm glow, no figures, no readable text, suitable as a backdrop behind a professions panel.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
     key: "lottery_bg",
     defaultFilename: "lottery_bg.png",
     label: "Lottery Panel Background",
@@ -1386,6 +1412,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     assetType: "ornament",
     defaultPrompt:
       "A single ornate horizontal UI button set with a large faceted amethyst-purple gem, a dark carved-wood and brass frame with leaf flourishes and a soft violet inner glow, isolated decorative button element, transparent background, blank face, no readable text.",
+    transparent: true,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "char_btn_professions",
+    defaultFilename: "char_btn_professions.png",
+    label: "Professions Button",
+    description:
+      "Ornate amber/gold gem button that opens the professions panel — matches the achievements (emerald) and prestige (amethyst) buttons. Wide button (usable as 9-slice); the label is rendered in CSS over it for i18n. Falls back to a carved CSS gem button.",
+    assetType: "ornament",
+    defaultPrompt:
+      "A single ornate horizontal UI button set with a large faceted amber-gold gem, a dark carved-wood and brass frame with leaf flourishes and a soft warm golden inner glow, isolated decorative button element, transparent background, blank face, no readable text.",
     transparent: true,
     aspect: "landscape",
     optional: true,

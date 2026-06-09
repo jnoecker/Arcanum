@@ -1111,6 +1111,32 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     aspect: "landscape",
     optional: true,
   },
+  {
+    key: "lottery_bg",
+    defaultFilename: "lottery_bg.png",
+    label: "Lottery Panel Background",
+    description:
+      "Fully painted backdrop for the lottery panel; the ticket kiosk UI overlays it. Falls back to the procedural panel when absent. (The lottery_board_widget icon doubles as the panel emblem.)",
+    assetType: "background",
+    defaultPrompt:
+      "A festive fortune-and-fate backdrop filling the frame edge to edge — a great ornate spinning fortune wheel with golden spokes off to one side, warm amber and gold tones, soft bokeh festival lights and drifting sparkles, draped banners, an open uncluttered center where the lottery ticket panel overlays, warm celebratory glow, no figures, no readable text, suitable as a backdrop behind a lottery panel.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "dice_bg",
+    defaultFilename: "dice_bg.png",
+    label: "Dice Table Background",
+    description:
+      "Fully painted backdrop for the dice-gambling panel; the dice game UI overlays it. Falls back to the procedural panel when absent. (The dice_table_widget icon doubles as the panel emblem.)",
+    assetType: "background",
+    defaultPrompt:
+      "A cozy gambling dice-table backdrop filling the frame edge to edge — a rich green felt surface with a carved wooden rim, a few ornate tumbling dice and stacked coins off to one side, warm tavern lamplight and soft shadows, an open uncluttered center where the dice game panel overlays, inviting warm glow, no figures, no readable text, suitable as a backdrop behind a dice gambling panel.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
   // Character panel — the "Woodland Fae Cabinet". A layered set: the cabinet
   // backdrop is the hero cover; the niche is the sprite alcove; frame/plaque/
   // charm are carved chrome the readouts sit in; the two gem buttons open the

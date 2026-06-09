@@ -877,6 +877,57 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     aspect: "landscape",
     optional: true,
   },
+  // Who panel (online-player roster): a painted backdrop plus the two per-row
+  // action buttons (examine, send tell). All optional; each resolves authored
+  // key → CSS fallback.
+  {
+    key: "who_bg",
+    defaultFilename: "who_bg.png",
+    label: "Who Panel Background",
+    description:
+      "Fully painted backdrop for the who panel — the roster of online players. The name list and per-row action buttons overlay it. Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "An ornate carved-wood roster board backdrop filling the frame edge to edge — a grand timber frame wrapped in vines and wildflowers, brass fittings and corner studs, a soft hanging lantern glow, an open uncluttered central area where a list of player names overlays, warm magical light, wide landscape composition, no figures, no readable text.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "who_examine_btn",
+    defaultFilename: "who_examine_btn.png",
+    label: "Who — Examine Button",
+    description:
+      "Small square per-row icon on the who panel that examines the selected player. Bold silhouette that reads at small size; CSS provides the button chrome. Falls back to a CSS button.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single magnifying glass, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "who_tell_btn",
+    defaultFilename: "who_tell_btn.png",
+    label: "Who — Send Tell Button",
+    description:
+      "Small square per-row icon on the who panel that opens a private tell to the selected player. Bold silhouette that reads at small size; CSS provides the button chrome. Falls back to a CSS button.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single speech-bubble icon, bold silhouette that reads at small size, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "who_widget",
+    defaultFilename: "who_widget.png",
+    label: "Who Panel",
+    description: "Services-menu nav button that opens the who panel (online-player roster). Optional; falls back to a CSS button.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single roster / list-of-people icon — a small parchment scroll with a row of tiny figures or names, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
   {
     key: "trainer_bg",
     defaultFilename: "trainer_bg.png",

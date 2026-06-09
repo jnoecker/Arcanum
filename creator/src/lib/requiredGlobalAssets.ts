@@ -1177,6 +1177,32 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "staff_action_btn",
+    defaultFilename: "staff_action_btn.png",
+    label: "Staff Action Button",
+    description:
+      "Stained-glass button background for staff action rows in the admin / control panel (idle state). Sits behind the action label + description. Pairs with staff_action_btn_active for the hover/pressed state. Falls back to the procedural button styling when absent.",
+    assetType: "ornament",
+    defaultPrompt:
+      "A wide horizontal button panel rendered as deep blue-and-violet stained glass set in an ornate gold filigree frame, edge to edge, matching a celestial-cathedral admin theme — midnight-blue glass with faint star motifs, slender gold border with small corner flourishes, a dark uncluttered interior where a button label overlays, subtle gilt sparkle, soft cool glow, no figures, no readable text, transparent background outside the frame.",
+    transparent: true,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "staff_action_btn_active",
+    defaultFilename: "staff_action_btn_active.png",
+    label: "Staff Action Button (Active)",
+    description:
+      "Stained-glass button background for staff action rows in the admin / control panel — the lit hover/pressed/selected state. Brighter, more saturated version of staff_action_btn. Falls back to the procedural button styling when absent.",
+    assetType: "ornament",
+    defaultPrompt:
+      "A wide horizontal button panel rendered as glowing blue-and-violet stained glass set in a bright gold filigree frame, edge to edge, matching a celestial-cathedral admin theme — luminous backlit midnight-blue glass with faint star motifs, radiant gold border with corner flourishes, a dark interior where a button label overlays, warm gilt sparkle and a soft ember-gold inner glow signaling the active state, no figures, no readable text, transparent background outside the frame.",
+    transparent: true,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
     key: "dice_bg",
     defaultFilename: "dice_bg.png",
     label: "Dice Table Background",

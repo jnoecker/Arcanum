@@ -966,6 +966,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "command_reference_bg",
+    defaultFilename: "command_reference_bg.png",
+    label: "Command Reference Background",
+    description:
+      "Fully painted backdrop for the command reference / help panel (opened by the help widget). A carved-wood frame around an aged-parchment center where the command list overlays. Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "An ornate carved-wood frame backdrop filling the frame edge to edge — dark timber wrapped in moonlit vines and night-blooming wildflowers, brass fittings and corner studs, a soft hanging lantern glow, an open aged-parchment tome page in the center where a reference list of commands overlays, cool night-fae tones with warm lantern accents, wide landscape composition, no writing, no figures, no readable text.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
     key: "group_widget",
     defaultFilename: "group_widget.png",
     label: "Group Panel",

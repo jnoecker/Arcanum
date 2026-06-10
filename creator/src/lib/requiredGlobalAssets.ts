@@ -1202,6 +1202,113 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     aspect: "landscape",
     optional: true,
   },
+  // Painted full-screen login flow scenes. The web client maps the live
+  // controls (inputs, buttons, name chips, list/detail regions) onto the
+  // painted elements; absent art falls back to the CSS-only login UI.
+  {
+    key: "login_bg",
+    defaultFilename: "login_bg.png",
+    label: "Login Scene",
+    description:
+      "Painted full-screen login scene (1536×1024). The web client maps the character-name field and the Create/Login + Start Demo controls onto the painted elements. Falls back to the CSS-only animated login hero when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen login scene for a cozy magical world filling the frame edge to edge — a wide nocturnal vista with an aurora-streaked starry sky, floating islands on the horizon, and drifting fireflies, a welcoming focal point in the center with open space around it where login controls overlay, warm inviting glow, no figures, no readable text, suitable as the first screen a player sees.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "login_password_bg",
+    defaultFilename: "login_password_bg.png",
+    label: "Login Password Scene",
+    description:
+      "Painted full-screen scene for the returning-user password step (1448×1086). The web client maps the password field and Login control onto the painted elements. Falls back to the CSS-only login UI when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen welcome-back scene for a cozy magical world filling the frame edge to edge — a warm nocturnal vista in the same aurora-and-fireflies family as the login scene, an inviting central area with open space where a password field and button overlay, warm familiar glow, no figures, no readable text, suitable as the returning-player password screen.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "login_set_password_bg",
+    defaultFilename: "login_set_password_bg.png",
+    label: "Login Set-Password Scene",
+    description:
+      "Painted full-screen scene for the new-character password step (1536×1024). The web client maps the new-password field and Set Password control onto the painted elements. Falls back to the CSS-only login UI when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen scene for choosing a secret word in a cozy magical world filling the frame edge to edge — a nocturnal vista in the same aurora-and-fireflies family as the login scene, a central focal area with open space where a password field and button overlay, a hint of warding or keepsake magic, warm glow, no figures, no readable text, suitable as the set-a-password screen for a new character.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "login_confirm_bg",
+    defaultFilename: "login_confirm_bg.png",
+    label: "Login Confirm Scene",
+    description:
+      "Painted full-screen scene for the create-character confirmation step (1448×1086). The web client maps the Yes-create / No-go-back controls onto the painted elements. Falls back to the CSS-only login UI when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen decision scene for a cozy magical world filling the frame edge to edge — a nocturnal vista in the same aurora-and-fireflies family as the login scene, a central area with open space where a confirmation question and two choice buttons overlay, a sense of a new beginning, warm glow, no figures, no readable text, suitable as the confirm-new-character screen.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "login_claim_bg",
+    defaultFilename: "login_claim_bg.png",
+    label: "Login Claim Scene",
+    description:
+      "Painted full-screen scene for the demo-character claim step — \"Save Your Character\" (1448×1086). The web client maps the optional new-name field, the password field, and the Save Character / Not now controls onto the painted elements. Falls back to the CSS-only login UI when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen scene for keeping a hero's story in a cozy magical world filling the frame edge to edge — a nocturnal vista in the same aurora-and-fireflies family as the login scene, a sense of a tale being bound into a keepsake storybook, a central area with open space where rename and password fields and two choice buttons overlay, warm glow, no figures, no readable text, suitable as the save-your-character screen.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "login_picker_bg",
+    defaultFilename: "login_picker_bg.png",
+    label: "Login Character Picker Scene",
+    description:
+      "Painted full-screen scene for the saved-character picker (1448×1086). The web client maps the saved-character name chips and controls onto the painted elements. Falls back to the CSS-only login UI when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen scene for choosing among saved heroes in a cozy magical world filling the frame edge to edge — a nocturnal vista in the same aurora-and-fireflies family as the login scene, an open central region where a row of saved-character name chips overlays, warm welcoming glow, no figures, no readable text, suitable as the pick-your-character screen.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "login_race_bg",
+    defaultFilename: "login_race_bg.png",
+    label: "Login Race Selection Scene",
+    description:
+      "Painted full-screen scene for race selection with 9 slots (1122×1402 portrait). The web client maps the race cards and detail region onto the painted elements. Falls back to the CSS-only login UI when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen portrait scene for choosing an ancestry in a cozy magical world filling the frame edge to edge — a nocturnal vista in the same aurora-and-fireflies family as the login scene, an upper region with a grid of nine empty ornate niches where race cards overlay and a lower open region where descriptive text overlays, warm glow, no figures, no readable text, suitable as the race-selection screen.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
+    key: "login_class_bg",
+    defaultFilename: "login_class_bg.png",
+    label: "Login Class Selection Scene",
+    description:
+      "Painted full-screen scene for class selection with 6 slots (1122×1402 portrait). The web client maps the class cards and detail region onto the painted elements. Falls back to the CSS-only login UI when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen portrait scene for choosing a calling in a cozy magical world filling the frame edge to edge — a nocturnal vista in the same aurora-and-fireflies family as the login scene, an upper region with a grid of six empty ornate niches where class cards overlay and a lower open region where descriptive text overlays, warm glow, no figures, no readable text, suitable as the class-selection screen.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
   {
     key: "dice_bg",
     defaultFilename: "dice_bg.png",

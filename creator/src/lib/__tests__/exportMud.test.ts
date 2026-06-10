@@ -129,7 +129,9 @@ const BASE_CONFIG: AppConfig = {
   enchanting: { maxEnchantmentsPerItem: 1, definitions: {} },
   bank: { maxItems: 50 },
   worldTime: { cycleLengthMs: 3600000, dawnHour: 5, dayHour: 8, duskHour: 18, nightHour: 21 },
+  season: { cycleLengthMs: 14400000 },
   weather: { minTransitionMs: 300000, maxTransitionMs: 900000, types: {} },
+  mobVariants: { enabled: true, chance: 0.04, variants: {} },
   environment: { defaultTheme: { moteColors: [], skyGradients: {}, transitionColors: [], weatherParticleOverrides: {} }, zones: {} },
   worldEvents: { definitions: {} },
   pets: {},
@@ -267,6 +269,40 @@ describe("buildMonolithicConfigObject", () => {
     expect(runtime.engine.dailyQuests.enabled).toBe(false);
     expect(runtime.engine.dailyQuests.dailySlots).toBe(3);
     expect(runtime.engine.dailyQuests.dailyPool).toEqual([]);
+  });
+
+  it("emits season and mob-variant engine config", () => {
+    const config: AppConfig = {
+      ...BASE_CONFIG,
+      season: { cycleLengthMs: 7200000 },
+      mobVariants: { enabled: false, chance: 0.1, variants: {} },
+    };
+
+    const runtime = buildMonolithicConfigObject(config) as any;
+
+    expect(runtime.engine.season.cycleLengthMs).toBe(7200000);
+    expect(runtime.engine.mobVariants.enabled).toBe(false);
+    expect(runtime.engine.mobVariants.chance).toBe(0.1);
+    // An empty custom palette is omitted so the server keeps its built-ins.
+    expect("variants" in runtime.engine.mobVariants).toBe(false);
+  });
+
+  it("preserves a custom mob-variant palette on export", () => {
+    const config: AppConfig = {
+      ...BASE_CONFIG,
+      mobVariants: {
+        enabled: true,
+        chance: 0.04,
+        variants: {
+          molten: { namePrefix: "Molten ", tint: "#ff0000", weight: 2, announce: "ZONE" },
+        },
+      },
+    };
+
+    const runtime = buildMonolithicConfigObject(config) as any;
+
+    expect(runtime.engine.mobVariants.variants.molten.namePrefix).toBe("Molten ");
+    expect(runtime.engine.mobVariants.variants.molten.weight).toBe(2);
   });
 
   it("emits non-default skillPointCost values on abilities", () => {

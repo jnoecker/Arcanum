@@ -700,9 +700,30 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     issues.push({ severity: "warning", entity: "worldTime", message: "Time period hours should be in order: dawn < day < dusk < night" });
   }
 
+  // ─── Seasons ─────────────────────────────────────────────────
+  if (config.season && config.season.cycleLengthMs <= 0) {
+    issues.push({ severity: "error", entity: "season", message: "Season cycle length must be greater than 0" });
+  }
+
   // ─── Weather ────────────────────────────────────────────────
   if (config.weather.minTransitionMs > config.weather.maxTransitionMs) {
     issues.push({ severity: "warning", entity: "weather", message: "Min transition time exceeds max transition time" });
+  }
+
+  // ─── Rare Mob Variants ──────────────────────────────────────
+  if (config.mobVariants) {
+    const mv = config.mobVariants;
+    if (Number.isNaN(mv.chance) || mv.chance < 0 || mv.chance > 1) {
+      issues.push({ severity: "error", entity: "mobVariants", message: "Variant chance must be in 0.0..1.0" });
+    }
+    for (const [id, v] of Object.entries(mv.variants)) {
+      if (v.weight < 0) {
+        issues.push({ severity: "error", entity: `mobVariant:${id}`, message: "Weight must be >= 0" });
+      }
+      if (v.announce && !["ROOM", "ZONE", "SERVER"].includes(v.announce)) {
+        issues.push({ severity: "error", entity: `mobVariant:${id}`, message: "Announce must be ROOM, ZONE, or SERVER" });
+      }
+    }
   }
 
   // ─── Weather Types ──────────────────────────────────────────────

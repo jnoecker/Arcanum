@@ -130,6 +130,36 @@ describe("sanitizeZone — ID remapping", () => {
     expect(result.mobs!["100"]).toBeUndefined();
   });
 
+  it("preserves spawn condition and rareVariants on mobs", () => {
+    const world = makeWorld({
+      mobs: {
+        midnight_moth: {
+          name: "a luminous midnight moth",
+          spawns: [{ room: "room_a" }],
+          rareVariants: false,
+          condition: {
+            time: ["NIGHT", "DUSK"],
+            seasons: ["WINTER"],
+            weather: ["STORM"],
+            events: ["blood_moon"],
+            chance: 0.5,
+          },
+        },
+      },
+    });
+
+    const result = sanitizeZone(world);
+    const moth = result.mobs!["midnight_moth"]!;
+    expect(moth.rareVariants).toBe(false);
+    expect(moth.condition).toEqual({
+      time: ["NIGHT", "DUSK"],
+      seasons: ["WINTER"],
+      weather: ["STORM"],
+      events: ["blood_moon"],
+      chance: 0.5,
+    });
+  });
+
   it("renames numeric item IDs and cascades to shop items + mob drops", () => {
     const world = makeWorld({
       items: {

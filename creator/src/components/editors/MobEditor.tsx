@@ -1,5 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
-import type { WorldFile, MobFile, MobSpellFile, MobRole, SpawnEntry } from "@/types/world";
+import type {
+  WorldFile,
+  MobFile,
+  MobSpellFile,
+  MobRole,
+  SpawnEntry,
+  SpawnCondition,
+  SpawnTimePeriod,
+  SpawnSeason,
+} from "@/types/world";
 import { MOB_ROLES, MOB_ROLE_LABELS, MOB_ROLE_DESCRIPTIONS } from "@/types/world";
 import { updateMob, deleteMob } from "@/lib/zoneEdits";
 import { useEntityEditor } from "@/lib/useEntityEditor";
@@ -13,6 +22,7 @@ import {
   EntityHeader,
   FieldGrid,
   CompactField,
+  CheckboxInput,
   ArrayRow,
   TabBar,
 } from "@/components/ui/FormWidgets";
@@ -62,6 +72,30 @@ const FALLBACK_TRAINER_CLASSES = [
   { value: "CLERIC", label: "Cleric" },
   { value: "ROGUE", label: "Rogue" },
 ];
+
+const TIME_PERIOD_OPTIONS: { value: SpawnTimePeriod; label: string }[] = [
+  { value: "DAWN", label: "Dawn" },
+  { value: "DAY", label: "Day" },
+  { value: "DUSK", label: "Dusk" },
+  { value: "NIGHT", label: "Night" },
+];
+
+const SEASON_OPTIONS: { value: SpawnSeason; label: string }[] = [
+  { value: "SPRING", label: "Spring" },
+  { value: "SUMMER", label: "Summer" },
+  { value: "AUTUMN", label: "Autumn" },
+  { value: "WINTER", label: "Winter" },
+];
+
+/** Weather ids available when the world hasn't defined any custom weather types. */
+const FALLBACK_WEATHER_IDS = ["CLEAR", "RAIN", "STORM", "FOG", "SNOW", "WIND"];
+
+function toggleInArray<T>(arr: T[] | undefined, value: T): T[] {
+  const current = arr ?? [];
+  return current.includes(value)
+    ? current.filter((v) => v !== value)
+    : [...current, value];
+}
 
 function fieldLabel(
   base: string,
@@ -174,6 +208,11 @@ export function MobEditor({
   );
 
   const classConfig = useConfigStore((s) => s.config?.classes);
+  const weatherTypes = useConfigStore((s) => s.config?.weather?.types);
+  const weatherIds = useMemo(() => {
+    const ids = Object.keys(weatherTypes ?? {});
+    return ids.length > 0 ? ids : FALLBACK_WEATHER_IDS;
+  }, [weatherTypes]);
   const trainerClassOptions = useConfigOptions(classConfig, FALLBACK_TRAINER_CLASSES);
   const trainerClasses = useMemo(() => getTrainerClasses(mob), [mob]);
   const availableTrainerClasses = useMemo(
@@ -518,6 +557,13 @@ export function MobEditor({
               </CompactField>
             </FieldGrid>
           </Section>
+
+          <SpawnConditionSection
+            mob={mob}
+            patch={patch}
+            weatherIds={weatherIds}
+            isCombatant={isCombatant}
+          />
 
           {isTrainer && (
             <Section
@@ -1261,5 +1307,197 @@ function ToughnessSelector({
         </p>
       )}
     </div>
+  );
+}
+
+function ChipToggle({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        active
+          ? "focus-ring rounded border border-accent bg-accent/10 px-2 py-1 text-2xs font-medium text-accent"
+          : "focus-ring rounded border border-border-default px-2 py-1 text-2xs text-text-muted transition-colors hover:border-border-active hover:text-text-primary"
+      }
+    >
+      {label}
+    </button>
+  );
+}
+
+function SpawnConditionSection({
+  mob,
+  patch,
+  weatherIds,
+  isCombatant,
+}: {
+  mob: MobFile;
+  patch: (p: Partial<MobFile>) => void;
+  weatherIds: string[];
+  isCombatant: boolean;
+}) {
+  const condition = mob.condition;
+  const enabled = condition !== undefined;
+
+  const updateCondition = useCallback(
+    (changes: Partial<SpawnCondition>) => {
+      const next: SpawnCondition = { ...(mob.condition ?? {}), ...changes };
+      if (!next.time?.length) delete next.time;
+      if (!next.weather?.length) delete next.weather;
+      if (!next.seasons?.length) delete next.seasons;
+      if (!next.events?.length) delete next.events;
+      if (next.chance == null || next.chance === 1) delete next.chance;
+      patch({ condition: next });
+    },
+    [mob.condition, patch],
+  );
+
+  const toggleEnabled = useCallback(
+    (on: boolean) => patch({ condition: on ? {} : undefined }),
+    [patch],
+  );
+
+  const noGates =
+    !condition?.time?.length &&
+    !condition?.seasons?.length &&
+    !condition?.weather?.length &&
+    !condition?.events?.length &&
+    (condition?.chance == null || condition.chance === 1);
+
+  return (
+    <Section
+      title="Appearance Conditions"
+      description="Gate when this mob appears, and whether the server may spawn rare cosmetic variants of it."
+    >
+      <div className="flex flex-col gap-3">
+        {isCombatant && (
+          <div className="flex flex-col gap-1">
+            <CheckboxInput
+              checked={mob.rareVariants !== false}
+              onCommit={(v) => patch({ rareVariants: v ? undefined : false })}
+              label="Allow rare cosmetic variants"
+            />
+            <p className="text-2xs text-text-muted">
+              When enabled, the server may occasionally spawn this mob as a tinted rare
+              variant (e.g. “Shadow-touched …”) with a modest HP/XP/loot bump. Turn off for
+              unique bosses or strictly-themed creatures.
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-1 border-t border-border-muted pt-3">
+          <CheckboxInput
+            checked={enabled}
+            onCommit={toggleEnabled}
+            label="Only appears under specific conditions"
+          />
+          <p className="text-2xs text-text-muted">
+            Condition-gated mobs aren’t placed at world start — the server spawns and fades
+            them as the gates open and close (never mid-combat). Facets are AND-ed; values
+            within a facet are OR-ed.
+            {enabled && mob.respawnSeconds != null
+              ? " Respawn delay is ignored while a condition is set."
+              : ""}
+          </p>
+        </div>
+
+        {enabled && (
+          <div className="flex flex-col gap-3 rounded border border-border-muted bg-bg-tertiary/40 p-2.5">
+            <div className="flex flex-col gap-1">
+              <span className="text-2xs font-medium uppercase tracking-wide text-text-muted">
+                Time of day
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {TIME_PERIOD_OPTIONS.map((o) => (
+                  <ChipToggle
+                    key={o.value}
+                    label={o.label}
+                    active={condition?.time?.includes(o.value) ?? false}
+                    onClick={() => updateCondition({ time: toggleInArray(condition?.time, o.value) })}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-2xs font-medium uppercase tracking-wide text-text-muted">
+                Season
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {SEASON_OPTIONS.map((o) => (
+                  <ChipToggle
+                    key={o.value}
+                    label={o.label}
+                    active={condition?.seasons?.includes(o.value) ?? false}
+                    onClick={() => updateCondition({ seasons: toggleInArray(condition?.seasons, o.value) })}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-2xs font-medium uppercase tracking-wide text-text-muted">
+                Weather
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {weatherIds.map((id) => (
+                  <ChipToggle
+                    key={id}
+                    label={id}
+                    active={condition?.weather?.includes(id) ?? false}
+                    onClick={() => updateCondition({ weather: toggleInArray(condition?.weather, id) })}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <FieldRow
+              label="Event flags"
+              hint="Comma-separated world-event flags; any one active opens the gate (e.g. blood_moon)."
+            >
+              <TextInput
+                value={(condition?.events ?? []).join(", ")}
+                onCommit={(v) =>
+                  updateCondition({
+                    events: v
+                      .split(",")
+                      .map((s) => s.trim())
+                      .filter(Boolean),
+                  })
+                }
+                placeholder="e.g. blood_moon, harvest_festival"
+              />
+            </FieldRow>
+
+            <FieldRow label="Chance" hint="Per-opportunity appearance probability (0–1). Default 1.0.">
+              <NumberInput
+                value={condition?.chance}
+                onCommit={(v) => updateCondition({ chance: v == null ? undefined : v })}
+                placeholder="1.0"
+                min={0}
+                max={1}
+                step={0.05}
+              />
+            </FieldRow>
+
+            {noGates && (
+              <p className="text-2xs text-status-warning">
+                No gates set — this behaves like an unconditional mob. Add a facet or lower
+                the chance below 1.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </Section>
   );
 }

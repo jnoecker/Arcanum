@@ -397,12 +397,30 @@ export function buildMonolithicConfigObject(
   // World Time
   engine.worldTime = c.worldTime;
 
+  // Seasons
+  if (c.season) {
+    engine.season = { cycleLengthMs: c.season.cycleLengthMs };
+  }
+
   // Weather
   engine.weather = {
     minTransitionMs: c.weather.minTransitionMs,
     maxTransitionMs: c.weather.maxTransitionMs,
     ...(Object.keys(c.weather.types).length > 0 ? { types: c.weather.types } : {}),
   };
+
+  // Rare mob variants
+  if (c.mobVariants) {
+    engine.mobVariants = {
+      enabled: c.mobVariants.enabled,
+      chance: c.mobVariants.chance,
+      // Omit `variants` when empty so the server keeps its built-in palette
+      // (an explicit empty map would wipe it).
+      ...(Object.keys(c.mobVariants.variants).length > 0
+        ? { variants: c.mobVariants.variants }
+        : {}),
+    };
+  }
 
   // Environment
   if (c.environment && (c.environment.defaultTheme.moteColors.length > 0 || Object.keys(c.environment.zones).length > 0)) {

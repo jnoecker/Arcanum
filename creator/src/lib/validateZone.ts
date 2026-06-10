@@ -19,6 +19,9 @@ import { resolveMobStats } from "./resolveMobStats";
 import { resolveQuestXp } from "./resolveQuestXp";
 import type { QuestXpConfig } from "@/types/config";
 
+const VALID_TIME_PERIODS = new Set(["DAWN", "DAY", "DUSK", "NIGHT"]);
+const VALID_SEASONS = new Set(["SPRING", "SUMMER", "AUTUMN", "WINTER"]);
+
 /**
  * A mob is a "unique NPC" iff it places exactly one runtime instance —
  * a single spawn entry with count <= 1. Quest givers and turn-in NPCs
@@ -614,6 +617,23 @@ export function validateZone(
       }
       if (Number.isNaN(drop.chance) || drop.chance < 0 || drop.chance > 1) {
         addIssue(issues, "error", entity, `Drop #${index + 1} has invalid chance ${drop.chance}; expected 0.0-1.0`);
+      }
+    }
+
+    if (mob.condition) {
+      const cond = mob.condition;
+      if (cond.chance != null && (Number.isNaN(cond.chance) || cond.chance < 0 || cond.chance > 1)) {
+        addIssue(issues, "error", entity, `Spawn condition chance ${cond.chance} is out of range; expected 0.0-1.0`);
+      }
+      for (const t of cond.time ?? []) {
+        if (!VALID_TIME_PERIODS.has(t)) {
+          addIssue(issues, "error", entity, `Spawn condition time "${t}" is invalid; expected one of ${[...VALID_TIME_PERIODS].join(", ")}`);
+        }
+      }
+      for (const s of cond.seasons ?? []) {
+        if (!VALID_SEASONS.has(s)) {
+          addIssue(issues, "error", entity, `Spawn condition season "${s}" is invalid; expected one of ${[...VALID_SEASONS].join(", ")}`);
+        }
       }
     }
 

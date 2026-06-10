@@ -133,7 +133,9 @@ const BASE_CONFIG: AppConfig = {
   enchanting: { maxEnchantmentsPerItem: 1, definitions: {} },
   bank: { maxItems: 50 },
   worldTime: { cycleLengthMs: 3600000, dawnHour: 5, dayHour: 8, duskHour: 18, nightHour: 21 },
+  season: { cycleLengthMs: 14400000 },
   weather: { minTransitionMs: 300000, maxTransitionMs: 900000, types: {} },
+  mobVariants: { enabled: true, chance: 0.04, variants: {} },
   environment: { defaultTheme: { moteColors: [], skyGradients: {}, transitionColors: [], weatherParticleOverrides: {} }, zones: {} },
   worldEvents: { definitions: {} },
   pets: {},
@@ -250,6 +252,38 @@ const BASE_CONFIG: AppConfig = {
 describe("validateConfig", () => {
   it("returns no issues for a valid config", () => {
     expect(validateConfig(BASE_CONFIG)).toEqual([]);
+  });
+
+  // ─── Seasons & rare variants ─────────────────────────────────
+  it("flags non-positive season cycle length", () => {
+    const cfg = { ...BASE_CONFIG, season: { cycleLengthMs: 0 } };
+    const issues = validateConfig(cfg);
+    expect(issues).toContainEqual(
+      expect.objectContaining({ entity: "season", severity: "error" }),
+    );
+  });
+
+  it("flags mob-variant chance out of range", () => {
+    const cfg = { ...BASE_CONFIG, mobVariants: { enabled: true, chance: 2, variants: {} } };
+    const issues = validateConfig(cfg);
+    expect(issues).toContainEqual(
+      expect.objectContaining({ entity: "mobVariants", severity: "error" }),
+    );
+  });
+
+  it("flags invalid mob-variant announce scope", () => {
+    const cfg = {
+      ...BASE_CONFIG,
+      mobVariants: {
+        enabled: true,
+        chance: 0.04,
+        variants: { glow: { weight: 1, announce: "EVERYWHERE" } },
+      },
+    };
+    const issues = validateConfig(cfg);
+    expect(issues).toContainEqual(
+      expect.objectContaining({ entity: "mobVariant:glow", severity: "error" }),
+    );
   });
 
   // ─── Server ─────────────────────────────────────────────────

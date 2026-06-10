@@ -279,6 +279,31 @@ export interface SpawnEntry {
   count?: number;
 }
 
+/** Times of day a conditional mob may appear. Mirrors the server's `TimePeriod`. */
+export type SpawnTimePeriod = "DAWN" | "DAY" | "DUSK" | "NIGHT";
+
+/** Seasons a conditional mob may appear in. Mirrors the server's `Season`. */
+export type SpawnSeason = "SPRING" | "SUMMER" | "AUTUMN" | "WINTER";
+
+/**
+ * Gates when a mob appears in the world. Facets are AND-ed together; values
+ * within a facet are OR-ed. An omitted/empty facet means "any". A condition
+ * whose facets are all empty and whose `chance` is 1.0 behaves like no
+ * condition at all. Mirrors the server's `SpawnConditionFile`.
+ */
+export interface SpawnCondition {
+  /** Times of day. Empty = any time. */
+  time?: SpawnTimePeriod[];
+  /** Weather type ids (e.g. CLEAR, RAIN, STORM). Empty = any weather. */
+  weather?: string[];
+  /** Seasons. Empty = any season. */
+  seasons?: SpawnSeason[];
+  /** World-event flags, any one of which activates the condition. Empty = none required. */
+  events?: string[];
+  /** Per-opportunity appearance probability (0.0–1.0). Defaults to 1.0. */
+  chance?: number;
+}
+
 export interface MobFile {
   name: string;
   description?: string;
@@ -324,6 +349,21 @@ export interface MobFile {
   toughness?: -2 | -1 | 0 | 1 | 2;
   drops?: MobDropFile[];
   respawnSeconds?: number;
+  /**
+   * Whether the server may spawn rare cosmetic variants of this mob (tint +
+   * overlay + name prefix + modest stat bump). Defaults to true server-side;
+   * set false to opt a mob out — e.g. unique named bosses or strictly-themed
+   * creatures whose appearance should never be altered. Omit to keep the
+   * default (true).
+   */
+  rareVariants?: boolean;
+  /**
+   * Optional spawn condition gating when this mob appears (time of day,
+   * weather, season, world-event flags, and/or a random `chance`). When set to
+   * a non-trivial condition, the mob is not placed at world start; its entire
+   * spawn lifecycle is owned by the server's conditional spawn handler.
+   */
+  condition?: SpawnCondition;
   behavior?: BehaviorFile;
   dialogue?: Record<string, DialogueNodeFile>;
   quests?: string[];

@@ -123,7 +123,9 @@ export function parseAppConfigYaml(content: string): AppConfig {
     multiclass: parseMulticlassConfig(engine.multiclass),
     bank: parseBankConfig(engine.bank),
     worldTime: parseWorldTimeConfig(engine.worldTime),
+    season: parseSeasonConfig(engine.season),
     weather: (() => { const w = parseWeatherConfig(engine.weather); return { ...w, types: withDefaults(w.types, DEFAULT_WEATHER_TYPES) }; })(),
+    mobVariants: parseMobVariantsConfig(engine.mobVariants),
     environment: parseEnvironmentConfig(engine.environment),
     worldEvents: parseWorldEventsConfig(engine.worldEvents),
     pets: parsePetDefinitions(engine.pets),
@@ -948,7 +950,7 @@ function collectRawSections(
     "effectTypes", "targetTypes", "stackBehaviors",
     "craftingSkills", "craftingStationTypes",
     "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets", "enchanting", "bank",
-    "worldTime", "weather", "worldEvents", "environment", "skillPoints", "multiclass",
+    "worldTime", "season", "weather", "mobVariants", "worldEvents", "environment", "skillPoints", "multiclass",
     "lottery", "gambling", "stylist", "respec", "prestige", "dailyQuests", "autoQuests", "globalQuests",
     "guildHalls", "factions", "leaderboard", "currencies",
   ]);
@@ -1051,6 +1053,44 @@ function parseWorldTimeConfig(raw: unknown): import("@/types/config").WorldTimeC
     duskHour: asNumber(s.duskHour, 18),
     nightHour: asNumber(s.nightHour, 21),
   };
+}
+
+function parseSeasonConfig(raw: unknown): import("@/types/config").SeasonConfig {
+  if (!raw || typeof raw !== "object") return { cycleLengthMs: 14_400_000 };
+  const s = raw as Record<string, unknown>;
+  return { cycleLengthMs: asNumber(s.cycleLengthMs, 14_400_000) };
+}
+
+function parseMobVariantsConfig(raw: unknown): import("@/types/config").MobVariantsConfig {
+  if (!raw || typeof raw !== "object") return { enabled: true, chance: 0.04, variants: {} };
+  const s = raw as Record<string, unknown>;
+  return {
+    enabled: typeof s.enabled === "boolean" ? s.enabled : true,
+    chance: asNumber(s.chance, 0.04),
+    variants: parseMobVariants(s.variants),
+  };
+}
+
+function parseMobVariants(raw: unknown): Record<string, import("@/types/config").MobVariantDefinition> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, import("@/types/config").MobVariantDefinition> = {};
+  for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!v || typeof v !== "object") continue;
+    const t = v as Record<string, unknown>;
+    out[id] = {
+      displayName: typeof t.displayName === "string" ? t.displayName : undefined,
+      namePrefix: typeof t.namePrefix === "string" ? t.namePrefix : undefined,
+      tint: typeof t.tint === "string" ? t.tint : undefined,
+      overlay: typeof t.overlay === "string" ? t.overlay : undefined,
+      rarity: typeof t.rarity === "string" ? t.rarity : undefined,
+      weight: asNumber(t.weight, 1.0),
+      hpMultiplier: t.hpMultiplier != null ? asNumber(t.hpMultiplier, 1.0) : undefined,
+      xpMultiplier: t.xpMultiplier != null ? asNumber(t.xpMultiplier, 1.0) : undefined,
+      lootMultiplier: t.lootMultiplier != null ? asNumber(t.lootMultiplier, 1.0) : undefined,
+      announce: typeof t.announce === "string" ? t.announce : undefined,
+    };
+  }
+  return out;
 }
 
 function parseWeatherConfig(raw: unknown): import("@/types/config").WeatherConfig {
@@ -1579,7 +1619,9 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       housing: parseHousingConfig(worldRaw.housing),
       bank: parseBankConfig(worldRaw.bank),
       worldTime: parseWorldTimeConfig(worldRaw.worldTime),
+      season: parseSeasonConfig(worldRaw.season),
       weather: (() => { const w = parseWeatherConfig(worldRaw.weather); return { ...w, types: withDefaults(w.types, DEFAULT_WEATHER_TYPES) }; })(),
+      mobVariants: parseMobVariantsConfig(worldRaw.mobVariants),
       environment: parseEnvironmentConfig(worldRaw.environment),
       worldEvents: parseWorldEventsConfig(worldRaw.worldEvents),
       pets: parsePetDefinitions(petsRaw),

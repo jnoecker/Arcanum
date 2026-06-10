@@ -498,6 +498,58 @@ export interface WorldTimeConfig {
   nightHour: number;
 }
 
+// ─── Seasons ───────────────────────────────────────────────────────
+
+export interface SeasonConfig {
+  /**
+   * Real-time milliseconds for one full game year (all four seasons). Each
+   * season lasts a quarter of this.
+   */
+  cycleLengthMs: number;
+}
+
+// ─── Rare Mob Variants ─────────────────────────────────────────────
+
+/**
+ * A single server-generated rare variant archetype. Cosmetic (tint + overlay +
+ * name prefix) plus a modest stat bump. Mirrors the server's
+ * `MobVariantDefinition`.
+ */
+export interface MobVariantDefinition {
+  displayName?: string;
+  /** Prepended to the base mob name, e.g. "Shadow-touched ". */
+  namePrefix?: string;
+  /** CSS hex tint applied to the client sprite (multiply). Empty = no tint. */
+  tint?: string;
+  /** Client particle/overlay hint: swirl|embers|sparkle|frost|mist. Empty = none. */
+  overlay?: string;
+  /** uncommon|rare|legendary — flavor + default announce loudness. */
+  rarity?: string;
+  /** Relative selection weight among all variants. Higher = more common. */
+  weight: number;
+  hpMultiplier?: number;
+  xpMultiplier?: number;
+  /** Multiplies drop chances (and gold) for this variant. */
+  lootMultiplier?: number;
+  /** Announcement scope on appearance: ROOM|ZONE|SERVER. */
+  announce?: string;
+}
+
+export interface MobVariantsConfig {
+  enabled: boolean;
+  /**
+   * Base probability that an eligible mob rolls as a rare variant on each
+   * dynamic spawn opportunity (zone reset, post-death respawn, conditional
+   * spawn). Cold-start spawns are never rolled.
+   */
+  chance: number;
+  /**
+   * Variant archetypes keyed by ID, selected by weight. Empty = the server's
+   * built-in palette (albino, verdant, shadow, ember, …) is used.
+   */
+  variants: Record<string, MobVariantDefinition>;
+}
+
 // ─── Weather ───────────────────────────────────────────────────────
 
 export interface WeatherTypeDefinition {
@@ -1403,7 +1455,9 @@ export interface AppConfig {
   multiclass: MulticlassConfig;
   bank: BankConfig;
   worldTime: WorldTimeConfig;
+  season: SeasonConfig;
   weather: WeatherConfig;
+  mobVariants: MobVariantsConfig;
   environment: EnvironmentConfig;
   worldEvents: WorldEventsConfig;
   pets: Record<string, PetDefinitionConfig>;

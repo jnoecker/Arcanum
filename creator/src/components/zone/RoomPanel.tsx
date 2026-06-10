@@ -26,7 +26,7 @@ import { MusicGenerator } from "@/components/ui/MusicGenerator";
 import { VideoGenerator } from "@/components/ui/VideoGenerator";
 import { roomPrompt, roomContext } from "@/lib/entityPrompts";
 import { getTrainerClasses } from "@/lib/trainers";
-import { EnhanceDescriptionButton, MediaDisclosure } from "@/components/editors/EditorShared";
+import { EnhanceDescriptionButton, MediaDisclosure, VideoVisionFields } from "@/components/editors/EditorShared";
 import { useVibeStore } from "@/stores/vibeStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { useZoneStore } from "@/stores/zoneStore";
@@ -1185,7 +1185,7 @@ export function RoomPanel({
               surface="worldbuilding"
             />
           </div>
-          <MediaDisclosure label="Video" hasValue={!!room.video}>
+          <MediaDisclosure label="Video" hasValue={!!room.video || !!room.videoText}>
             <FieldRow label="Video">
               <TextInput
                 value={room.video ?? ""}
@@ -1214,6 +1214,14 @@ export function RoomPanel({
               onAccept={(fileName) => {
                 onWorldChange(updateRoom(world, roomId, { video: fileName }));
               }}
+            />
+            <VideoVisionFields
+              videoText={room.videoText}
+              onVideoTextChange={(v) => onWorldChange(updateRoom(world, roomId, { videoText: v }))}
+              videoTextSeconds={room.videoTextSeconds}
+              onVideoTextSecondsChange={(v) =>
+                onWorldChange(updateRoom(world, roomId, { videoTextSeconds: v }))
+              }
             />
           </MediaDisclosure>
         </div>

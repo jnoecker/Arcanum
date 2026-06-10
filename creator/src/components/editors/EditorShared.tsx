@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Section, FieldRow, TextInput } from "@/components/ui/FormWidgets";
+import { Section, FieldRow, TextInput, CommitTextarea, NumberInput } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
 import { MusicGenerator } from "@/components/ui/MusicGenerator";
@@ -207,11 +207,58 @@ export function EnhanceDescriptionButton({
   );
 }
 
+/**
+ * Text alternative for a cinematic — narrated as a vision to text and
+ * screen-reader clients in place of the video, and shown verbatim as the
+ * transcript under the video in the web client. Valid without a `video`
+ * (a text-only vision). Pairs everywhere a `video` field exists.
+ */
+export function VideoVisionFields({
+  videoText,
+  onVideoTextChange,
+  videoTextSeconds,
+  onVideoTextSecondsChange,
+}: {
+  videoText?: string;
+  onVideoTextChange: (v: string | undefined) => void;
+  videoTextSeconds?: number;
+  onVideoTextSecondsChange: (v: number | undefined) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <CommitTextarea
+        label="Vision text"
+        value={videoText ?? ""}
+        onCommit={(v) => onVideoTextChange(v.trim() ? v : undefined)}
+        rows={3}
+        placeholder="A hawk's-eye sweep over slate rooftops and lantern-lit lanes…"
+      />
+      <p className="text-2xs text-text-muted">
+        Narrated to text & screen-reader players as a vision, and shown as the
+        video transcript. Write the content of the vision, not the file.
+      </p>
+      <FieldRow label="Vision seconds">
+        <NumberInput
+          value={videoTextSeconds}
+          onCommit={onVideoTextSecondsChange}
+          min={0}
+          placeholder="All at once"
+          dense
+        />
+      </FieldRow>
+    </div>
+  );
+}
+
 export function MediaSection({
   image,
   onImageChange,
   video,
   onVideoChange,
+  videoText,
+  onVideoTextChange,
+  videoTextSeconds,
+  onVideoTextSecondsChange,
   getPrompt,
   entityContext,
   assetType,
@@ -222,6 +269,10 @@ export function MediaSection({
   onImageChange: (v: string | undefined) => void;
   video?: string;
   onVideoChange?: (v: string | undefined) => void;
+  videoText?: string;
+  onVideoTextChange?: (v: string | undefined) => void;
+  videoTextSeconds?: number;
+  onVideoTextSecondsChange?: (v: number | undefined) => void;
   getPrompt?: (style: ArtStyle) => string;
   entityContext?: string;
   assetType?: string;
@@ -253,7 +304,7 @@ export function MediaSection({
           )}
         </div>
         {onVideoChange && (
-          <MediaDisclosure label="Video" hasValue={!!video}>
+          <MediaDisclosure label="Video" hasValue={!!video || !!videoText}>
             <FieldRow label="Video">
               <TextInput
                 value={video ?? ""}
@@ -271,6 +322,14 @@ export function MediaSection({
               <VideoGenerator
                 imagePath={image}
                 onAccept={(filePath) => onVideoChange(filePath)}
+              />
+            )}
+            {onVideoTextChange && onVideoTextSecondsChange && (
+              <VideoVisionFields
+                videoText={videoText}
+                onVideoTextChange={onVideoTextChange}
+                videoTextSeconds={videoTextSeconds}
+                onVideoTextSecondsChange={onVideoTextSecondsChange}
               />
             )}
           </MediaDisclosure>

@@ -582,6 +582,10 @@ export function ItemEditor({
           onImageChange={(v) => patch({ image: v })}
           video={item.video}
           onVideoChange={(v) => patch({ video: v })}
+          videoText={item.videoText}
+          onVideoTextChange={(v) => patch({ videoText: v })}
+          videoTextSeconds={item.videoTextSeconds}
+          onVideoTextSecondsChange={(v) => patch({ videoTextSeconds: v })}
           getPrompt={(style) => itemPrompt(itemId, item, style, zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined)}
           entityContext={itemContext(itemId, item)}
           assetType="entity_portrait"

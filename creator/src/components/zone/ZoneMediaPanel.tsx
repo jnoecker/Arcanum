@@ -4,6 +4,7 @@ import { FieldRow, TextInput } from "@/components/ui/FormWidgets";
 import { MusicGenerator } from "@/components/ui/MusicGenerator";
 import { VideoGenerator } from "@/components/ui/VideoGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
+import { VideoVisionFields } from "@/components/editors/EditorShared";
 import { useVibeStore } from "@/stores/vibeStore";
 import { useAssetStore } from "@/stores/assetStore";
 import sidebarBg from "@/assets/sidebar-bg.png";
@@ -183,6 +184,14 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
                   Generate a room image first — zone intro video needs a source frame.
                 </p>
               )}
+              <div className="mt-3 border-t border-border-muted pt-3">
+                <VideoVisionFields
+                  videoText={world.videoText}
+                  onVideoTextChange={(v) => onWorldChange({ ...world, videoText: v })}
+                  videoTextSeconds={world.videoTextSeconds}
+                  onVideoTextSecondsChange={(v) => onWorldChange({ ...world, videoTextSeconds: v })}
+                />
+              </div>
             </MediaCard>
           </div>
 

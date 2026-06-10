@@ -71,6 +71,15 @@ export interface WorldFile {
    *  resolves under the videos base URL. Auto-plays on a player's first entry
    *  to the zone and is replayable from the World Map. */
   video?: string;
+  /** Prose vision narrated to text/screen-reader clients in place of the video.
+   *  The server frames it as a vision ("a vision rises before your eyes…") and
+   *  shows it verbatim as the transcript under the video in the web client.
+   *  Valid without a `video` — that makes a text-only vision. */
+  videoText?: string;
+  /** Total seconds the text vision plays out over for text clients. With a block
+   *  literal `videoText`, each line is revealed evenly across this window. Omit or
+   *  ≤ 0 shows it all at once. Sensible default: the video's runtime. */
+  videoTextSeconds?: number;
   rooms: Record<string, RoomFile>;
   mobs?: Record<string, MobFile>;
   items?: Record<string, ItemFile>;
@@ -117,6 +126,12 @@ export interface RoomFile {
   inn?: boolean;
   image?: string;
   video?: string;
+  /** Prose vision narrated to text/screen-reader clients in place of the video.
+   *  Valid without a `video` — that makes a text-only vision. */
+  videoText?: string;
+  /** Seconds the text vision plays out over; lines of a block literal reveal
+   *  evenly across this window. Omit or ≤ 0 shows it all at once. */
+  videoTextSeconds?: number;
   music?: string;
   ambient?: string;
   /** Legacy Arcanum-only alias; stripped on output. */
@@ -317,6 +332,12 @@ export interface MobFile {
   defaultAttack?: string;
   image?: string;
   video?: string;
+  /** Prose vision narrated to text/screen-reader clients in place of the video.
+   *  Valid without a `video` — that makes a text-only vision. */
+  videoText?: string;
+  /** Seconds the text vision plays out over; lines of a block literal reveal
+   *  evenly across this window. Omit or ≤ 0 shows it all at once. */
+  videoTextSeconds?: number;
   /**
    * When `role === "trainer"`, the class IDs this NPC teaches. One entry =
    * single-class trainer; two or more = multi-class trainer. Each spawn room
@@ -419,6 +440,12 @@ export interface ItemFile {
   basePrice?: number;
   image?: string;
   video?: string;
+  /** Prose vision narrated to text/screen-reader clients in place of the video.
+   *  Valid without a `video` — that makes a text-only vision. */
+  videoText?: string;
+  /** Seconds the text vision plays out over; lines of a block literal reveal
+   *  evenly across this window. Omit or ≤ 0 shows it all at once. */
+  videoTextSeconds?: number;
   /**
    * Explicit server-side category. Leave unset to let the server infer from
    * other fields. Values are lowercase to match the server's `ItemType.label()`.

@@ -1037,6 +1037,10 @@ export function MobEditor({
           onImageChange={(v) => patch({ image: v })}
           video={mob.video}
           onVideoChange={(v) => patch({ video: v })}
+          videoText={mob.videoText}
+          onVideoTextChange={(v) => patch({ videoText: v })}
+          videoTextSeconds={mob.videoTextSeconds}
+          onVideoTextSecondsChange={(v) => patch({ videoTextSeconds: v })}
           getPrompt={(style) => mobPrompt(mobId, mob, style, zoneId ? useVibeStore.getState().getVibe(zoneId) : undefined)}
           entityContext={mobContext(mobId, mob)}
           assetType="entity_portrait"

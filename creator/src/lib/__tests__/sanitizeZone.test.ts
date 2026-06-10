@@ -819,3 +819,72 @@ describe("sanitizeZone — end-to-end", () => {
     expect(result.shops!["shop_301"]).toBeUndefined();
   });
 });
+
+// ─── sanitizeZone — cinematic text alternatives (videoText) ────────
+
+describe("sanitizeZone — videoText / videoTextSeconds", () => {
+  it("serializes zone-level videoText and a positive videoTextSeconds", () => {
+    const world = makeWorld({
+      video: "intro.mp4",
+      videoText: "A hawk's-eye sweep over slate rooftops.\nThe view dives toward a quiet keep.",
+      videoTextSeconds: 30,
+    });
+
+    const result = sanitizeZone(world) as WorldFile;
+    expect(result.video).toBe("intro.mp4");
+    expect(result.videoText).toBe(
+      "A hawk's-eye sweep over slate rooftops.\nThe view dives toward a quiet keep.",
+    );
+    expect(result.videoTextSeconds).toBe(30);
+  });
+
+  it("preserves the block-literal text verbatim without trimming internal lines", () => {
+    const world = makeWorld({ videoText: "Line one\nLine two\nLine three" });
+    const result = sanitizeZone(world) as WorldFile;
+    expect(result.videoText).toBe("Line one\nLine two\nLine three");
+  });
+
+  it("allows a text-only vision (videoText without video)", () => {
+    const world = makeWorld({ videoText: "Glyphs flare to life, tracing a hidden door." });
+    const result = sanitizeZone(world) as WorldFile;
+    expect(result.video).toBeUndefined();
+    expect(result.videoText).toBe("Glyphs flare to life, tracing a hidden door.");
+  });
+
+  it("drops blank videoText and non-positive videoTextSeconds", () => {
+    const world = makeWorld({ videoText: "   ", videoTextSeconds: 0 });
+    const result = sanitizeZone(world) as WorldFile;
+    expect(result.videoText).toBeUndefined();
+    expect(result.videoTextSeconds).toBeUndefined();
+  });
+
+  it("carries room, mob, and item videoText through serialization", () => {
+    const world = makeWorld({
+      rooms: {
+        room_a: {
+          title: "A",
+          description: "A",
+          video: "glyphs.mp4",
+          videoText: "Glyphs along the wall flare to life.",
+          videoTextSeconds: 10,
+        },
+      },
+      mobs: {
+        seer: {
+          name: "Seer",
+          spawns: [{ room: "room_a" }],
+          videoText: "The seer's eyes cloud with prophecy.",
+        },
+      },
+      items: {
+        orb: { displayName: "Orb", videoText: "The orb pulses with trapped light." },
+      },
+    });
+
+    const result = sanitizeZone(world);
+    expect(result.rooms["room_a"]!.videoText).toBe("Glyphs along the wall flare to life.");
+    expect(result.rooms["room_a"]!.videoTextSeconds).toBe(10);
+    expect(result.mobs!["seer"]!.videoText).toBe("The seer's eyes cloud with prophecy.");
+    expect(result.items!["orb"]!.videoText).toBe("The orb pulses with trapped light.");
+  });
+});

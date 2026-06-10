@@ -814,6 +814,10 @@ function cleanOutput(world: WorldFile): WorldFile {
   }
   if (world.audio) result.audio = world.audio;
   if (world.video?.trim()) result.video = world.video.trim();
+  if (world.videoText?.trim()) result.videoText = world.videoText;
+  if (typeof world.videoTextSeconds === "number" && world.videoTextSeconds > 0) {
+    result.videoTextSeconds = world.videoTextSeconds;
+  }
   if (hasEntries(mobsOut)) result.mobs = mobsOut;
   if (hasEntries(items)) result.items = items;
   if (hasEntries(world.shops)) result.shops = world.shops;

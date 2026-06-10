@@ -1,7 +1,9 @@
 use base64::Engine;
 use serde::Serialize;
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Mutex, OnceLock};
 
 /// Monotonic counter to guarantee temp-file uniqueness even when two atomic
 /// writes inside the same process race in the same millisecond.
@@ -91,9 +93,84 @@ pub async fn read_image_data_url(path: String) -> Result<String, String> {
     let bytes = tokio::fs::read(&path)
         .await
         .map_err(|e| format!("Failed to read image: {e}"))?;
+    Ok(bytes_to_data_url(&bytes))
+}
 
-    let ext = detect_extension(&bytes);
+fn bytes_to_data_url(bytes: &[u8]) -> String {
+    let ext = detect_extension(bytes);
     let mime = detect_mime(ext);
-    let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-    Ok(format!("data:{mime};base64,{b64}"))
+    let b64 = base64::engine::general_purpose::STANDARD.encode(bytes);
+    format!("data:{mime};base64,{b64}")
+}
+
+static THUMBNAIL_CACHE: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
+
+fn thumbnail_cache() -> &'static Mutex<HashMap<String, String>> {
+    THUMBNAIL_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// Generous upper bound; thumbnails are ~10–40 KB each, so a full cache is a
+/// few tens of MB. Cleared wholesale rather than LRU-evicted — re-encoding on
+/// the rare overflow is cheaper than tracking recency on every hit.
+const THUMBNAIL_CACHE_MAX_ENTRIES: usize = 2048;
+
+fn encode_thumbnail(bytes: &[u8], max_dim: u32) -> String {
+    let img = match image::load_from_memory(bytes) {
+        Ok(img) => img,
+        // Undecodable here doesn't mean undecodable in the webview — serve
+        // the original bytes, matching read_image_data_url behavior.
+        Err(_) => return bytes_to_data_url(bytes),
+    };
+    if img.width() <= max_dim && img.height() <= max_dim {
+        return bytes_to_data_url(bytes);
+    }
+    let thumb = img.thumbnail(max_dim, max_dim).to_rgba8();
+    let (w, h) = (thumb.width(), thumb.height());
+    let encoded = webp::Encoder::from_rgba(thumb.as_raw(), w, h).encode(80.0);
+    format!(
+        "data:image/webp;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(&*encoded)
+    )
+}
+
+/// Like `read_image_data_url`, but downscaled to fit within `max_dim` and
+/// re-encoded as lossy WebP. Meant for map nodes and list thumbnails where
+/// full-resolution art (often multi-MB PNGs) wastes decode time and GPU
+/// memory. Results are cached against the file's mtime + size.
+#[tauri::command]
+pub async fn read_image_thumbnail_data_url(path: String, max_dim: u32) -> Result<String, String> {
+    let max_dim = max_dim.clamp(16, 1024);
+    let meta = tokio::fs::metadata(&path)
+        .await
+        .map_err(|e| format!("Failed to read image: {e}"))?;
+    let mtime = meta
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let key = format!("{path}|{max_dim}|{mtime}|{}", meta.len());
+
+    if let Some(hit) = thumbnail_cache()
+        .lock()
+        .expect("thumbnail cache poisoned")
+        .get(&key)
+    {
+        return Ok(hit.clone());
+    }
+
+    let bytes = tokio::fs::read(&path)
+        .await
+        .map_err(|e| format!("Failed to read image: {e}"))?;
+
+    let data_url = tokio::task::spawn_blocking(move || encode_thumbnail(&bytes, max_dim))
+        .await
+        .map_err(|e| format!("Thumbnail encode failed: {e}"))?;
+
+    let mut cache = thumbnail_cache().lock().expect("thumbnail cache poisoned");
+    if cache.len() >= THUMBNAIL_CACHE_MAX_ENTRIES {
+        cache.clear();
+    }
+    cache.insert(key, data_url.clone());
+    Ok(data_url)
 }

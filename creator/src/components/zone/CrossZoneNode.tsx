@@ -48,10 +48,10 @@ export function CrossZoneNode({ data }: NodeProps<CrossZoneNodeType>) {
       {([Position.Top, Position.Bottom, Position.Left, Position.Right] as const).map(
         (pos) => (
           <Handle
-            key={`target-${pos}`}
+            key={pos}
             type="target"
             position={pos}
-            id={`target-${pos === Position.Top ? "n" : pos === Position.Bottom ? "s" : pos === Position.Left ? "w" : "e"}`}
+            id={pos === Position.Top ? "n" : pos === Position.Bottom ? "s" : pos === Position.Left ? "w" : "e"}
             style={handleStyle}
             isConnectable
           />

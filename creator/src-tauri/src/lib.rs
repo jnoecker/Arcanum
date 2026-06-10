@@ -71,6 +71,7 @@ macro_rules! base_handler {
             project_settings::save_project_settings,
             project_settings::seed_project_settings,
             fs_utils::read_image_data_url,
+            fs_utils::read_image_thumbnail_data_url,
             ffmpeg::check_ffmpeg_status,
             ffmpeg::ensure_ffmpeg_ready,
             video_export::save_video_frame,

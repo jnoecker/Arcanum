@@ -57,6 +57,7 @@ function voicesBaseUrl(imagesBaseUrl: string): string {
 function sanitizeAdminConfigForRuntime(admin: AppConfig["admin"] | undefined): AppConfig["admin"] {
   return {
     enabled: admin?.enabled ?? false,
+    host: admin?.host ?? "127.0.0.1",
     port: admin?.port ?? 9091,
     // The runtime token is injected by the mud deployment layer via env/SSM.
     // Arcanum should never persist it into project config.
@@ -533,6 +534,7 @@ export function buildMonolithicConfigObject(
     },
     admin: {
       enabled: adminConfig.enabled,
+      host: adminConfig.host || undefined,
       port: adminConfig.port,
       token: adminConfig.token,
       basePath: adminConfig.basePath || undefined,

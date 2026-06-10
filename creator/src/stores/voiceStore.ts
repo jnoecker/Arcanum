@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 import { useProjectStore } from "@/stores/projectStore";
+import { useZoneStore } from "@/stores/zoneStore";
+import { collectDialogueLines } from "@/lib/dialogueLines";
 import type { SyncProgress } from "@/types/assets";
 import {
   DEFAULT_ELEVENLABS_MODEL,
@@ -98,6 +100,10 @@ interface VoiceStore {
   synthesizeLine: (line: DialogueLine) => Promise<void>;
   generateAll: (lines: DialogueLine[]) => Promise<void>;
   publishToR2: (lines: DialogueLine[], force?: boolean) => Promise<SyncProgress | null>;
+  /** Self-contained publish for the world handoff flow: loads the voice map,
+   *  enumerates every dialogue line, rehydrates on-disk clips, then uploads.
+   *  Works without the Voice-Over panel ever being opened. */
+  publishWorldVoices: (force?: boolean) => Promise<SyncProgress | null>;
   reset: () => void;
 }
 
@@ -412,6 +418,22 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
       set({ lastPublish: progress, publishing: false });
       return progress;
     }
+  },
+
+  publishWorldVoices: async (force = false) => {
+    const dir = projectDir();
+    if (!dir) return null;
+    await get().loadVoiceMap();
+    const lines = collectDialogueLines(useZoneStore.getState().zones);
+    if (lines.length === 0) {
+      const empty: SyncProgress = { total: 0, uploaded: 0, skipped: 0, failed: 0, errors: [] };
+      set({ lastPublish: empty });
+      return empty;
+    }
+    // Discover which clips are already synthesized on disk for the current
+    // voice/model/settings — the panel may never have been opened this session.
+    await get().rehydrate(lines);
+    return get().publishToR2(lines, force);
   },
 
   reset: () =>

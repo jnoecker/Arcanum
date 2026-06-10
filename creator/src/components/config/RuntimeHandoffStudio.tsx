@@ -15,6 +15,7 @@ import {
   publishCuratedAssets,
   publishGlobalAssets,
   publishPlayerSprites,
+  publishVoices,
   runWorkspaceValidation,
   saveWorkspace,
 } from "@/lib/runtimeHandoff";
@@ -30,6 +31,7 @@ type StepKey =
   | "assets"
   | "globals"
   | "sprites"
+  | "voices"
   | "config"
   | "achievements"
   | "zones";
@@ -159,6 +161,7 @@ export function RuntimeHandoffStudio() {
     assets: { status: "idle", detail: "Upload approved gallery assets to R2.", errors: [] },
     globals: { status: "idle", detail: "Upload global asset files to R2.", errors: [] },
     sprites: { status: "idle", detail: "Upload player sprite files to R2.", errors: [] },
+    voices: { status: "idle", detail: "Upload synthesized dialogue clips to R2.", errors: [] },
     config: { status: "idle", detail: "Upload runtime config to R2.", errors: [] },
     achievements: { status: "idle", detail: "Upload achievements.yaml to R2.", errors: [] },
     zones: { status: "idle", detail: "Upload zone YAML files to R2.", errors: [] },
@@ -389,6 +392,30 @@ export function RuntimeHandoffStudio() {
     }
   };
 
+  const runVoicesStep = async () => {
+    setStepState("voices", {
+      status: "running",
+      detail: "Publishing dialogue voice-over to R2...",
+      errors: [],
+    });
+    try {
+      const result = await publishVoices(forceReupload);
+      const nothing = result.total === 0 && result.uploaded === 0 && result.failed === 0;
+      setStepState("voices", {
+        status: result.failed > 0 ? "warning" : "success",
+        detail: nothing ? "No synthesized dialogue clips to publish." : formatSyncResult(result, "clips"),
+        errors: result.errors,
+      });
+    } catch (error) {
+      setStepState("voices", {
+        status: "error",
+        detail: "Voice publish failed.",
+        errors: [String(error)],
+      });
+      throw error;
+    }
+  };
+
   const runConfigStep = async () => {
     if (!project) return;
     setStepState("config", {
@@ -520,6 +547,7 @@ export function RuntimeHandoffStudio() {
         await runAssetsStep();
         await runGlobalsStep();
         await runSpritesStep();
+        await runVoicesStep();
         await runConfigStep();
         await runAchievementsStep();
         await runZonesStep();
@@ -749,6 +777,16 @@ export function RuntimeHandoffStudio() {
 
         <StepCard
           number={8}
+          title="Publish dialogue voices"
+          description="Upload synthesized voice-over clips to R2."
+          state={steps.voices}
+          actionLabel="Publish voices"
+          disabled={!hasR2}
+          onAction={runVoicesStep}
+        />
+
+        <StepCard
+          number={9}
           title="Deploy runtime config"
           description="Upload the assembled runtime config the MUD server pulls from R2."
           state={steps.config}
@@ -758,7 +796,7 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          number={9}
+          number={10}
           title="Deploy achievements"
           description="Upload achievements.yaml to R2."
           state={steps.achievements}
@@ -768,7 +806,7 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          number={10}
+          number={11}
           title="Deploy zone YAML"
           description="Upload zone files to R2."
           state={steps.zones}

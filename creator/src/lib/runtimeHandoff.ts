@@ -9,6 +9,7 @@ import { validateAllZones, type ValidationIssue } from "@/lib/validateZone";
 import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useValidationStore } from "@/stores/validationStore";
+import { useVoiceStore } from "@/stores/voiceStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import type { Project } from "@/types/project";
 import type { SyncProgress, SyncScope } from "@/types/assets";
@@ -149,20 +150,29 @@ export async function exportRuntimeBundle(outputDir: string) {
   return exportMudFormat(outputDir);
 }
 
-export async function publishCuratedAssets(scope: SyncScope = "approved"): Promise<SyncProgress> {
-  return useAssetStore.getState().syncToR2(scope);
+export async function publishCuratedAssets(
+  scope: SyncScope = "approved",
+  force = false,
+): Promise<SyncProgress> {
+  return useAssetStore.getState().syncToR2(scope, force);
 }
 
-export async function publishGlobalAssets(): Promise<SyncProgress> {
+export async function publishGlobalAssets(force = false): Promise<SyncProgress> {
   const config = useConfigStore.getState().config;
   return invoke<SyncProgress>("deploy_global_assets_to_r2", {
     globalAssets: config?.globalAssets ?? {},
+    force,
   });
 }
 
-export async function publishPlayerSprites(): Promise<SyncProgress> {
+export async function publishPlayerSprites(force = false): Promise<SyncProgress> {
   const spritesYaml = generateSpritesYaml();
-  return invoke<SyncProgress>("deploy_sprites_to_r2", { spritesYaml });
+  return invoke<SyncProgress>("deploy_sprites_to_r2", { spritesYaml, force });
+}
+
+export async function publishVoices(force = false): Promise<SyncProgress> {
+  const result = await useVoiceStore.getState().publishWorldVoices(force);
+  return result ?? { total: 0, uploaded: 0, skipped: 0, failed: 0, errors: [] };
 }
 
 export async function deployRuntimeAchievements(): Promise<string> {

@@ -15,6 +15,7 @@ import {
   publishCuratedAssets,
   publishGlobalAssets,
   publishPlayerSprites,
+  publishVoices,
   runWorkspaceValidation,
   saveWorkspace,
 } from "@/lib/runtimeHandoff";
@@ -30,6 +31,7 @@ type StepKey =
   | "assets"
   | "globals"
   | "sprites"
+  | "voices"
   | "config"
   | "achievements"
   | "zones";
@@ -143,6 +145,7 @@ export function RuntimeHandoffStudio() {
     }
   });
   const [runningAll, setRunningAll] = useState(false);
+  const [forceReupload, setForceReupload] = useState(false);
   const [workflowMessage, setWorkflowMessage] = useState<string | null>(null);
   const [deployCommitMsg, setDeployCommitMsg] = useState(() =>
     `Deploy: ${new Date().toISOString().slice(0, 16).replace("T", " ")}`,
@@ -158,6 +161,7 @@ export function RuntimeHandoffStudio() {
     assets: { status: "idle", detail: "Upload approved gallery assets to R2.", errors: [] },
     globals: { status: "idle", detail: "Upload global asset files to R2.", errors: [] },
     sprites: { status: "idle", detail: "Upload player sprite files to R2.", errors: [] },
+    voices: { status: "idle", detail: "Upload synthesized dialogue clips to R2.", errors: [] },
     config: { status: "idle", detail: "Upload runtime config to R2.", errors: [] },
     achievements: { status: "idle", detail: "Upload achievements.yaml to R2.", errors: [] },
     zones: { status: "idle", detail: "Upload zone YAML files to R2.", errors: [] },
@@ -326,7 +330,7 @@ export function RuntimeHandoffStudio() {
       errors: [],
     });
     try {
-      const result = await publishCuratedAssets(syncScope);
+      const result = await publishCuratedAssets(syncScope, forceReupload);
       setStepState("assets", {
         status: result.failed > 0 ? "warning" : "success",
         detail: formatSyncResult(result, "assets"),
@@ -349,7 +353,7 @@ export function RuntimeHandoffStudio() {
       errors: [],
     });
     try {
-      const result = await publishGlobalAssets();
+      const result = await publishGlobalAssets(forceReupload);
       setStepState("globals", {
         status: result.failed > 0 ? "warning" : "success",
         detail: formatSyncResult(result, "globals"),
@@ -372,7 +376,7 @@ export function RuntimeHandoffStudio() {
       errors: [],
     });
     try {
-      const result = await publishPlayerSprites();
+      const result = await publishPlayerSprites(forceReupload);
       setStepState("sprites", {
         status: result.failed > 0 ? "warning" : "success",
         detail: formatSyncResult(result, "sprites"),
@@ -382,6 +386,30 @@ export function RuntimeHandoffStudio() {
       setStepState("sprites", {
         status: "error",
         detail: "Sprite publish failed.",
+        errors: [String(error)],
+      });
+      throw error;
+    }
+  };
+
+  const runVoicesStep = async () => {
+    setStepState("voices", {
+      status: "running",
+      detail: "Publishing dialogue voice-over to R2...",
+      errors: [],
+    });
+    try {
+      const result = await publishVoices(forceReupload);
+      const nothing = result.total === 0 && result.uploaded === 0 && result.failed === 0;
+      setStepState("voices", {
+        status: result.failed > 0 ? "warning" : "success",
+        detail: nothing ? "No synthesized dialogue clips to publish." : formatSyncResult(result, "clips"),
+        errors: result.errors,
+      });
+    } catch (error) {
+      setStepState("voices", {
+        status: "error",
+        detail: "Voice publish failed.",
         errors: [String(error)],
       });
       throw error;
@@ -519,6 +547,7 @@ export function RuntimeHandoffStudio() {
         await runAssetsStep();
         await runGlobalsStep();
         await runSpritesStep();
+        await runVoicesStep();
         await runConfigStep();
         await runAchievementsStep();
         await runZonesStep();
@@ -565,6 +594,18 @@ export function RuntimeHandoffStudio() {
             >
               Open validation
             </button>
+            <label
+              className="flex cursor-pointer items-center gap-2 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-2 text-xs font-medium text-text-secondary transition hover:bg-[var(--chrome-highlight-strong)]"
+              title="Re-upload assets that are already on R2 so they pick up the latest cache headers. Slower — use after a caching change."
+            >
+              <input
+                type="checkbox"
+                checked={forceReupload}
+                onChange={(event) => setForceReupload(event.target.checked)}
+                className="accent-[var(--accent)]"
+              />
+              Force re-upload
+            </label>
           </div>
         </div>
 
@@ -736,6 +777,16 @@ export function RuntimeHandoffStudio() {
 
         <StepCard
           number={8}
+          title="Publish dialogue voices"
+          description="Upload synthesized voice-over clips to R2."
+          state={steps.voices}
+          actionLabel="Publish voices"
+          disabled={!hasR2}
+          onAction={runVoicesStep}
+        />
+
+        <StepCard
+          number={9}
           title="Deploy runtime config"
           description="Upload the assembled runtime config the MUD server pulls from R2."
           state={steps.config}
@@ -745,7 +796,7 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          number={9}
+          number={10}
           title="Deploy achievements"
           description="Upload achievements.yaml to R2."
           state={steps.achievements}
@@ -755,7 +806,7 @@ export function RuntimeHandoffStudio() {
         />
 
         <StepCard
-          number={10}
+          number={11}
           title="Deploy zone YAML"
           description="Upload zone files to R2."
           state={steps.zones}

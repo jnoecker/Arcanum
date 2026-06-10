@@ -4,6 +4,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
 import { useVoiceStore } from "@/stores/voiceStore";
 import { panelTab } from "@/lib/panelRegistry";
+import { collectDialogueLines } from "@/lib/dialogueLines";
 import {
   ELEVENLABS_DEFAULT_SETTINGS,
   ELEVENLABS_MODELS,
@@ -12,7 +13,6 @@ import {
   settingsAreEmpty,
   sha8,
   VOICE_SETTING_FIELDS,
-  type DialogueLine,
   type ElevenLabsVoice,
   type VoiceMap,
   type VoiceSettings,
@@ -40,31 +40,6 @@ function fillRequired(
     speed: s.speed ?? base.speed,
     sentencePause: s.sentencePause ?? base.sentencePause,
   };
-}
-
-/** Flatten every voiceable NPC dialogue line across all loaded zones. */
-function collectLines(zones: Map<string, { data: import("@/types/world").WorldFile }>): DialogueLine[] {
-  const lines: DialogueLine[] = [];
-  for (const { data } of zones.values()) {
-    const zone = data.zone;
-    const mobs = data.mobs ?? {};
-    for (const [templateKey, mob] of Object.entries(mobs)) {
-      const dialogue = mob.dialogue;
-      if (!dialogue) continue;
-      for (const [nodeId, node] of Object.entries(dialogue)) {
-        if (!node.text || !node.text.trim()) continue;
-        lines.push({ zone, templateKey, mobName: mob.name ?? templateKey, nodeId, text: node.text });
-      }
-    }
-  }
-  lines.sort((a, b) => {
-    if (a.zone !== b.zone) return a.zone.localeCompare(b.zone);
-    if (a.templateKey !== b.templateKey) return a.templateKey.localeCompare(b.templateKey);
-    if (a.nodeId === "root") return -1;
-    if (b.nodeId === "root") return 1;
-    return a.nodeId.localeCompare(b.nodeId);
-  });
-  return lines;
 }
 
 export default function VoiceOverPanel() {
@@ -107,6 +82,7 @@ export default function VoiceOverPanel() {
 
   const [savingMap, setSavingMap] = useState(false);
   const [savedMap, setSavedMap] = useState(false);
+  const [forceReupload, setForceReupload] = useState(false);
   const [sha8Map, setSha8Map] = useState<Record<string, string>>({});
 
   const hasKey = !!settings?.elevenlabs_api_key;
@@ -131,7 +107,7 @@ export default function VoiceOverPanel() {
     }
   }, [hasKey, voices.length, loadingVoices, voicesError, fetchVoices]);
 
-  const lines = useMemo(() => collectLines(zones), [zones]);
+  const lines = useMemo(() => collectDialogueLines(zones), [zones]);
 
   const mobGroups = useMemo<MobGroup[]>(() => {
     const map = new Map<string, MobGroup>();
@@ -438,8 +414,20 @@ export default function VoiceOverPanel() {
             >
               {generating ? "Generating…" : "Generate all"}
             </button>
+            <label
+              className="flex cursor-pointer items-center gap-1.5 text-2xs text-text-muted"
+              title="Re-upload clips already on R2 so they pick up the latest cache headers. Use when seeding a new bucket or after a caching change."
+            >
+              <input
+                type="checkbox"
+                checked={forceReupload}
+                onChange={(event) => setForceReupload(event.target.checked)}
+                className="accent-[var(--accent)]"
+              />
+              Force re-upload
+            </label>
             <button
-              onClick={() => publishToR2(lines)}
+              onClick={() => publishToR2(lines, forceReupload)}
               disabled={!r2Configured || publishing || doneCount === 0}
               title={r2Configured ? undefined : "Configure Cloudflare R2 in Settings to publish."}
               className="action-button action-button-secondary action-button-sm focus-ring"

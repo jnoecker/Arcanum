@@ -12,6 +12,7 @@ import {
   publishCuratedAssets,
   publishGlobalAssets,
   publishPlayerSprites,
+  publishVoices,
   runWorkspaceValidation,
   saveWorkspace,
 } from "@/lib/runtimeHandoff";
@@ -31,6 +32,7 @@ type StepKey =
   | "assets"
   | "globals"
   | "sprites"
+  | "voices"
   | "config"
   | "achievements"
   | "zones";
@@ -55,6 +57,7 @@ const STEP_ORDER: { key: StepKey; title: string; idleDetail: string }[] = [
   { key: "assets", title: "Publish assets", idleDetail: "Upload approved gallery assets to R2." },
   { key: "globals", title: "Publish globals", idleDetail: "Upload changed global assets to R2." },
   { key: "sprites", title: "Publish sprites", idleDetail: "Upload changed player sprites to R2." },
+  { key: "voices", title: "Publish voices", idleDetail: "Upload synthesized dialogue clips to R2." },
 ];
 
 const STATUS_STYLES: Record<StepStatus, string> = {
@@ -307,6 +310,21 @@ export function PublishWorldModal({ onClose }: PublishWorldModalProps) {
         });
       } catch (error) {
         setStep("sprites", { status: "error", detail: "Sprite publish failed.", errors: [String(error)] });
+        throw error;
+      }
+
+      // ── 10. Voices ────────────────────────────────────────────────
+      setStep("voices", { status: "running", detail: "Publishing dialogue voice-over to R2..." });
+      try {
+        const result = await publishVoices();
+        const nothing = result.total === 0 && result.uploaded === 0 && result.failed === 0;
+        setStep("voices", {
+          status: nothing ? "skipped" : result.failed > 0 ? "warning" : "success",
+          detail: nothing ? "No synthesized dialogue clips to publish." : formatSyncResult(result, "clips"),
+          errors: result.errors,
+        });
+      } catch (error) {
+        setStep("voices", { status: "error", detail: "Voice publish failed.", errors: [String(error)] });
         throw error;
       }
 

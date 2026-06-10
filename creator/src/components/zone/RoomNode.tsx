@@ -103,7 +103,7 @@ function RoomBackground({ image }: { image?: string }) {
 
 /** Role pill badges (bank, tavern/lottery, inn, dungeon, auction, stylist, housingBroker) */
 function RoleBadges({ d }: { d: RoomNodeData }) {
-  if (!d.bank && !d.tavern && !d.inn && !d.dungeon && !d.auction && !d.stylist && !d.housingBroker) return null;
+  if (!d.bank && !d.tavern && !d.inn && !d.dungeon && !d.auction && !d.stylist && !d.housingBroker && !d.akathavaeShrine) return null;
   return (
     <div className="relative flex flex-wrap gap-1">
       {d.bank && (
@@ -146,6 +146,12 @@ function RoleBadges({ d }: { d: RoomNodeData }) {
         <span className="flex items-center gap-0.5 rounded bg-accent/20 px-1 text-3xs font-semibold text-accent" title="Housing Broker">
           <img src={ROLE_ICONS.housingBroker} alt="" className="h-3 w-3" />
           Housing
+        </span>
+      )}
+      {d.akathavaeShrine && (
+        <span className="flex items-center gap-0.5 rounded bg-accent/20 px-1 text-3xs font-semibold text-accent" title="Akathavae shrine (pledge/renounce)">
+          <img src={ROLE_ICONS.akathavaeShrine} alt="" className="h-3 w-3" />
+          Shrine
         </span>
       )}
     </div>

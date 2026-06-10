@@ -17,6 +17,7 @@ import {
   normalizeLotteryConfig,
   normalizeGamblingConfig,
   normalizeStylistConfig,
+  normalizeAkathavaeConfig,
   normalizeRespecConfig,
   normalizeCurrenciesConfig,
   normalizeDailyQuestsConfig,
@@ -142,6 +143,7 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
     lottery: normalizeLotteryConfig(config.lottery),
     gambling: normalizeGamblingConfig(config.gambling),
     stylist: normalizeStylistConfig(config.stylist),
+    akathavae: normalizeAkathavaeConfig(config.akathavae),
     respec: normalizeRespecConfig(config.respec),
     housing: (config.housing.enabled || Object.keys(config.housing.templates).length > 0)
       ? housingToPlain(config.housing) : undefined,

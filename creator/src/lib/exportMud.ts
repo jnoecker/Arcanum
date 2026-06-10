@@ -15,6 +15,7 @@ import {
   DEFAULT_STATUS_EFFECT_TYPES,
   DEFAULT_STACK_BEHAVIORS,
   DEFAULT_ABILITY_TARGET_TYPES,
+  DEFAULT_AKATHAVAE,
 } from "@/lib/configDefaults";
 
 import { YAML_OPTS } from "@/lib/yamlOpts";
@@ -192,6 +193,42 @@ export function normalizeStylistConfig(config?: AppConfig["stylist"]): AppConfig
   return {
     feeGold: config.feeGold ?? 500,
   };
+}
+
+/**
+ * Normalize the Akathavae config for serialization. Returns `undefined` when it
+ * matches the canonical defaults so untouched worlds don't grow a redundant
+ * block (the server applies the same defaults). Keys are emitted in the server's
+ * declaration order.
+ */
+export function normalizeAkathavaeConfig(config?: AppConfig["akathavae"]): AppConfig["akathavae"] | undefined {
+  const d = DEFAULT_AKATHAVAE;
+  const c = { ...d, ...(config ?? {}) };
+  const ordered: AppConfig["akathavae"] = {
+    enabled: c.enabled,
+    renounceCostGold: c.renounceCostGold,
+    repledgeCooldownMs: c.repledgeCooldownMs,
+    illuminateBaseSuccessPct: c.illuminateBaseSuccessPct,
+    successStat: c.successStat,
+    successPerStatPoint: c.successPerStatPoint,
+    levelGapPenaltyPct: c.levelGapPenaltyPct,
+    gapReliefStat: c.gapReliefStat,
+    gapReliefPerStatPoint: c.gapReliefPerStatPoint,
+    minSuccessPct: c.minSuccessPct,
+    maxSuccessPct: c.maxSuccessPct,
+    failRetryCooldownMs: c.failRetryCooldownMs,
+    escapeStat: c.escapeStat,
+    escapePerStatPoint: c.escapePerStatPoint,
+    xpStat: c.xpStat,
+    xpBonusPerStatPoint: c.xpBonusPerStatPoint,
+    repeatXpFraction: c.repeatXpFraction,
+    repeatXpCooldownMs: c.repeatXpCooldownMs,
+    roomDiscoveryXp: c.roomDiscoveryXp,
+    itemDiscoveryXp: c.itemDiscoveryXp,
+    observeNpcXp: c.observeNpcXp,
+    discoveryXpThrottleMs: c.discoveryXpThrottleMs,
+  };
+  return JSON.stringify(ordered) === JSON.stringify(d) ? undefined : ordered;
 }
 
 export function normalizeRespecConfig(config?: AppConfig["respec"]): AppConfig["respec"] | undefined {
@@ -475,6 +512,8 @@ export function buildMonolithicConfigObject(
   if (c.lottery) engine.lottery = normalizeLotteryConfig(c.lottery);
   if (c.gambling) engine.gambling = normalizeGamblingConfig(c.gambling);
   if (c.stylist) engine.stylist = normalizeStylistConfig(c.stylist);
+  const akathavae = normalizeAkathavaeConfig(c.akathavae);
+  if (akathavae) engine.akathavae = akathavae;
   if (c.respec) engine.respec = normalizeRespecConfig(c.respec);
   if (c.prestige) engine.prestige = c.prestige;
   if (c.dailyQuests) engine.dailyQuests = normalizeDailyQuestsConfig(c.dailyQuests);

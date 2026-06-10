@@ -10,6 +10,7 @@ interface ClassesListProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onAdd: () => void;
+  onAddAkathavae: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
 }
@@ -19,11 +20,13 @@ export function ClassesList({
   selectedId,
   onSelect,
   onAdd,
+  onAddAkathavae,
   onDuplicate,
   onDelete,
 }: ClassesListProps) {
   const [query, setQuery] = useState("");
   const hasSelection = selectedId !== null;
+  const hasAkathavae = "AKATHAVAE" in classes;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -89,6 +92,18 @@ export function ClassesList({
           <TrashIcon />
         </button>
       </div>
+
+      {!hasAkathavae && (
+        <button
+          type="button"
+          onClick={onAddAkathavae}
+          title="Insert a pre-filled Akathavae class (pacifist path, granted on pledge)"
+          className="focus-ring inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2.5 py-1.5 text-2xs font-medium text-text-muted transition hover:border-accent/30 hover:text-text-primary"
+        >
+          <PlusIcon />
+          Scaffold Akathavae
+        </button>
+      )}
 
       <ul className="-mx-1 flex max-h-[64vh] flex-col gap-1.5 overflow-y-auto px-1 pb-1">
         {filtered.length === 0 ? (

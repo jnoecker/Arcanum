@@ -31,6 +31,7 @@ import { GuildHallsPanel } from "./panels/GuildHallsPanel";
 import { FactionPanel } from "./panels/FactionPanel";
 import { PetsPanel } from "./panels/PetsPanel";
 import { EnchantingPanel } from "./panels/EnchantingPanel";
+import { AkathavaePanel } from "./panels/AkathavaePanel";
 import { WorldEventsPanel } from "./panels/WorldEventsPanel";
 import { WeatherEnvironmentPanel } from "./panels/WeatherEnvironmentPanel";
 import { CurrenciesPanel } from "./panels/CurrenciesPanel";
@@ -87,6 +88,8 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <CraftingStudio config={config} onChange={onChange} />;
     case "enchanting":
       return <EnchantingPanel config={config} onChange={onChange} />;
+    case "akathavae":
+      return <AkathavaePanel config={config} onChange={onChange} />;
     case "factions":
       return <FactionPanel />;
     case "guilds":

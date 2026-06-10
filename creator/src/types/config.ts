@@ -1314,6 +1314,60 @@ export interface StylistConfig {
   feeGold: number;
 }
 
+// ─── Akathavae (pacifist explorer path) ────────────────────────────
+
+/**
+ * Tuning for the Akathavae pledge — the pacifist explorer path. Mirrors the
+ * server's `ambonMUD.engine.akathavae` block. Pledging is free at a shrine
+ * (`akathavaeShrine` room flag); renouncing costs gold and gates a re-pledge
+ * cooldown. Illumination replaces combat: a stat-driven attempt to record a
+ * creature in the player's Arcanum.
+ */
+export interface AkathavaeConfig {
+  enabled: boolean;
+  /** Gold cost to renounce the pledge at a shrine. */
+  renounceCostGold: number;
+  /** Real-time cooldown before an ex-Akathavae may pledge again (ms). Default 24h. */
+  repledgeCooldownMs: number;
+  /** Base chance (percent) that an illumination success roll passes before stat/level adjustments. */
+  illuminateBaseSuccessPct: number;
+  /** Stat that improves illumination success chance. */
+  successStat: string;
+  /** Success-chance percent gained per successStat point above base (10). */
+  successPerStatPoint: number;
+  /** Success-chance percent lost per level the subject is above the player. */
+  levelGapPenaltyPct: number;
+  /** Stat that shrinks the level-gap penalty. */
+  gapReliefStat: string;
+  /** Gap-penalty percent (per subject level) removed per gapReliefStat point above base. */
+  gapReliefPerStatPoint: number;
+  /** Success chance is clamped into [minSuccessPct, maxSuccessPct]. */
+  minSuccessPct: number;
+  maxSuccessPct: number;
+  /** Per-subject retry cooldown after a failed illumination (ms). */
+  failRetryCooldownMs: number;
+  /** Stat that lets a failed illuminator talk their way out of being attacked. */
+  escapeStat: string;
+  /** Escape-chance percent per escapeStat point above base on a failed illumination. */
+  escapePerStatPoint: number;
+  /** Stat that scales all illumination/discovery XP yields. */
+  xpStat: string;
+  /** Fractional XP bonus per xpStat point above base (0.02 = +2% per point). */
+  xpBonusPerStatPoint: number;
+  /** Fraction of the first-time XP awarded for re-illuminating a known subject. */
+  repeatXpFraction: number;
+  /** Per-subject cooldown before a repeat illumination yields XP again (ms). */
+  repeatXpCooldownMs: number;
+  /** XP for recording a never-before-visited room. */
+  roomDiscoveryXp: number;
+  /** XP for recording a never-before-seen item. */
+  itemDiscoveryXp: number;
+  /** XP for observing a non-combat NPC (recorded, never removed). */
+  observeNpcXp: number;
+  /** Minimum gap between discovery XP awards (ms) — anti-speedrun throttle. */
+  discoveryXpThrottleMs: number;
+}
+
 // ─── Auto Quests (Bounties) ────────────────────────────────────────
 
 export interface AutoQuestsConfig {
@@ -1468,6 +1522,7 @@ export interface AppConfig {
   lottery?: LotteryConfig;
   gambling?: GamblingConfig;
   stylist?: StylistConfig;
+  akathavae: AkathavaeConfig;
   autoQuests?: AutoQuestsConfig;
   dailyQuests?: DailyQuestsConfig;
   globalQuests?: GlobalQuestsConfig;

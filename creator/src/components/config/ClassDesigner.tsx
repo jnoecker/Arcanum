@@ -13,6 +13,31 @@ function defaultClass(displayName: string): ClassDefinitionConfig {
   };
 }
 
+/**
+ * Pre-filled definition for the Akathavae — the pledge-granted pacifist class
+ * the server swaps players into when they pledge at a shrine. Authored as a
+ * scaffold (opt-in) rather than a passive default so it only appears in worlds
+ * that want it. Uses only standard class fields; the multiclass-lock and
+ * pledge-grant behavior is enforced by the server at runtime, so it lives in the
+ * description rather than as a fabricated config field. `selectable: false`
+ * keeps it out of character creation. Leaves stat priorities for the author to
+ * map to their own stat IDs.
+ */
+function akathavaeClass(): ClassDefinitionConfig {
+  return {
+    displayName: "Akathavae",
+    description:
+      "Pledge-granted pacifist path. Players who pledge at an Akathavae shrine become Akathavae — combat is forsworn and the world is leveled through illumination. Multiclassing is locked while pledged, and the prior class is restored on renunciation. Not selectable at character creation.",
+    backstory:
+      "The Akathavae are keepers of knowledge who give voice to stories, in service of the Naraxian god who writes the Arcanum. Where others conquer the world, the Akathavae record it — every room walked, every creature met, every relic held — illuminating each into a personal Arcanum.",
+    hpScalingRate: 1.0,
+    manaScalingRate: 1.2,
+    selectable: false,
+    outfitDescription:
+      "Candle-lit scholar's robes layered over travelling leathers, a satchel of blank parchment, and a quill kept always within reach.",
+  };
+}
+
 function nextDefaultId(existing: Record<string, unknown>): string {
   const base = "NEW_CLASS";
   if (!existing[base]) return base;
@@ -83,6 +108,20 @@ export function ClassDesigner({ config, onChange }: ClassDesignerProps) {
     setSelectedId(id);
   };
 
+  const addAkathavaeClass = () => {
+    if (classes.AKATHAVAE) {
+      setSelectedId("AKATHAVAE");
+      return;
+    }
+    onChange({
+      classes: {
+        ...classes,
+        AKATHAVAE: akathavaeClass(),
+      },
+    });
+    setSelectedId("AKATHAVAE");
+  };
+
   const duplicateClass = () => {
     if (!selectedId || !classes[selectedId]) return;
     const source = classes[selectedId];
@@ -113,6 +152,7 @@ export function ClassDesigner({ config, onChange }: ClassDesignerProps) {
           selectedId={selectedId}
           onSelect={setSelectedId}
           onAdd={addClass}
+          onAddAkathavae={addAkathavaeClass}
           onDuplicate={duplicateClass}
           onDelete={deleteClass}
         />

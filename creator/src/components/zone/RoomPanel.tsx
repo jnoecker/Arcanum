@@ -840,7 +840,7 @@ export function RoomPanel({
       {/* Room roles */}
       <Section
         title="Room Roles"
-        defaultExpanded={!!room.station || !!room.bank || !!room.tavern || !!room.dungeon || !!room.auction || !!room.stylist || !!room.housingBroker || !!room.inn}
+        defaultExpanded={!!room.station || !!room.bank || !!room.tavern || !!room.dungeon || !!room.auction || !!room.stylist || !!room.housingBroker || !!room.inn || !!room.akathavaeShrine}
       >
         <div className="flex flex-col gap-2">
           {/* Station — dropdown instead of toggle */}
@@ -874,6 +874,7 @@ export function RoomPanel({
             { key: "auction" as const, label: "Auction", icon: ROLE_ICONS.auction },
             { key: "stylist" as const, label: "Stylist", icon: ROLE_ICONS.stylist },
             { key: "housingBroker" as const, label: "Housing Broker", icon: ROLE_ICONS.housingBroker },
+            { key: "akathavaeShrine" as const, label: "Akathavae Shrine", icon: ROLE_ICONS.akathavaeShrine },
           ] as const).map(({ key, label, icon }) => {
             const active = !!(room[key]);
             return (

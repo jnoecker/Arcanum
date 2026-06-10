@@ -421,6 +421,17 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
+    key: "arcanum_widget",
+    defaultFilename: "arcanum_widget.png",
+    label: "Arcanum Kiosk",
+    description: "Action-dock button that opens the Akathavae's Arcanum journal. Shown to pledged players.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single open illuminated codex with a quill resting across it and a faint candlelight glow, gilded page edges, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
     key: "quests_widget",
     defaultFilename: "quests_widget.png",
     label: "Quests Panel",
@@ -1042,6 +1053,18 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "An open leather-bound book viewed from above, two facing aged-parchment pages with a soft shadowed center gutter, warm paper with subtle fibers and gentle wear, leather binding edges, no writing, no ruled lines, no objects, no figures, no readable text, suitable as a backdrop behind a two-page spell list.",
     transparent: false,
     aspect: "landscape",
+  },
+  {
+    key: "arcanum_bg",
+    defaultFilename: "arcanum_bg.png",
+    label: "Arcanum Journal Spread",
+    description: "Painted backdrop behind the Akathavae's Arcanum panel (recorded creatures, items, and places). Falls back to procedural pages when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "An open illuminated codex viewed from above, two facing aged-parchment pages with a softly shadowed center gutter, gilded margins and faint candlelight glow, warm paper with subtle fibers and gentle wear, leather binding edges, no writing, no ruled lines, no objects, no figures, no readable text, suitable as a backdrop behind a catalogue of recorded discoveries.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
   },
   {
     key: "puzzle_bg",

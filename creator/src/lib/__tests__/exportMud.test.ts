@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parse } from "yaml";
+import { parse, stringify } from "yaml";
 import { buildMonolithicConfigObject } from "../exportMud";
 import { parseAppConfigYaml } from "../loader";
 import type { AppConfig } from "@/types/config";
@@ -493,5 +493,67 @@ ambonmud:
     const defs = runtime.engine.abilities.definitions;
     expect(defs.fireball.manaCostPct).toBe(25);
     expect(defs.fireball).not.toHaveProperty("manaCost");
+  });
+});
+
+describe("akathavae config", () => {
+  it("parses engine.akathavae overrides and fills defaults for missing keys", () => {
+    const yaml = `
+ambonmud:
+  server:
+    telnetPort: 4000
+    webPort: 8080
+  world:
+    startRoom: hub:square
+    resources: []
+  engine:
+    akathavae:
+      renounceCostGold: 999
+      illuminateBaseSuccessPct: 50
+      successStat: WIS
+`;
+    const config = parseAppConfigYaml(yaml);
+    expect(config.akathavae.renounceCostGold).toBe(999);
+    expect(config.akathavae.illuminateBaseSuccessPct).toBe(50);
+    expect(config.akathavae.successStat).toBe("WIS");
+    // Untouched keys fall back to the canonical defaults.
+    expect(config.akathavae.repledgeCooldownMs).toBe(86_400_000);
+    expect(config.akathavae.maxSuccessPct).toBe(95);
+    expect(config.akathavae.enabled).toBe(true);
+  });
+
+  it("defaults the whole block when engine.akathavae is absent", () => {
+    const yaml = `
+ambonmud:
+  server:
+    telnetPort: 4000
+    webPort: 8080
+  world:
+    startRoom: hub:square
+    resources: []
+  engine: {}
+`;
+    const config = parseAppConfigYaml(yaml);
+    expect(config.akathavae.renounceCostGold).toBe(2500);
+    expect(config.akathavae.successStat).toBe("INT");
+  });
+
+  it("omits the block on export when unchanged, emits it when tuned", () => {
+    const base = parseAppConfigYaml(`
+ambonmud:
+  server: { telnetPort: 4000, webPort: 8080 }
+  world: { startRoom: hub:square, resources: [] }
+  engine: {}
+`);
+    // Default config → no akathavae block in the rebuilt monolith.
+    const clean = buildMonolithicConfigObject(base) as any;
+    expect(clean.engine).not.toHaveProperty("akathavae");
+
+    // Tuned config → block round-trips with the change preserved.
+    const tuned: AppConfig = { ...base, akathavae: { ...base.akathavae, renounceCostGold: 5000 } };
+    const runtime = buildMonolithicConfigObject(tuned) as any;
+    expect(runtime.engine.akathavae.renounceCostGold).toBe(5000);
+    // Block re-parses cleanly with the change preserved.
+    expect(parseAppConfigYaml(stringify({ ambonmud: runtime })).akathavae.renounceCostGold).toBe(5000);
   });
 });

@@ -125,6 +125,36 @@ describe("validateZone", () => {
     expect(issues.some((i) => i.message.includes("chance"))).toBe(true);
   });
 
+  it("errors on out-of-range spawn condition chance", () => {
+    const world = makeValidWorld();
+    world.mobs!.rat.condition = { chance: 1.5 };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.includes("condition chance"))).toBe(true);
+  });
+
+  it("errors on invalid spawn condition time and season", () => {
+    const world = makeValidWorld();
+    world.mobs!.rat.condition = {
+      time: ["MIDNIGHT" as never],
+      seasons: ["MONSOON" as never],
+    };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.includes('time "MIDNIGHT"'))).toBe(true);
+    expect(issues.some((i) => i.message.includes('season "MONSOON"'))).toBe(true);
+  });
+
+  it("accepts a valid spawn condition", () => {
+    const world = makeValidWorld();
+    world.mobs!.rat.condition = {
+      time: ["NIGHT"],
+      seasons: ["WINTER"],
+      weather: ["STORM"],
+      chance: 0.25,
+    };
+    const issues = errors(validateZone(world));
+    expect(issues).toHaveLength(0);
+  });
+
   it("errors on patrol route with non-existent room", () => {
     const world = makeValidWorld();
     world.mobs!.rat.behavior = {

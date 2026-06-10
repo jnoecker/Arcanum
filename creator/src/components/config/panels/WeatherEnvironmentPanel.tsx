@@ -13,6 +13,7 @@ import {
   TextInput,
   NumberInput,
   SelectInput,
+  CheckboxInput,
   IconButton,
 } from "@/components/ui/FormWidgets";
 import { RegistryPanel } from "./RegistryPanel";
@@ -135,7 +136,7 @@ const MoteColorRow = memo(function MoteColorRow({
 
 // ─── Main panel ──────────────────────────────────────────────────
 
-type Tab = "weather" | "cycle" | "theme" | "zones";
+type Tab = "weather" | "cycle" | "variants" | "theme" | "zones";
 
 export function WeatherEnvironmentPanel({ config, onChange }: ConfigPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>("weather");
@@ -171,11 +172,25 @@ export function WeatherEnvironmentPanel({ config, onChange }: ConfigPanelProps) 
     [config.worldTime, onChange],
   );
 
+  const patchSeason = useCallback(
+    (p: Partial<AppConfig["season"]>) => {
+      onChange({ season: { ...config.season, ...p } });
+    },
+    [config.season, onChange],
+  );
+
+  const patchMobVariants = useCallback(
+    (p: Partial<AppConfig["mobVariants"]>) => {
+      onChange({ mobVariants: { ...config.mobVariants, ...p } });
+    },
+    [config.mobVariants, onChange],
+  );
+
   return (
     <>
       {/* Tab bar */}
       <div className="mb-4 flex gap-1 rounded-full border border-border-muted bg-bg-secondary/60 p-1">
-        {(["weather", "cycle", "theme", "zones"] as const).map((tab) => (
+        {(["weather", "cycle", "variants", "theme", "zones"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -188,10 +203,12 @@ export function WeatherEnvironmentPanel({ config, onChange }: ConfigPanelProps) 
             {tab === "weather"
               ? "Weather Types"
               : tab === "cycle"
-                ? "Day/Night"
-                : tab === "theme"
-                  ? "Default Theme"
-                  : "Zone Overrides"}
+                ? "Time & Seasons"
+                : tab === "variants"
+                  ? "Rare Variants"
+                  : tab === "theme"
+                    ? "Default Theme"
+                    : "Zone Overrides"}
           </button>
         ))}
       </div>
@@ -203,7 +220,15 @@ export function WeatherEnvironmentPanel({ config, onChange }: ConfigPanelProps) 
         />
       )}
       {activeTab === "cycle" && (
-        <CycleTab worldTime={config.worldTime} patchTime={patchTime} />
+        <CycleTab
+          worldTime={config.worldTime}
+          patchTime={patchTime}
+          season={config.season}
+          patchSeason={patchSeason}
+        />
+      )}
+      {activeTab === "variants" && (
+        <MobVariantsTab mobVariants={config.mobVariants} patch={patchMobVariants} />
       )}
       {activeTab === "theme" && (
         <DefaultThemeTab
@@ -228,11 +253,17 @@ export function WeatherEnvironmentPanel({ config, onChange }: ConfigPanelProps) 
 function CycleTab({
   worldTime: wt,
   patchTime,
+  season,
+  patchSeason,
 }: {
   worldTime: AppConfig["worldTime"];
   patchTime: (p: Partial<AppConfig["worldTime"]>) => void;
+  season: AppConfig["season"];
+  patchSeason: (p: Partial<AppConfig["season"]>) => void;
 }) {
+  const perSeasonMin = Math.round((season.cycleLengthMs / 4 / 60000) * 10) / 10;
   return (
+    <>
     <Section
       title="Day/Night Cycle"
       description="One game day cycles through dawn, day, dusk, and night. The cycle length controls how long a full day takes in real time."
@@ -270,6 +301,71 @@ function CycleTab({
             </div>
           ))}
         </div>
+      </div>
+    </Section>
+
+    <Section
+      title="Seasonal Cycle"
+      description="One game year cycles through spring, summer, autumn, and winter. Mobs can be gated to specific seasons via their spawn conditions."
+    >
+      <div className="flex flex-col gap-1.5">
+        <FieldRow
+          label="Year Length (ms)"
+          hint="Real-time milliseconds for one full game year (all four seasons). 14400000 = 4 hours."
+        >
+          <NumberInput
+            value={season.cycleLengthMs}
+            onCommit={(v) => patchSeason({ cycleLengthMs: v ?? 14_400_000 })}
+            min={1000}
+          />
+        </FieldRow>
+        <p className="text-2xs text-text-muted">
+          Each season lasts about {perSeasonMin} minute{perSeasonMin === 1 ? "" : "s"} in real time.
+        </p>
+      </div>
+    </Section>
+    </>
+  );
+}
+
+// ─── Tab: Rare Mob Variants ──────────────────────────────────────
+
+function MobVariantsTab({
+  mobVariants: mv,
+  patch,
+}: {
+  mobVariants: AppConfig["mobVariants"];
+  patch: (p: Partial<AppConfig["mobVariants"]>) => void;
+}) {
+  const variantIds = Object.keys(mv.variants);
+  return (
+    <Section
+      title="Rare Mob Variants"
+      description="The server may spawn any eligible combat mob as a rare cosmetic variant — a tint, overlay, name prefix, and modest stat bump — so explorers always find richer sightings. Authors opt individual mobs out in the mob editor."
+    >
+      <div className="flex flex-col gap-2">
+        <CheckboxInput
+          checked={mv.enabled}
+          onCommit={(v) => patch({ enabled: v })}
+          label="Spawn rare variants"
+        />
+        <FieldRow
+          label="Base Chance"
+          hint="Probability an eligible mob rolls as a rare variant on each dynamic spawn (zone reset, respawn, conditional spawn). 0–1; default 0.04."
+        >
+          <NumberInput
+            value={mv.chance}
+            onCommit={(v) => patch({ chance: v ?? 0.04 })}
+            min={0}
+            max={1}
+            step={0.01}
+          />
+        </FieldRow>
+        <p className="text-2xs text-text-muted">
+          {variantIds.length > 0
+            ? `${variantIds.length} custom variant archetype${variantIds.length === 1 ? "" : "s"} defined: ${variantIds.join(", ")}.`
+            : "Using the server's built-in archetype palette (albino, verdant, shadow-touched, ember, glimmering, frostbound, spectral, ancient). Custom palettes can be authored directly in the world YAML."}
+        </p>
       </div>
     </Section>
   );

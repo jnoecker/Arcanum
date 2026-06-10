@@ -160,10 +160,18 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
     navigation: config.navigation,
     death: config.death,
     worldTime: config.worldTime,
+    season: config.season,
     weather: {
       minTransitionMs: config.weather.minTransitionMs,
       maxTransitionMs: config.weather.maxTransitionMs,
       ...(Object.keys(config.weather.types).length > 0 ? { types: config.weather.types } : {}),
+    },
+    mobVariants: {
+      enabled: config.mobVariants.enabled,
+      chance: config.mobVariants.chance,
+      ...(Object.keys(config.mobVariants.variants).length > 0
+        ? { variants: config.mobVariants.variants }
+        : {}),
     },
     environment: (config.environment.defaultTheme.moteColors.length > 0 || Object.keys(config.environment.zones).length > 0)
       ? config.environment : undefined,

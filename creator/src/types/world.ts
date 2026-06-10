@@ -124,6 +124,9 @@ export interface RoomFile {
   housingBroker?: boolean;
   /** True if this room is an inn. Players can `rest` here to set their recall point. */
   inn?: boolean;
+  /** True if this room holds an Akathavae shrine. Enables the `pledge`/`renounce`
+   *  commands for the pacifist explorer path. */
+  akathavaeShrine?: boolean;
   image?: string;
   video?: string;
   /** Prose vision narrated to text/screen-reader clients in place of the video.

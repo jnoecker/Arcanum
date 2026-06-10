@@ -12,6 +12,8 @@ import roleHousingBroker from "./role_housing_broker.png";
 import roleInn from "./role_inn.png";
 import roleStylist from "./role_stylist.png";
 import roleTavern from "./role_tavern.png";
+// Placeholder: reuses the scroll panel icon until a bespoke role_akathavae_shrine.png is generated.
+import roleAkathavaeShrine from "./panel_scroll.png";
 
 // Feature type icons (16×16) — room feature badges
 import featureContainer from "./feature_container.png";
@@ -144,6 +146,7 @@ export const ROLE_ICONS: Record<string, string> = {
   stylist: roleStylist,
   housingBroker: roleHousingBroker,
   inn: roleInn,
+  akathavaeShrine: roleAkathavaeShrine,
 };
 
 /** Feature type (lowercase) → icon URL. */

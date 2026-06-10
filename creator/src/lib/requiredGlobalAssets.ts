@@ -1078,6 +1078,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
+    key: "terminal_parchment_bg",
+    defaultFilename: "terminal_parchment_bg.png",
+    label: "Terminal Parchment Background",
+    description:
+      "Pressed-flower parchment layered behind the full-screen terminal overlay (under a dark legibility scrim) once the player commits to typing. Falls back to the flat translucent CSS panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A pressed-flower parchment texture filling the frame edge to edge — warm aged paper with delicate dried wildflowers, petals, ferns, and leaves pressed flat into the fibers, soft botanical silhouettes drifting toward the edges, faint stains and gentle wear, muted cream and dusty pastel tones, an open uncluttered center where terminal text overlays, no border, no writing, no objects, no figures, no readable text, suitable as a backdrop layered under a dark scrim behind a full-screen terminal.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
     key: "mail_bg",
     defaultFilename: "mail_bg.png",
     label: "Mail Parchment Texture",

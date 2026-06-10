@@ -1218,6 +1218,8 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
   // Painted full-screen login flow scenes. The web client maps the live
   // controls (inputs, buttons, name chips, list/detail regions) onto the
   // painted elements; absent art falls back to the CSS-only login UI.
+  // Each landscape scene has a *_portrait sibling served to mobile /
+  // narrow-viewport players.
   {
     key: "login_bg",
     defaultFilename: "login_bg.png",
@@ -1229,6 +1231,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A painted full-screen login scene for a cozy magical world filling the frame edge to edge — a wide nocturnal vista with an aurora-streaked starry sky, floating islands on the horizon, and drifting fireflies, a welcoming focal point in the center with open space around it where login controls overlay, warm inviting glow, no figures, no readable text, suitable as the first screen a player sees.",
     transparent: false,
     aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "login_bg_portrait",
+    defaultFilename: "login_bg_portrait.png",
+    label: "Login Scene (Portrait)",
+    description:
+      "Portrait variant of the login scene for mobile / narrow viewports (1024×1536). The web client maps the character-name field and the Create/Login + Start Demo controls onto the painted elements. Falls back to the CSS-only animated login hero when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen portrait login scene for a cozy magical world filling the frame edge to edge — a tall nocturnal vista with an aurora-streaked starry sky above, floating islands in the distance, and drifting fireflies, a welcoming focal point in the lower half with open space around it where login controls overlay, warm inviting glow, no figures, no readable text, suitable as the first screen a player sees on a phone.",
+    transparent: false,
+    aspect: "portrait",
     optional: true,
   },
   {
@@ -1245,6 +1260,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "login_password_bg_portrait",
+    defaultFilename: "login_password_bg_portrait.png",
+    label: "Login Password Scene (Portrait)",
+    description:
+      "Portrait variant of the returning-user password scene for mobile / narrow viewports (1024×1536). The web client maps the password field and Login control onto the painted elements. Falls back to the CSS-only login UI when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen portrait welcome-back scene for a cozy magical world filling the frame edge to edge — a tall warm nocturnal vista in the same aurora-and-fireflies family as the login scene, an inviting area in the lower half with open space where a password field and button overlay, warm familiar glow, no figures, no readable text, suitable as the returning-player password screen on a phone.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
     key: "login_set_password_bg",
     defaultFilename: "login_set_password_bg.png",
     label: "Login Set-Password Scene",
@@ -1255,6 +1283,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A painted full-screen scene for choosing a secret word in a cozy magical world filling the frame edge to edge — a nocturnal vista in the same aurora-and-fireflies family as the login scene, a central focal area with open space where a password field and button overlay, a hint of warding or keepsake magic, warm glow, no figures, no readable text, suitable as the set-a-password screen for a new character.",
     transparent: false,
     aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "login_set_password_bg_portrait",
+    defaultFilename: "login_set_password_bg_portrait.png",
+    label: "Login Set-Password Scene (Portrait)",
+    description:
+      "Portrait variant of the new-character password scene for mobile / narrow viewports (1024×1536). The web client maps the new-password field and Set Password control onto the painted elements. Falls back to the CSS-only login UI when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen portrait scene for choosing a secret word in a cozy magical world filling the frame edge to edge — a tall nocturnal vista in the same aurora-and-fireflies family as the login scene, a focal area in the lower half with open space where a password field and button overlay, a hint of warding or keepsake magic, warm glow, no figures, no readable text, suitable as the set-a-password screen for a new character on a phone.",
+    transparent: false,
+    aspect: "portrait",
     optional: true,
   },
   {
@@ -1271,6 +1312,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "login_confirm_bg_portrait",
+    defaultFilename: "login_confirm_bg_portrait.png",
+    label: "Login Confirm Scene (Portrait)",
+    description:
+      "Portrait variant of the create-character confirmation scene for mobile / narrow viewports (1024×1536). The web client maps the Yes-create / No-go-back controls onto the painted elements. Falls back to the CSS-only login UI when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen portrait decision scene for a cozy magical world filling the frame edge to edge — a tall nocturnal vista in the same aurora-and-fireflies family as the login scene, an area in the lower half with open space where a confirmation question and two choice buttons overlay, a sense of a new beginning, warm glow, no figures, no readable text, suitable as the confirm-new-character screen on a phone.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
     key: "login_claim_bg",
     defaultFilename: "login_claim_bg.png",
     label: "Login Claim Scene",
@@ -1284,6 +1338,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "login_claim_bg_portrait",
+    defaultFilename: "login_claim_bg_portrait.png",
+    label: "Login Claim Scene (Portrait)",
+    description:
+      "Portrait variant of the demo-character claim scene — \"Save Your Character\" — for mobile / narrow viewports (1024×1536). The web client maps the optional new-name field, the password field, and the Save Character / Not now controls onto the painted elements. Falls back to the CSS-only login UI when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen portrait scene for keeping a hero's story in a cozy magical world filling the frame edge to edge — a tall nocturnal vista in the same aurora-and-fireflies family as the login scene, a sense of a tale being bound into a keepsake storybook, an area in the lower half with open space where rename and password fields and two choice buttons overlay, warm glow, no figures, no readable text, suitable as the save-your-character screen on a phone.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
     key: "login_picker_bg",
     defaultFilename: "login_picker_bg.png",
     label: "Login Character Picker Scene",
@@ -1294,6 +1361,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A painted full-screen scene for choosing among saved heroes in a cozy magical world filling the frame edge to edge — a nocturnal vista in the same aurora-and-fireflies family as the login scene, an open central region where a row of saved-character name chips overlays, warm welcoming glow, no figures, no readable text, suitable as the pick-your-character screen.",
     transparent: false,
     aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "login_picker_bg_portrait",
+    defaultFilename: "login_picker_bg_portrait.png",
+    label: "Login Character Picker Scene (Portrait)",
+    description:
+      "Portrait variant of the saved-character picker scene for mobile / narrow viewports (1024×1536). The web client maps the saved-character name chips and controls onto the painted elements. Falls back to the CSS-only login UI when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen portrait scene for choosing among saved heroes in a cozy magical world filling the frame edge to edge — a tall nocturnal vista in the same aurora-and-fireflies family as the login scene, an open region in the lower half where a column of saved-character name chips overlays, warm welcoming glow, no figures, no readable text, suitable as the pick-your-character screen on a phone.",
+    transparent: false,
+    aspect: "portrait",
     optional: true,
   },
   {

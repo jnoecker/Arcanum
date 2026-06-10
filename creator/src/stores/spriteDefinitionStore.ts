@@ -28,6 +28,58 @@ function parseRequirement(raw: Record<string, unknown>): SpriteRequirement | nul
   }
 }
 
+/**
+ * Flatten legacy multi-variant definitions into one definition per variant.
+ * Each sprite is now itself a variant, so a def carrying a `variants[]` array
+ * is exploded into sibling definitions keyed by each variant's imageId — which
+ * is also the asset's variant-group key, so generated images stay associated.
+ * Variant race/class filters become requirements; gender/displayName carry over.
+ * Returns whether any definition was rewritten so the caller can mark dirty.
+ */
+function flattenVariantDefinitions(
+  defs: Record<string, SpriteDefinition>,
+): { defs: Record<string, SpriteDefinition>; changed: boolean } {
+  const out: Record<string, SpriteDefinition> = {};
+  let changed = false;
+
+  const claim = (preferred: string): string => {
+    if (!out[preferred]) return preferred;
+    let n = 1;
+    while (out[`${preferred}_${n}`]) n += 1;
+    return `${preferred}_${n}`;
+  };
+
+  for (const [id, def] of Object.entries(defs)) {
+    if (!def.variants || def.variants.length === 0) {
+      out[claim(id)] = def;
+      continue;
+    }
+    changed = true;
+    def.variants.forEach((variant, index) => {
+      const newId = claim(variant.imageId || (index === 0 ? id : `${id}_v${index}`));
+      const requirements: SpriteRequirement[] = [...def.requirements];
+      if (variant.race && !requirements.some((r) => r.type === "race")) {
+        requirements.push({ type: "race", race: variant.race });
+      }
+      if (variant.playerClass && !requirements.some((r) => r.type === "class")) {
+        requirements.push({ type: "class", playerClass: variant.playerClass });
+      }
+      out[newId] = {
+        displayName: variant.displayName ?? def.displayName,
+        description: def.description,
+        artDirection: def.artDirection,
+        category: def.category,
+        gender: variant.gender ?? def.gender,
+        sortOrder: def.sortOrder + index,
+        requirements,
+        image: variant.imagePath || `player_sprites/${newId}.png`,
+      };
+    });
+  }
+
+  return { defs: out, changed };
+}
+
 /** Parse a raw YAML entry into a SpriteDefinition. */
 function parseDefinition(id: string, entry: Record<string, unknown>): SpriteDefinition {
   const requirements: SpriteRequirement[] = [];
@@ -136,7 +188,8 @@ export const useSpriteDefinitionStore = create<SpriteDefinitionStore>((set, get)
           defs[id] = parseDefinition(id, entry as Record<string, unknown>);
         }
       }
-      set({ definitions: defs, dirty: false });
+      const flattened = flattenVariantDefinitions(defs);
+      set({ definitions: flattened.defs, dirty: flattened.changed });
     } catch {
       set({ definitions: {}, dirty: false });
     }

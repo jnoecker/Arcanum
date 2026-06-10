@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { SketchCanvas } from "./SketchCanvas";
+import { SketchCanvas, type SketchSavedEntry } from "./SketchCanvas";
+import type { AssetContext } from "@/types/assets";
 
 interface Props {
   open: boolean;
@@ -8,8 +9,10 @@ interface Props {
   height?: number;
   initialDataUrl?: string | null;
   assetType?: string;
+  context?: AssetContext;
+  variantGroup?: string;
   onClose: () => void;
-  onSave: (entry: { file_name: string; width: number; height: number }) => void;
+  onSave: (entry: SketchSavedEntry) => void;
 }
 
 export function SketchDialog({
@@ -19,6 +22,8 @@ export function SketchDialog({
   height,
   initialDataUrl,
   assetType,
+  context,
+  variantGroup,
   onClose,
   onSave,
 }: Props) {
@@ -70,6 +75,8 @@ export function SketchDialog({
           height={height}
           initialDataUrl={initialDataUrl}
           assetType={assetType}
+          context={context}
+          variantGroup={variantGroup}
           onCancel={onClose}
           onSave={(entry) => {
             onSave(entry);

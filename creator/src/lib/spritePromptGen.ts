@@ -14,6 +14,7 @@ import {
   DEFAULT_CLASS_OUTFIT_DESCRIPTIONS,
 } from "./defaultSpriteData";
 import { AI_ENABLED } from "@/lib/featureFlags";
+import type { SpriteDefinition, SpriteRequirement } from "@/types/sprites";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -62,6 +63,30 @@ export function getClassOutfitDescription(cls: string): string {
   return config?.classes[cls]?.outfitDescription
     ?? DEFAULT_CLASS_OUTFIT_DESCRIPTIONS[cls]
     ?? cls;
+}
+
+function findReq<T extends SpriteRequirement["type"]>(
+  requirements: SpriteRequirement[],
+  type: T,
+): Extract<SpriteRequirement, { type: T }> | undefined {
+  return requirements.find(
+    (r): r is Extract<SpriteRequirement, { type: T }> => r.type === type,
+  );
+}
+
+/** Resolve race/class/gender for a sprite definition from its requirements + gender. */
+export function resolveSpriteDimensions(def: SpriteDefinition): SpriteDimensions {
+  return {
+    race: findReq(def.requirements, "race")?.race || undefined,
+    playerClass: findReq(def.requirements, "class")?.playerClass || undefined,
+    gender: def.gender || undefined,
+  };
+}
+
+/** Free-text steering (art direction / description) for a sprite definition. */
+export function spritePromptNotes(def: SpriteDefinition): string | undefined {
+  const notes = def.artDirection?.trim() || def.description?.trim();
+  return notes || undefined;
 }
 
 // ─── Prompt assembly ─────────────────────────────────────────────────

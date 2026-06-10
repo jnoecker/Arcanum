@@ -82,6 +82,7 @@ macro_rules! base_handler {
             assets::accept_asset,
             assets::list_assets,
             assets::delete_asset,
+            assets::delete_assets,
             assets::get_assets_dir,
             assets::resolve_media_path,
             assets::read_media_data_url,

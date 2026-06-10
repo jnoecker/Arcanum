@@ -187,6 +187,33 @@ pub async fn delete_asset(app: AppHandle, id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub async fn delete_assets(app: AppHandle, ids: Vec<String>) -> Result<(), String> {
+    if ids.is_empty() {
+        return Ok(());
+    }
+    let _lock = MANIFEST_LOCK.lock().await;
+    let mut manifest = load_manifest(&app).await?;
+    let id_set: std::collections::HashSet<&str> = ids.iter().map(|s| s.as_str()).collect();
+    let base = assets_dir(&app)?;
+
+    for entry in manifest.assets.iter().filter(|a| id_set.contains(a.id.as_str())) {
+        for subdir in &["images", "video", "audio"] {
+            let file_path = base.join(subdir).join(&entry.file_name);
+            if file_path.exists() {
+                tokio::fs::remove_file(&file_path)
+                    .await
+                    .map_err(|e| format!("Failed to delete file: {e}"))?;
+                break;
+            }
+        }
+    }
+
+    manifest.assets.retain(|a| !id_set.contains(a.id.as_str()));
+    save_manifest(&app, &manifest).await?;
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn get_assets_dir(app: AppHandle) -> Result<String, String> {
     let dir = assets_dir(&app)?;
     Ok(dir.to_string_lossy().to_string())

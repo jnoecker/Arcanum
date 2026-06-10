@@ -26,17 +26,17 @@ export interface PortraitPromptTemplate {
 const GENERIC_PORTRAIT_STYLE = "Digital fantasy illustration — painterly, detailed, atmospheric. NOT a photograph, NOT a 3D render, NOT concept art.";
 
 const RACE_FORMAT_SPEC =
-  "2:3 portrait orientation character portrait. Close-up to mid-shot framing, richly detailed painterly environment background with soft atmospheric depth";
+  "3:2 landscape orientation character portrait. Close-up to mid-shot framing, richly detailed painterly environment background with soft atmospheric depth";
 
 const CLASS_FORMAT_SPEC =
-  "2:3 portrait orientation action portrait of a fantasy race character (race varies per class). Mid-shot framing, dynamic or atmospheric pose, richly detailed painterly environment background";
+  "3:2 landscape orientation action portrait of a fantasy race character (race varies per class). Mid-shot framing, dynamic or atmospheric pose, richly detailed painterly environment background";
 
 function getPortraitPromptPrefix(): string {
   const vs = buildVisualStyleDirective("worldbuilding");
   if (vs) {
-    return `${vs}. NOT a photograph, NOT a 3D render, NOT concept art. 2:3 portrait orientation.`;
+    return `${vs}. NOT a photograph, NOT a 3D render, NOT concept art. 3:2 landscape orientation.`;
   }
-  return `${GENERIC_PORTRAIT_STYLE} 2:3 portrait orientation.`;
+  return `${GENERIC_PORTRAIT_STYLE} 3:2 landscape orientation.`;
 }
 
 // ─── Data resolution ─────────────────────────────────────────────────
@@ -77,7 +77,7 @@ export async function generatePortraitTemplate(
 
   const systemPrompt = `You are an expert image prompt engineer for AI image generators.${toneBlock}${styleBlock}
 
-These portraits appear on a character creation screen. They should be visually stunning and evocative — selling the fantasy of each race and class. They are 2:3 portrait orientation. NOT photorealistic, NOT a 3D render, NOT concept art.
+These portraits appear on a character creation screen. They should be visually stunning and evocative — selling the fantasy of each race and class. They are 3:2 landscape orientation. NOT photorealistic, NOT a 3D render, NOT concept art.
 
 Your task: produce a JSON object with these fields:
 

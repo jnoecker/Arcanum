@@ -17,6 +17,33 @@
 
 import type { AppConfig, EnvironmentTheme, EnvironmentConfig } from "@/types/config";
 
+/** Canonical defaults for the Akathavae pacifist path (mirrors the server's
+ *  AkathavaeConfig). Used to seed the parser and to omit an unchanged block on save. */
+export const DEFAULT_AKATHAVAE: AppConfig["akathavae"] = {
+  enabled: true,
+  renounceCostGold: 2500,
+  repledgeCooldownMs: 86_400_000,
+  illuminateBaseSuccessPct: 70,
+  successStat: "INT",
+  successPerStatPoint: 2.0,
+  levelGapPenaltyPct: 8.0,
+  gapReliefStat: "STR",
+  gapReliefPerStatPoint: 0.5,
+  minSuccessPct: 5,
+  maxSuccessPct: 95,
+  failRetryCooldownMs: 30_000,
+  escapeStat: "CHA",
+  escapePerStatPoint: 3.0,
+  xpStat: "WIS",
+  xpBonusPerStatPoint: 0.02,
+  repeatXpFraction: 0.2,
+  repeatXpCooldownMs: 300_000,
+  roomDiscoveryXp: 15,
+  itemDiscoveryXp: 25,
+  observeNpcXp: 10,
+  discoveryXpThrottleMs: 1_500,
+};
+
 // ─── Registries with simple map shapes ─────────────────────────────
 
 export const DEFAULT_ACHIEVEMENT_CATEGORIES: AppConfig["achievementCategories"] = {
@@ -497,6 +524,11 @@ export const DEFAULT_COMMANDS: AppConfig["commands"] = {
   prestige: { usage: "prestige | prestige info", description: "Reset at max level for permanent prestige perks", category: "progression", staff: false },
   leaderboard: { usage: "leaderboard/top [category]", description: "View player leaderboards", category: "progression", staff: false },
   stylist: { usage: "stylist", description: "View race-change options and fee (requires a stylist)", category: "progression", staff: false },
+  pledge: { usage: "pledge", description: "Take the Akathavae pledge at a shrine — forsake combat, level through illumination", category: "progression", staff: false },
+  renounce: { usage: "renounce [confirm]", description: "Renounce the Akathavae pledge at a shrine (costs gold)", category: "progression", staff: false },
+  illuminate: { usage: "illuminate <creature>", description: "Record a creature in your Arcanum — the Akathavae's replacement for attacking", category: "progression", staff: false },
+  arcanum: { usage: "arcanum [rooms|mobs|items]", description: "Leaf through your Arcanum journal of recorded places, creatures, and items", category: "progression", staff: false },
+  wardrobe: { usage: "wardrobe [item]", description: "Conjure and wear equipment recorded in your Arcanum (Akathavae only)", category: "progression", staff: false },
   changerace: { usage: "changerace <race>", description: "Pay the stylist to change your race", category: "progression", staff: false },
   pet: { usage: "pet [status] | pet name <name> | pet skills | pet <skill> | pet dismiss", description: "Manage your pet and trigger its skills", category: "progression", staff: false },
   autoloot: { usage: "autoloot on/off/status", description: "Auto-loot mob corpses when enabled", category: "utility", staff: false },

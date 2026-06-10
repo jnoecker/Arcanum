@@ -15,6 +15,7 @@ import {
   DEFAULT_ABILITY_TARGET_TYPES,
   DEFAULT_STATUS_EFFECTS,
   DEFAULT_COMMANDS,
+  DEFAULT_AKATHAVAE,
   DEFAULT_EMOTE_PRESETS,
   DEFAULT_WEATHER_TYPES,
   DEFAULT_ENVIRONMENT_CONFIG,
@@ -140,6 +141,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     lottery: parseLotteryConfig(engine.lottery),
     gambling: parseGamblingConfig(engine.gambling),
     stylist: parseStylistConfig(engine.stylist),
+    akathavae: parseAkathavaeConfig(engine.akathavae),
     respec: parseRespecConfig(engine.respec),
     prestige: engine.prestige as AppConfig["prestige"],
     dailyQuests: parseDailyQuestsConfig(engine.dailyQuests),
@@ -717,6 +719,36 @@ function parseStylistConfig(raw: unknown): AppConfig["stylist"] {
   };
 }
 
+function parseAkathavaeConfig(raw: unknown): AppConfig["akathavae"] {
+  const d = DEFAULT_AKATHAVAE;
+  if (!raw || typeof raw !== "object") return { ...d };
+  const s = raw as Record<string, unknown>;
+  return {
+    enabled: asBool(s.enabled, d.enabled),
+    renounceCostGold: asNumber(s.renounceCostGold, d.renounceCostGold),
+    repledgeCooldownMs: asNumber(s.repledgeCooldownMs, d.repledgeCooldownMs),
+    illuminateBaseSuccessPct: asNumber(s.illuminateBaseSuccessPct, d.illuminateBaseSuccessPct),
+    successStat: asString(s.successStat, d.successStat),
+    successPerStatPoint: asNumber(s.successPerStatPoint, d.successPerStatPoint),
+    levelGapPenaltyPct: asNumber(s.levelGapPenaltyPct, d.levelGapPenaltyPct),
+    gapReliefStat: asString(s.gapReliefStat, d.gapReliefStat),
+    gapReliefPerStatPoint: asNumber(s.gapReliefPerStatPoint, d.gapReliefPerStatPoint),
+    minSuccessPct: asNumber(s.minSuccessPct, d.minSuccessPct),
+    maxSuccessPct: asNumber(s.maxSuccessPct, d.maxSuccessPct),
+    failRetryCooldownMs: asNumber(s.failRetryCooldownMs, d.failRetryCooldownMs),
+    escapeStat: asString(s.escapeStat, d.escapeStat),
+    escapePerStatPoint: asNumber(s.escapePerStatPoint, d.escapePerStatPoint),
+    xpStat: asString(s.xpStat, d.xpStat),
+    xpBonusPerStatPoint: asNumber(s.xpBonusPerStatPoint, d.xpBonusPerStatPoint),
+    repeatXpFraction: asNumber(s.repeatXpFraction, d.repeatXpFraction),
+    repeatXpCooldownMs: asNumber(s.repeatXpCooldownMs, d.repeatXpCooldownMs),
+    roomDiscoveryXp: asNumber(s.roomDiscoveryXp, d.roomDiscoveryXp),
+    itemDiscoveryXp: asNumber(s.itemDiscoveryXp, d.itemDiscoveryXp),
+    observeNpcXp: asNumber(s.observeNpcXp, d.observeNpcXp),
+    discoveryXpThrottleMs: asNumber(s.discoveryXpThrottleMs, d.discoveryXpThrottleMs),
+  };
+}
+
 function parseRespecConfig(raw: unknown): AppConfig["respec"] {
   if (!raw || typeof raw !== "object") return undefined;
   const s = raw as Record<string, unknown>;
@@ -951,7 +983,7 @@ function collectRawSections(
     "craftingSkills", "craftingStationTypes",
     "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets", "enchanting", "bank",
     "worldTime", "season", "weather", "mobVariants", "worldEvents", "environment", "skillPoints", "multiclass",
-    "lottery", "gambling", "stylist", "respec", "prestige", "dailyQuests", "autoQuests", "globalQuests",
+    "lottery", "gambling", "stylist", "akathavae", "respec", "prestige", "dailyQuests", "autoQuests", "globalQuests",
     "guildHalls", "factions", "leaderboard", "currencies",
   ]);
 
@@ -1690,6 +1722,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       lottery: parseLotteryConfig(worldRaw.lottery),
       gambling: parseGamblingConfig(worldRaw.gambling),
       stylist: parseStylistConfig(worldRaw.stylist),
+      akathavae: parseAkathavaeConfig(worldRaw.akathavae),
       respec: parseRespecConfig(worldRaw.respec),
       prestige: worldRaw.prestige as AppConfig["prestige"],
       dailyQuests: parseDailyQuestsConfig(worldRaw.dailyQuests),

@@ -20,6 +20,13 @@ export function AdminConfigPanel({ config, onChange }: ConfigPanelProps) {
               label="Enable admin server"
             />
           </FieldRow>
+          <FieldRow label="Host" hint="Bind address for the admin API. Defaults to 127.0.0.1 (loopback) so the privileged API is not network-reachable. Set to 0.0.0.0 only behind a reverse proxy.">
+            <TextInput
+              value={a.host}
+              onCommit={(v) => patch({ host: v || "127.0.0.1" })}
+              placeholder="127.0.0.1"
+            />
+          </FieldRow>
           <FieldRow label="Port" hint="HTTP port for the admin API. Default 9091 avoids conflicts with the game's web port.">
             <NumberInput
               value={a.port}

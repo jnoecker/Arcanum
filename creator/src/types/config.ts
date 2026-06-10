@@ -1019,6 +1019,11 @@ export interface WebSocketTransportConfig {
   host: string;
   stopGraceMillis: number;
   stopTimeoutMillis: number;
+  maxConnections: number;
+  maxConnectionsPerIp: number;
+  pingPeriodMillis: number;
+  pongTimeoutMillis: number;
+  maxFrameBytes: number;
 }
 
 export interface TransportConfig {
@@ -1158,6 +1163,7 @@ export interface ShardingConfig {
 
 export interface AdminServerConfig {
   enabled: boolean;
+  host: string;
   port: number;
   token: string;
   basePath: string;

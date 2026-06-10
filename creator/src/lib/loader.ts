@@ -261,6 +261,11 @@ function parseTransportConfig(raw: unknown): AppConfig["transport"] {
       host: asString(ws.host, "0.0.0.0"),
       stopGraceMillis: asNumber(ws.stopGraceMillis, 1000),
       stopTimeoutMillis: asNumber(ws.stopTimeoutMillis, 2000),
+      maxConnections: asNumber(ws.maxConnections, 5000),
+      maxConnectionsPerIp: asNumber(ws.maxConnectionsPerIp, 30),
+      pingPeriodMillis: asNumber(ws.pingPeriodMillis, 15000),
+      pongTimeoutMillis: asNumber(ws.pongTimeoutMillis, 30000),
+      maxFrameBytes: asNumber(ws.maxFrameBytes, 65536),
     },
     maxInboundBackpressureFailures: asNumber(s.maxInboundBackpressureFailures, 3),
   };
@@ -388,6 +393,7 @@ function parseAdminConfig(raw: unknown): AppConfig["admin"] {
   const s = (raw ?? {}) as Record<string, unknown>;
   return {
     enabled: s.enabled === true,
+    host: asString(s.host, "127.0.0.1"),
     port: asNumber(s.port, 9091),
     token: asString(s.token, ""),
     basePath: asString(s.basePath, "/"),

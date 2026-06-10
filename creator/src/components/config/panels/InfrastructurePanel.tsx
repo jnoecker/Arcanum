@@ -300,6 +300,60 @@ function WebsocketBody({ config, onChange }: ConfigPanelProps) {
       </div>
 
       <div className="ornate-divider" aria-hidden />
+      <SubLabel>Connection limits</SubLabel>
+      <div className="flex flex-col gap-1.5">
+        <FieldRow label="Max connections" hint="Global cap on concurrent WebSocket connections before new ones are rejected.">
+          <NumberInput
+            value={t.websocket.maxConnections}
+            onCommit={(v) => patchWs({ maxConnections: v ?? 5000 })}
+            min={1}
+            max={1000000}
+            dense
+          />
+        </FieldRow>
+        <FieldRow label="Max per IP" hint="Concurrent connections allowed from a single remote IP. 0 disables the per-IP cap.">
+          <NumberInput
+            value={t.websocket.maxConnectionsPerIp}
+            onCommit={(v) => patchWs({ maxConnectionsPerIp: v ?? 30 })}
+            min={0}
+            max={100000}
+            dense
+          />
+        </FieldRow>
+        <FieldRow label="Max frame (bytes)" hint="Largest inbound WebSocket frame accepted. Bigger frames are rejected.">
+          <NumberInput
+            value={t.websocket.maxFrameBytes}
+            onCommit={(v) => patchWs({ maxFrameBytes: v ?? 65536 })}
+            min={1024}
+            dense
+          />
+        </FieldRow>
+      </div>
+
+      <div className="ornate-divider" aria-hidden />
+      <SubLabel>Keepalive</SubLabel>
+      <div className="flex flex-col gap-1.5">
+        <FieldRow label="Ping period (ms)" hint="Server→client ping interval; also drives dead-peer detection. 0 disables pings.">
+          <NumberInput
+            value={t.websocket.pingPeriodMillis}
+            onCommit={(v) => patchWs({ pingPeriodMillis: v ?? 15000 })}
+            min={0}
+            max={600000}
+            dense
+          />
+        </FieldRow>
+        <FieldRow label="Pong timeout (ms)" hint="Time to wait for a pong before closing. Defends against slow-loris holds.">
+          <NumberInput
+            value={t.websocket.pongTimeoutMillis}
+            onCommit={(v) => patchWs({ pongTimeoutMillis: v ?? 30000 })}
+            min={0}
+            max={600000}
+            dense
+          />
+        </FieldRow>
+      </div>
+
+      <div className="ornate-divider" aria-hidden />
       <SubLabel>Backpressure</SubLabel>
       <div className="flex flex-col gap-1.5">
         <FieldRow label="Max failures" hint="Outbound buffer overflows before drop.">

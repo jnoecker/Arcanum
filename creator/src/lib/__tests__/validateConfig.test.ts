@@ -6,7 +6,7 @@ import type { AppConfig } from "@/types/config";
 const BASE_CONFIG: AppConfig = {
   mode: "STANDALONE",
   server: { telnetPort: 4000, webPort: 8080, inboundChannelCapacity: 10000, outboundChannelCapacity: 10000, sessionOutboundQueueCapacity: 200, maxInboundEventsPerTick: 1000, tickMillis: 100, inboundBudgetMs: 30 },
-  admin: { enabled: false, port: 9091, token: "", basePath: "/", grafanaUrl: "", corsOrigins: [] },
+  admin: { enabled: false, host: "127.0.0.1", port: 9091, token: "", basePath: "/", grafanaUrl: "", corsOrigins: [] },
   observability: { metricsEnabled: true, metricsEndpoint: "/metrics", metricsHttpPort: 9099, metricsHttpHost: "0.0.0.0", staticTags: {} },
   logging: { level: "INFO", packageLevels: {} },
   world: { startRoom: "" },
@@ -237,7 +237,7 @@ const BASE_CONFIG: AppConfig = {
   },
   persistence: { backend: "YAML", rootDir: "data/players", worker: { enabled: true, flushIntervalMs: 5000 } },
   login: { maxWrongPasswordRetries: 3, maxFailedAttemptsBeforeDisconnect: 3, maxConcurrentLogins: 50, authThreads: 8 },
-  transport: { telnet: { maxLineLen: 1024, maxNonPrintablePerLine: 32, socketBacklog: 256, maxConnections: 5000 }, websocket: { host: "0.0.0.0", stopGraceMillis: 1000, stopTimeoutMillis: 2000 }, maxInboundBackpressureFailures: 3 },
+  transport: { telnet: { maxLineLen: 1024, maxNonPrintablePerLine: 32, socketBacklog: 256, maxConnections: 5000 }, websocket: { host: "0.0.0.0", stopGraceMillis: 1000, stopTimeoutMillis: 2000, maxConnections: 5000, maxConnectionsPerIp: 30, pingPeriodMillis: 15000, pongTimeoutMillis: 30000, maxFrameBytes: 65536 }, maxInboundBackpressureFailures: 3 },
   demo: { autoLaunchBrowser: false, webClientHost: "localhost", webClientUrl: null },
   database: { jdbcUrl: "jdbc:postgresql://localhost:5432/ambonmud", username: "ambon", password: "ambon", maxPoolSize: 5, minimumIdle: 1 },
   redis: { enabled: false, uri: "redis://localhost:6379", cacheTtlSeconds: 3600, bus: { enabled: false, inboundChannel: "ambon:inbound", outboundChannel: "ambon:outbound", instanceId: "", sharedSecret: "" } },

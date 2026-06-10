@@ -308,7 +308,7 @@ export function PromptPreviewModal({
               Preview & Generate
             </h2>
             <p className="mt-0.5 text-2xs text-text-muted">
-              Review and tweak the prompt before generating &mdash; {imageId}
+              Review and tweak the AI-enhanced prompt before generating &mdash; {imageId}
             </p>
           </div>
           <ActionButton onClick={onClose} variant="ghost" size="icon">x</ActionButton>

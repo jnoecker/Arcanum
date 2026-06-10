@@ -1,4 +1,4 @@
-import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { memo, useState, useMemo, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import { useConfigStore } from "@/stores/configStore";
@@ -10,13 +10,12 @@ import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
 import { BulkBgRemoval } from "@/components/ui/BulkBgRemoval";
 import { AI_ENABLED } from "@/lib/featureFlags";
-import { ENTITY_DIMENSIONS, resolveImageModel } from "@/types/assets";
+import { ENTITY_DIMENSIONS, modelNativelyTransparent, resolveImageModel } from "@/types/assets";
 import { generateAssetImage } from "@/lib/imageGen";
+import { getNegativePrompt } from "@/lib/arcanumPrompts";
 import {
-  buildSpritePrompt,
-  generateSpriteTemplate,
+  buildEnhancedSpritePrompt,
   type SpriteDimensions,
-  type SpritePromptTemplate,
 } from "@/lib/spritePromptGen";
 import type {
   SpriteDefinition,
@@ -49,9 +48,6 @@ function primaryImageId(id: string, def: SpriteDefinition): string {
 function primaryAssetKey(id: string, def: SpriteDefinition): string {
   return primaryImageId(id, def);
 }
-
-const SPRITE_TEMPLATE_VIBE =
-  "Character creation sprites for a fantasy world — each one should be a compelling standalone portrait.";
 
 function findRequirement<T extends RequirementType>(
   requirements: SpriteRequirement[],
@@ -193,6 +189,7 @@ export function PlayerSpriteManager() {
   const assets = useAssetStore((s) => s.assets);
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const settings = useAssetStore((s) => s.settings);
+  const artStyle = useAssetStore((s) => s.artStyle);
   const loadAssets = useAssetStore((s) => s.loadAssets);
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
   const deleteAsset = useAssetStore((s) => s.deleteAsset);
@@ -219,8 +216,6 @@ export function PlayerSpriteManager() {
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [promptPreview, setPromptPreview] = useState<{ imageId: string; prompt: string } | null>(null);
-  const spriteTemplateRef = useRef<SpritePromptTemplate | null>(null);
-  const spriteTemplatePromiseRef = useRef<Promise<SpritePromptTemplate | null> | null>(null);
 
   const races = useMemo(() => config ? Object.keys(config.races) : [], [config]);
   const classes = useMemo(() => config ? Object.keys(config.classes).filter((c) => c !== "base") : [], [config]);
@@ -236,11 +231,6 @@ export function PlayerSpriteManager() {
     settings?.anthropic_api_key ||
     settings?.openrouter_api_key
   );
-
-  useEffect(() => {
-    spriteTemplateRef.current = null;
-    spriteTemplatePromiseRef.current = null;
-  }, [config]);
 
   // Map imageId → asset file name + asset id for thumbnails & lightbox
   const spriteAssetMap = useMemo(() => {
@@ -335,32 +325,6 @@ export function PlayerSpriteManager() {
 
   const selectedDef = selectedId ? definitions[selectedId] : null;
 
-  const ensureSpriteTemplate = useCallback(async (): Promise<SpritePromptTemplate | null> => {
-    if (spriteTemplateRef.current) return spriteTemplateRef.current;
-    if (spriteTemplatePromiseRef.current) return spriteTemplatePromiseRef.current;
-    if (!config || !hasLlmKey) return null;
-
-    const promise = generateSpriteTemplate(
-      Object.keys(config.races),
-      Object.keys(config.classes),
-      SPRITE_TEMPLATE_VIBE,
-    )
-      .then((template) => {
-        spriteTemplateRef.current = template;
-        return template;
-      })
-      .catch((error) => {
-        console.warn("Failed to generate sprite prompt template, using fallback prompt composition.", error);
-        return null;
-      })
-      .finally(() => {
-        spriteTemplatePromiseRef.current = null;
-      });
-
-    spriteTemplatePromiseRef.current = promise;
-    return promise;
-  }, [config, hasLlmKey]);
-
   const handleAdd = useCallback(() => {
     const id = newId.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
     if (!id || definitions[id]) return;
@@ -413,16 +377,18 @@ export function PlayerSpriteManager() {
         const resolved = findSpriteEntry(definitions, imageId);
         if (!resolved) throw new Error(`Unable to resolve sprite definition for "${imageId}".`);
 
-        const template = await ensureSpriteTemplate();
-        const dimensions = resolveSpriteDimensions(resolved.definition, resolved.variant);
-        const rawPrompt = buildSpritePrompt(
-          dimensions,
-          template,
-          spritePromptNotes(resolved.definition, resolved.variant),
-        );
-        const finalPrompt = rawPrompt;
         const model = resolveImageModel(imageProvider, settings?.image_model);
         if (!model) throw new Error("No image model available");
+
+        const dimensions = resolveSpriteDimensions(resolved.definition, resolved.variant);
+        const finalPrompt = await buildEnhancedSpritePrompt({
+          displayName: resolved.variant?.displayName || resolved.definition.displayName,
+          dimensions,
+          notes: spritePromptNotes(resolved.definition, resolved.variant),
+          style: artStyle,
+          nativeTransparency: modelNativelyTransparent(imageProvider, model.id),
+          enhance: hasLlmKey,
+        });
 
         const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
 
@@ -433,6 +399,7 @@ export function PlayerSpriteManager() {
           width: dims.width,
           height: dims.height,
           assetType: "player_sprite",
+          negativePrompt: getNegativePrompt("player_sprite"),
         });
 
         const assetContext: AssetContext = { zone: "sprites", entity_type: "player_sprite", entity_id: imageId };
@@ -453,7 +420,7 @@ export function PlayerSpriteManager() {
         setGenerating(null);
       }
     },
-    [acceptAsset, config, definitions, ensureSpriteTemplate, hasApiKey, imageProvider, loadAssets, settings],
+    [acceptAsset, artStyle, definitions, hasApiKey, hasLlmKey, imageProvider, loadAssets, settings],
   );
 
   const handleExportSheet = useCallback(async () => {
@@ -642,16 +609,25 @@ export function PlayerSpriteManager() {
       const resolved = findSpriteEntry(definitions, imageId);
       if (!resolved) return;
 
-      const template = await ensureSpriteTemplate();
+      const model = resolveImageModel(imageProvider, settings?.image_model);
       const dimensions = resolveSpriteDimensions(resolved.definition, resolved.variant);
-      const rawPrompt = buildSpritePrompt(
-        dimensions,
-        template,
-        spritePromptNotes(resolved.definition, resolved.variant),
-      );
-      setPromptPreview({ imageId, prompt: rawPrompt });
+
+      setGenerating(imageId);
+      try {
+        const prompt = await buildEnhancedSpritePrompt({
+          displayName: resolved.variant?.displayName || resolved.definition.displayName,
+          dimensions,
+          notes: spritePromptNotes(resolved.definition, resolved.variant),
+          style: artStyle,
+          nativeTransparency: model ? modelNativelyTransparent(imageProvider, model.id) : false,
+          enhance: hasLlmKey,
+        });
+        setPromptPreview({ imageId, prompt });
+      } finally {
+        setGenerating(null);
+      }
     },
-    [config, definitions, ensureSpriteTemplate],
+    [artStyle, definitions, hasLlmKey, imageProvider, settings],
   );
 
   const handleGenerateWithPrompt = useCallback(
@@ -676,6 +652,7 @@ export function PlayerSpriteManager() {
           width: dims.width,
           height: dims.height,
           assetType: "player_sprite",
+          negativePrompt: getNegativePrompt("player_sprite"),
         });
 
         const assetContext: AssetContext = { zone: "sprites", entity_type: "player_sprite", entity_id: imageId };
@@ -696,7 +673,7 @@ export function PlayerSpriteManager() {
         setGenerating(null);
       }
     },
-    [promptPreview, acceptAsset, hasApiKey, hasLlmKey, imageProvider, loadAssets, settings],
+    [promptPreview, acceptAsset, hasApiKey, imageProvider, loadAssets, settings],
   );
 
   return (

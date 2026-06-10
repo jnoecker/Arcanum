@@ -128,6 +128,7 @@ export const FORMAT_BY_TYPE: Record<string, string> = {
   gathering_node: "1:1 square interactable resource node sprite, 3/4 isometric perspective view of an in-world harvest point grounded on the floor, full silhouette visible, clean simple background, no hands, no characters, no UI",
   ability_icon: "1:1 square ability icon centered in frame, symbolic/iconic representation",
   status_effect_icon: "1:1 square status effect icon centered in frame, symbolic/iconic representation",
+  player_sprite: "1:1 square full-body character sprite, the entire figure visible head to toe in a relaxed confident standing pose, facing the viewer, centered with padding on all sides, clean simple background, clear readable silhouette at small sizes",
   race_portrait: "3:2 landscape orientation character portrait, close-up to mid-shot framing, richly detailed painterly environment background",
   class_portrait: "3:2 landscape orientation action portrait, mid-shot framing, dynamic or atmospheric pose, richly detailed painterly environment background",
   faction_emblem: "1:1 square heraldic sigil centered in frame, single iconic emblem fills most of the canvas, dark uniform background suitable for a circular badge, no text, no scenery, no characters",
@@ -157,7 +158,7 @@ export const FORMAT_BY_ASSET_TYPE: Partial<Record<AssetType, string>> = {
   lever_handle: "1:1 square sprite of a single lever handle/arm oriented vertically pointing straight up, centered, the pivot end at the bottom and the grip at the top, the whole handle in frame with padding, no mounting plate, no wall, no characters, clean flat background",
   door_frame: "2:3 portrait sprite of a single empty doorway frame viewed straight head-on, the opening hollow and empty (no door panel inside), centered with padding, no door leaf, no wall around it, no characters, clean flat background",
   door_leaf: "2:3 portrait sprite of a single closed door panel/leaf viewed straight head-on, the whole leaf in frame with padding, no surrounding frame, no wall, no characters, clean flat background",
-  player_sprite: FORMAT_BY_TYPE.mob,
+  player_sprite: FORMAT_BY_TYPE.player_sprite,
   race_portrait: FORMAT_BY_TYPE.race_portrait,
   class_portrait: FORMAT_BY_TYPE.class_portrait,
   faction_emblem: FORMAT_BY_TYPE.faction_emblem,
@@ -417,8 +418,8 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
   player_sprite: {
     label: "Player Sprite",
     templates: {
-      arcanum: `A heroic fantasy character portrait against deep cosmic indigo void — the character stands in a confident adventuring pose, rendered with faithful anatomy and detailed equipment appropriate to their class and level, baroque aurum-gold energy scrollwork frames the figure as an ornate portrait border, warm golden light illuminates the character from a central point creating soft bloom, cool blue-violet atmospheric fill provides depth, the character's race is clearly depicted with distinct physical features, equipment quality and ornamentation reflects their power tier, centered square portrait composition, painterly, luminous, extremely detailed, heroic`,
-      gentle_magic: `A fantasy character portrait in a gentle enchanted setting — the character stands in a natural adventuring pose, rendered with faithful anatomy and detailed equipment appropriate to their class and level, soft ambient light in lavender and pale blue creates a dreamlike atmosphere, the character's race is clearly depicted with warm approachable features, equipment has a handcrafted quality with subtle magical glow, floating motes of light and gentle atmospheric haze surround the figure, small organic details like moss or tiny flowers at their feet, centered square portrait composition, painterly, luminous, dreamlike, characterful`,
+      arcanum: `A full-body fantasy adventurer rendered as an isolated game sprite — the entire figure visible from head to toe in a relaxed confident standing pose, weight settled naturally, facing the viewer, rendered with faithful anatomy and detailed class-defining equipment depicted realistically with Arcanum palette lighting, warm aurum-gold light catching armor edges and fabric folds with soft bloom, cool blue-violet tones in the shadows, the character's race clearly depicted with distinct physical features, a clear strong silhouette that reads instantly even at small sizes, centered square composition with padding on all sides, painterly, luminous, extremely detailed`,
+      gentle_magic: `A full-body fantasy adventurer rendered as an isolated game sprite — the entire figure visible from head to toe in a relaxed natural standing pose, facing the viewer, rendered with faithful anatomy and handcrafted class-defining equipment with a subtle magical glow, soft ambient lighting in the Gentle Magic palette with lavender and pale blue undertones and soft gold highlights, no harsh shadows, the character's race clearly depicted with warm approachable features, a clear gentle silhouette that reads instantly even at small sizes, centered square composition with padding on all sides, painterly, luminous, dreamlike, characterful`,
     },
   },
   class_portrait: {

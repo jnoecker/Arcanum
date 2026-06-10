@@ -8,11 +8,10 @@ import { useFocusTrap } from "@/lib/useFocusTrap";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import { ENTITY_DIMENSIONS, resolveImageModel, requestsTransparentBackground, modelNativelyTransparent } from "@/types/assets";
 import { generateAssetImage } from "@/lib/imageGen";
+import { getNegativePrompt } from "@/lib/arcanumPrompts";
 import {
-  buildSpritePrompt,
+  buildEnhancedSpritePrompt,
   generateArtDirection,
-  generateSpriteTemplate,
-  type SpritePromptTemplate,
 } from "@/lib/spritePromptGen";
 import {
   computeGaps,
@@ -22,9 +21,6 @@ import {
 } from "@/lib/spriteScaffold";
 import type { AssetContext } from "@/types/assets";
 import { ActionButton } from "./ui/FormWidgets";
-
-const SPRITE_TEMPLATE_VIBE =
-  "Character creation sprites for a fantasy world — each one should be a compelling standalone portrait.";
 
 const GENDER_OPTIONS = [
   { value: "male", label: "Male" },
@@ -52,6 +48,7 @@ export function SpriteScaffold({ onClose, onComplete }: SpriteScaffoldProps) {
   const saveDefinitions = useSpriteDefinitionStore((s) => s.saveDefinitions);
   const project = useProjectStore((s) => s.project);
   const settings = useAssetStore((s) => s.settings);
+  const artStyle = useAssetStore((s) => s.artStyle);
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
   const loadAssets = useAssetStore((s) => s.loadAssets);
 
@@ -143,19 +140,6 @@ export function SpriteScaffold({ onClose, onComplete }: SpriteScaffoldProps) {
     }
     await saveDefinitions(project);
 
-    let template: SpritePromptTemplate | null = null;
-    if (hasLlmKey) {
-      try {
-        template = await generateSpriteTemplate(
-          Object.keys(config.races),
-          Object.keys(config.classes),
-          SPRITE_TEMPLATE_VIBE,
-        );
-      } catch {
-        // Fall back to default template composition
-      }
-    }
-
     const concurrency = settings.batch_concurrency ?? 3;
     const queue = [...slots.keys()];
     let done = 0;
@@ -173,29 +157,37 @@ export function SpriteScaffold({ onClose, onComplete }: SpriteScaffoldProps) {
 
         try {
           const dimensions = { race: slot.race, playerClass: slot.playerClass, gender: slot.gender };
+          const defForSlot = pairs.find(([id]) => id === slot.id)?.[1];
+          const displayName = defForSlot?.displayName ?? slot.id;
 
           let artDirection: string | undefined;
           if (hasLlmKey) {
             try {
-              const defForSlot = pairs.find(([id]) => id === slot.id)?.[1];
               artDirection = await generateArtDirection(
-                defForSlot?.displayName ?? slot.id,
+                displayName,
                 slot.race,
                 slot.playerClass,
                 slot.gender,
               );
-              if (artDirection) {
-                setDefinition(slot.id, { ...defForSlot!, artDirection });
+              if (artDirection && defForSlot) {
+                setDefinition(slot.id, { ...defForSlot, artDirection });
               }
             } catch {
               // Art direction is best-effort; proceed without it
             }
           }
 
-          const prompt = buildSpritePrompt(dimensions, template, artDirection);
-
           const model = resolveImageModel(imageProvider, settings?.image_model);
           if (!model) throw new Error("No image model available");
+
+          const prompt = await buildEnhancedSpritePrompt({
+            displayName,
+            dimensions,
+            notes: artDirection,
+            style: artStyle,
+            nativeTransparency: modelNativelyTransparent(imageProvider, model.id),
+            enhance: hasLlmKey,
+          });
 
           const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
 
@@ -206,6 +198,7 @@ export function SpriteScaffold({ onClose, onComplete }: SpriteScaffoldProps) {
             width: dims.width,
             height: dims.height,
             assetType: "player_sprite",
+            negativePrompt: getNegativePrompt("player_sprite"),
           });
 
           const imageId = slot.id;
@@ -248,7 +241,7 @@ export function SpriteScaffold({ onClose, onComplete }: SpriteScaffoldProps) {
     setPhase("done");
   }, [
     config, project, settings, filteredMissing, definitions, hasLlmKey,
-    imageProvider, setDefinition, saveDefinitions,
+    artStyle, imageProvider, setDefinition, saveDefinitions,
     acceptAsset, loadAssets,
   ]);
 

@@ -1,19 +1,19 @@
 import { invoke } from "@tauri-apps/api/core";
-import { getStyleSuffix, parseLlmJson } from "./arcanumPrompts";
+import {
+  getEnhanceSystemPrompt,
+  getFormatForAssetType,
+  getPreamble,
+  getStyleSuffix,
+  withSpriteSafety,
+  type ArtStyle,
+} from "./arcanumPrompts";
 import { useConfigStore } from "@/stores/configStore";
-import { buildToneDirective, buildVisualStyleDirective } from "./loreGeneration";
+import { buildToneDirective } from "./loreGeneration";
 import {
   DEFAULT_RACE_BODY_DESCRIPTIONS,
   DEFAULT_CLASS_OUTFIT_DESCRIPTIONS,
 } from "./defaultSpriteData";
 import { AI_ENABLED } from "@/lib/featureFlags";
-
-// Fallback art-direction when the world has no visualStyle defined.
-// Kept lean — we never want project-specific aesthetic baked into code —
-// but dense enough to stop FLUX drifting into its default painterly
-// ranger-in-a-forest look on a minimal prompt.
-const GENERIC_SPRITE_STYLE_FALLBACK =
-  "Digital fantasy character illustration, painterly with clear readable silhouette, consistent world aesthetic. NOT a photograph, NOT a 3D render, NOT concept art.";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -23,10 +23,16 @@ export interface SpriteDimensions {
   gender?: string;
 }
 
-export interface SpritePromptTemplate {
-  raceDescriptions: Record<string, string>;
-  classOutfits: Record<string, string>;
-  generatedAt: string;
+export interface SpritePromptArgs {
+  displayName: string;
+  dimensions: SpriteDimensions;
+  /** Free-form steering text: artDirection, description, variant label. */
+  notes?: string;
+  style: ArtStyle;
+  /** Model produces native transparency — use light framing rules instead of the lavender chroma-key. */
+  nativeTransparency?: boolean;
+  /** Run the LLM enhancement pass. When false, returns the composed base prompt. */
+  enhance?: boolean;
 }
 
 // ─── Data resolution ─────────────────────────────────────────────────
@@ -60,130 +66,115 @@ export function getClassOutfitDescription(cls: string): string {
 
 // ─── Prompt assembly ─────────────────────────────────────────────────
 
-function resolveRaceFragment(
-  race: string,
-  template: SpritePromptTemplate | null,
-): string {
-  if (template?.raceDescriptions[race]) return `${race}, ${template.raceDescriptions[race]}`;
-  return race;
-}
-
-function resolveClassFragment(
-  cls: string,
-  template: SpritePromptTemplate | null,
-): string {
-  if (template?.classOutfits[cls]) return template.classOutfits[cls];
-  return cls;
-}
-
-export function buildSpritePrompt(
-  dimensions: SpriteDimensions,
-  template?: SpritePromptTemplate | null,
-  extraContext?: string,
-): string {
-  const subject: string[] = [];
-
-  if (dimensions.gender) subject.push(dimensions.gender);
-
+function spriteSubject(dimensions: SpriteDimensions): string {
+  const parts: string[] = [];
+  if (dimensions.gender) parts.push(dimensions.gender);
   if (dimensions.race) {
-    subject.push(extraContext?.trim()
-      ? `${extraContext.trim()} (${dimensions.race})`
-      : resolveRaceFragment(dimensions.race, template ?? null));
-  } else if (extraContext?.trim()) {
-    subject.push(extraContext.trim());
-  }
-
-  if (dimensions.playerClass) {
-    subject.push(resolveClassFragment(dimensions.playerClass, template ?? null));
+    const desc = getRaceBodyDescription(dimensions.race);
+    parts.push(desc !== dimensions.race ? `${dimensions.race} (${desc})` : dimensions.race);
   } else {
-    subject.push("wearing simple traveler's clothing");
+    parts.push("adventurer");
   }
+  if (dimensions.playerClass) {
+    parts.push(getClassOutfitDescription(dimensions.playerClass));
+  } else {
+    parts.push("wearing simple traveler's clothing");
+  }
+  return parts.join(", ");
+}
 
-  // Wire world-defined visualStyle and tone into the prompt so sprites
-  // respect the same aesthetic as portraits and world art. Without this,
-  // FLUX ignores the world and falls back to its generic painterly
-  // fantasy default.
-  const visualStyle = buildVisualStyleDirective("worldbuilding");
-  const toneDirective = buildToneDirective({ imageContext: true });
-  const prefix = visualStyle
-    ? `${visualStyle}. NOT a photograph, NOT a 3D render, NOT concept art.`
-    : GENERIC_SPRITE_STYLE_FALLBACK;
-  const toneLine = toneDirective ? `\n${toneDirective}\n` : "";
+/**
+ * Entity-context block fed to the prompt enhancer — same role as
+ * `mobContext` in the zone batch pipeline.
+ */
+export function spriteContext(
+  displayName: string,
+  dimensions: SpriteDimensions,
+  notes?: string,
+): string {
+  const parts = [
+    `Player character sprite "${displayName}" — a full-body standing figure used as a "player is standing here" marker composited into room scenes at small sizes.`,
+  ];
+  if (dimensions.gender) parts.push(`Gender: ${dimensions.gender}`);
+  if (dimensions.race) {
+    const desc = getRaceBodyDescription(dimensions.race);
+    parts.push(desc !== dimensions.race ? `Race: ${dimensions.race} — ${desc}` : `Race: ${dimensions.race}`);
+  }
+  if (dimensions.playerClass) {
+    const desc = getClassOutfitDescription(dimensions.playerClass);
+    parts.push(
+      desc !== dimensions.playerClass
+        ? `Class: ${dimensions.playerClass} — outfit: ${desc}`
+        : `Class: ${dimensions.playerClass}`,
+    );
+  } else {
+    parts.push("No class — wearing simple traveler's clothing");
+  }
+  const directive = getRaceImagePromptDirective(dimensions.race);
+  if (directive) {
+    parts.push(`Hard constraint for this race (must never be contradicted): ${directive}`);
+  }
+  if (notes?.trim()) parts.push(`Art direction: ${notes.trim()}`);
+  return parts.join("\n");
+}
 
-  const body = `1:1 square full-body character illustration, centered, clean neutral background. ${subject.join(", ")}`;
-
-  // Race-level verbatim directive (e.g. "NO FACE NO HUMAN FACE") — placed
-  // adjacent to the subject so FLUX gives it real weight, not after the
-  // style suffix where late tokens get downweighted.
+/**
+ * Composed base prompt — used directly when LLM enhancement is unavailable,
+ * and handed to the enhancer as the reference style template. Mirrors the
+ * `mobPrompt` shape from the zone batch pipeline.
+ */
+export function spriteBasePrompt(
+  dimensions: SpriteDimensions,
+  style: ArtStyle,
+  notes?: string,
+  nativeTransparency?: boolean,
+): string {
+  const preamble = getPreamble(style, "worldbuilding");
+  const tone = buildToneDirective({ imageContext: true });
+  const toneLine = tone ? `\n${tone}\n` : "";
+  const notesLine = notes?.trim() ? ` ${notes.trim()}.` : "";
   const directive = getRaceImagePromptDirective(dimensions.race);
   const directiveBlock = directive ? `\n\n${directive}` : "";
 
-  return `${prefix}${toneLine}\n\n${body}${directiveBlock}\n\n${getStyleSuffix("worldbuilding")}`;
+  const inner = `${getFormatForAssetType("player_sprite")}. ${preamble}${toneLine}
+
+A full-body standing figure of a ${spriteSubject(dimensions)}.${notesLine} Relaxed confident standing pose, entire figure visible head to toe, clear readable silhouette, painterly, luminous, extremely detailed${directiveBlock}
+
+${getStyleSuffix("worldbuilding")}`;
+
+  return withSpriteSafety(inner, "player_sprite", nativeTransparency);
 }
 
-export function fillSpriteTemplate(
-  template: SpritePromptTemplate,
-  dimensions: SpriteDimensions,
-): string {
-  return buildSpritePrompt(dimensions, template);
-}
+/**
+ * The single sprite prompt path — every generation surface (single
+ * generate, prompt preview, Fill Gaps bulk) goes through here. Runs the
+ * same per-entity LLM enhancement as the zone batch art pipeline; falls
+ * back to the composed base prompt if the LLM is unavailable or errors.
+ */
+export async function buildEnhancedSpritePrompt(args: SpritePromptArgs): Promise<string> {
+  const base = spriteBasePrompt(args.dimensions, args.style, args.notes, args.nativeTransparency);
+  if (!args.enhance || !AI_ENABLED) return base;
 
-// ─── Template generation ─────────────────────────────────────────────
+  try {
+    const systemPrompt = getEnhanceSystemPrompt(
+      args.style,
+      "player_sprite",
+      "worldbuilding",
+      args.nativeTransparency,
+    );
+    const context = spriteContext(args.displayName, args.dimensions, args.notes);
+    const userPrompt = `Generate an image prompt for this entity:\n${context}\n\nReference style template (adapt but prioritize the entity description above):\n${base}`;
+    let finalPrompt = await invoke<string>("llm_complete", { systemPrompt, userPrompt });
 
-export async function generateSpriteTemplate(
-  races: string[],
-  classes: string[],
-  _zoneVibe: string,
-): Promise<SpritePromptTemplate> {
-  if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
-  const raceList = races
-    .map((r) => `- ${r}: ${getRaceBodyDescription(r)}`)
-    .join("\n");
-
-  const classList = classes
-    .filter((c) => c !== "base")
-    .map((c) => `- ${c}: ${getClassOutfitDescription(c)}`)
-    .join("\n");
-
-  const toneDirective = buildToneDirective({ imageContext: true });
-  const toneBlock = toneDirective
-    ? `\n\nWorld context: ${toneDirective}\nDescriptions must match this tone.`
-    : "";
-
-  const systemPrompt = `You write short character descriptions for AI image generation. Keep each description to one concise phrase — just enough to identify the race or class visually. No prose, no storytelling.${toneBlock}
-
-Produce a JSON object with two fields:
-
-1. "raceDescriptions" — map each race key to a SHORT phrase describing physical appearance only (body type, skin, features). 10 words max. Only describe what makes this race visually distinct. For common races like "human", just use the race name.
-
-2. "classOutfits" — map each class key to a SHORT phrase describing outfit and weapon. 10 words max. Just the gear, not the character.
-
-Output ONLY valid JSON.`;
-
-  const userPrompt = `Races:
-${raceList}
-
-Classes:
-${classList}`;
-
-  const response = await invoke<string>("llm_complete", {
-    systemPrompt,
-    userPrompt,
-  });
-
-  const parsed = parseLlmJson<{
-    raceDescriptions?: Record<string, string>;
-    classOutfits?: Record<string, string>;
-  }>(response, "sprite-prompt-gen");
-  if (!parsed.raceDescriptions || !parsed.classOutfits) {
-    throw new Error("Invalid template response: missing required fields (raceDescriptions, classOutfits)");
+    const styleSuffix = getStyleSuffix("worldbuilding");
+    if (!finalPrompt.includes(styleSuffix.slice(0, 40))) {
+      finalPrompt = `${finalPrompt}\n\n${styleSuffix}`;
+    }
+    return finalPrompt;
+  } catch (error) {
+    console.warn("Sprite prompt enhancement failed, using base prompt.", error);
+    return base;
   }
-
-  return {
-    raceDescriptions: parsed.raceDescriptions,
-    classOutfits: parsed.classOutfits,
-    generatedAt: new Date().toISOString(),
-  };
 }
 
 // ─── Art direction generation ────────────────────────────────────────
@@ -230,4 +221,3 @@ Rules:
   });
   return result.trim();
 }
-

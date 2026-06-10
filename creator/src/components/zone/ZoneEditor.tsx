@@ -12,6 +12,7 @@ import {
   type NodeMouseHandler,
   type Connection,
   BackgroundVariant,
+  ConnectionMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -478,8 +479,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         ? target.slice("xzone:".length)
         : target;
 
-      // Extract direction from sourceHandle (e.g. "source-n" → "n")
-      const inferredDir = sourceHandle?.replace("source-", "") ?? "n";
+      // Handle ids are bare directions ("n", "se", "u", ...)
+      const inferredDir = sourceHandle ?? "n";
 
       // Show direction picker instead of immediately creating exit
       setPendingConnection({ source, target: resolvedTarget, inferredDir });
@@ -1084,6 +1085,10 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               onPaneClick={onPaneClick}
               minZoom={0.1}
               maxZoom={2}
+              // Loose mode lets edges and connection drags terminate on
+              // source-type handles, so RoomNode ships one handle per
+              // direction instead of a source/target pair.
+              connectionMode={ConnectionMode.Loose}
               // Skip mounting nodes outside the viewport. Big perf win for
               // zones with many image-backed rooms — each off-screen node
               // would otherwise hold a base64 background in the DOM.

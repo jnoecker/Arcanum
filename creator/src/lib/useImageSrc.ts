@@ -13,26 +13,59 @@ import { useAssetStore } from "@/stores/assetStore";
  */
 const imageDataUrlCache = new Map<string, Promise<string>>();
 
-function fetchImageDataUrl(path: string): Promise<string> {
-  const cached = imageDataUrlCache.get(path);
+/** Settled values from `imageDataUrlCache`, for synchronous lookup. Lets
+ *  components that re-mount constantly (ReactFlow nodes under
+ *  `onlyRenderVisibleElements`) render already-loaded images in their first
+ *  paint instead of flashing through a loading state on every pan. */
+const resolvedImageCache = new Map<string, string>();
+
+// NUL is illegal in file paths on every platform, so thumbnail keys can
+// never collide with a real full-size path key.
+const KEY_SEP = String.fromCharCode(0);
+
+function cacheKey(path: string, maxDim?: number): string {
+  return maxDim ? `${path}${KEY_SEP}${maxDim}` : path;
+}
+
+function fetchImageDataUrl(path: string, maxDim?: number): Promise<string> {
+  const key = cacheKey(path, maxDim);
+  const cached = imageDataUrlCache.get(key);
   if (cached) return cached;
-  const promise = invoke<string>("read_image_data_url", { path });
-  imageDataUrlCache.set(path, promise);
-  promise.catch(() => imageDataUrlCache.delete(path));
+  const promise = maxDim
+    ? invoke<string>("read_image_thumbnail_data_url", { path, maxDim })
+    : invoke<string>("read_image_data_url", { path });
+  imageDataUrlCache.set(key, promise);
+  promise.then(
+    (dataUrl) => resolvedImageCache.set(key, dataUrl),
+    () => imageDataUrlCache.delete(key),
+  );
   return promise;
 }
 
-/** Drop a single entry from the image-data-url cache. Call after writing the
- *  underlying file (e.g. asset accept, regenerate) so the next load picks up
- *  the new bytes instead of returning a stale data URL. */
+function lookupResolved(candidates: string[], maxDim?: number): string | null {
+  for (const path of candidates) {
+    const hit = resolvedImageCache.get(cacheKey(path, maxDim));
+    if (hit) return hit;
+  }
+  return null;
+}
+
+/** Drop all cached entries (full-size and thumbnails) for a path. Call after
+ *  writing the underlying file (e.g. asset accept, regenerate) so the next
+ *  load picks up the new bytes instead of returning a stale data URL. */
 export function invalidateImageCache(path: string): void {
-  imageDataUrlCache.delete(path);
+  for (const map of [imageDataUrlCache, resolvedImageCache] as Map<string, unknown>[]) {
+    for (const key of map.keys()) {
+      if (key === path || key.startsWith(`${path}${KEY_SEP}`)) map.delete(key);
+    }
+  }
 }
 
 /** Clear the entire image-data-url cache. Use sparingly — meant for project
  *  switches where every path is now invalid. */
 export function clearImageCache(): void {
   imageDataUrlCache.clear();
+  resolvedImageCache.clear();
 }
 
 /** Returns true if the path looks like an R2 hash filename (64 hex chars + extension). */
@@ -57,6 +90,14 @@ export interface ImageLoadResult {
   status: ImageLoadStatus;
 }
 
+export interface ImageSrcOptions {
+  /** Downscale server-side to fit within maxDim pixels (re-encoded as lossy
+   *  WebP). Use for map nodes and list thumbnails — full-resolution art is
+   *  often a multi-MB PNG that wastes IPC, decode time, and GPU memory when
+   *  displayed at thumbnail size. Omit for full resolution. */
+  maxDim?: number;
+}
+
 /**
  * Load an image from a local file path via IPC, returning a data URL plus status.
  * Handles three kinds of paths:
@@ -64,11 +105,13 @@ export interface ImageLoadResult {
  * - Legacy relative paths (e.g. "zone/image.png") → resolve from MUD images dir
  * - Absolute paths → load directly
  */
-export function useImageSrcStatus(filePath: string | undefined): ImageLoadResult {
+export function useImageSrcStatus(
+  filePath: string | undefined,
+  options?: ImageSrcOptions,
+): ImageLoadResult {
+  const maxDim = options?.maxDim;
   const mudDir = useProjectStore((s) => s.project?.mudDir);
   const assetsDir = useAssetStore((s) => s.assetsDir);
-  const [src, setSrc] = useState<string | null>(null);
-  const [status, setStatus] = useState<ImageLoadStatus>("idle");
 
   const candidates = useMemo(() => {
     if (!filePath) return [];
@@ -90,6 +133,16 @@ export function useImageSrcStatus(filePath: string | undefined): ImageLoadResult
     ];
   }, [filePath, mudDir, assetsDir]);
 
+  // Synchronous fast path on mount: components that re-mount constantly
+  // (ReactFlow nodes under `onlyRenderVisibleElements` re-mount on every
+  // pan) render already-loaded images in their first paint, skipping the
+  // loading flash and the extra render of the async path.
+  const initial = lookupResolved(candidates, maxDim);
+  const [src, setSrc] = useState<string | null>(initial);
+  const [status, setStatus] = useState<ImageLoadStatus>(
+    initial ? "loaded" : filePath ? "loading" : "idle",
+  );
+
   useEffect(() => {
     if (!filePath) {
       setSrc(null);
@@ -104,9 +157,16 @@ export function useImageSrcStatus(filePath: string | undefined): ImageLoadResult
       return;
     }
 
-    // Synchronous fast path: if every candidate is already cached, pick the
-    // first one that resolved successfully and skip the async dance. Avoids
-    // a "loading" flash and a microtask hop on re-renders of cached images.
+    // Same fast path for in-place candidate changes (e.g. a list row reused
+    // for a different image whose data URL is already cached). React bails
+    // out of the re-render when the values are unchanged.
+    const resolved = lookupResolved(candidates, maxDim);
+    if (resolved) {
+      setSrc(resolved);
+      setStatus("loaded");
+      return;
+    }
+
     let cancelled = false;
     setStatus("loading");
 
@@ -114,7 +174,7 @@ export function useImageSrcStatus(filePath: string | undefined): ImageLoadResult
       for (const path of candidates) {
         if (cancelled) return;
         try {
-          const dataUrl = await fetchImageDataUrl(path);
+          const dataUrl = await fetchImageDataUrl(path, maxDim);
           if (!cancelled) {
             setSrc(dataUrl);
             setStatus("loaded");
@@ -133,14 +193,17 @@ export function useImageSrcStatus(filePath: string | undefined): ImageLoadResult
     return () => {
       cancelled = true;
     };
-  }, [candidates, filePath]);
+  }, [candidates, filePath, maxDim]);
 
   return { src, status };
 }
 
 /** Backwards-compatible thin wrapper that returns just the data URL. */
-export function useImageSrc(filePath: string | undefined): string | null {
-  return useImageSrcStatus(filePath).src;
+export function useImageSrc(
+  filePath: string | undefined,
+  options?: ImageSrcOptions,
+): string | null {
+  return useImageSrcStatus(filePath, options).src;
 }
 
 /**

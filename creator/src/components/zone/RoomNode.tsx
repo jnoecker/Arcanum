@@ -62,27 +62,37 @@ const plusHandleStyle: React.CSSProperties = {
 
 // ─── Sub-components ──────────────────────────────────────────────────
 
+// Generated art is 1024px+ (often multi-MB PNGs); map nodes display it at
+// 220 CSS px wide. Server-side thumbnails keep large zones from holding
+// hundreds of full-resolution bitmaps in the canvas, which is what made
+// pan/zoom crawl. 512 covers max zoom (2x) at typical DPI; 96 covers the
+// 24px sprite chips.
+const ROOM_BG_MAX_DIM = 512;
+const SPRITE_MAX_DIM = 96;
+
 function SpriteThumb({ sprite }: { sprite: EntitySprite }) {
-  const src = useImageSrc(sprite.image);
+  const src = useImageSrc(sprite.image, { maxDim: SPRITE_MAX_DIM });
   if (!src) return null;
   return (
     <img
       src={src}
       alt={sprite.name}
       title={`${sprite.kind}: ${sprite.name}`}
+      decoding="async"
       className="h-6 w-6 rounded-sm border border-[var(--chrome-stroke-emphasis)] object-cover"
     />
   );
 }
 
 function RoomBackground({ image }: { image?: string }) {
-  const src = useImageSrc(image);
+  const src = useImageSrc(image, { maxDim: ROOM_BG_MAX_DIM });
   if (!src) return null;
   return (
     <>
       <img
         src={src}
         alt=""
+        decoding="async"
         className="pointer-events-none absolute inset-0 h-full w-full rounded object-cover"
       />
       {/* Gradient fade at bottom so the badge is readable */}
@@ -211,29 +221,21 @@ export const RoomNode = memo(function RoomNode({ data, selected }: NodeProps<Roo
       {/* Room background image — full opacity */}
       <RoomBackground image={d.image} />
 
-      {/* Source handles (drag from these to create exits) */}
+      {/* One handle per direction, doubling as drag origin and edge anchor.
+          Requires ConnectionMode.Loose on the owning ReactFlow — loose mode
+          lets edges terminate on source-type handles, so we don't need a
+          mirrored set of target handles (which doubled the per-node handle
+          count: 20 ReactFlow components per room adds up on large maps). */}
       {HANDLES.map((h) => (
         <Handle
-          key={`source-${h.id}`}
+          key={h.id}
           type="source"
           position={h.position}
-          id={`source-${h.id}`}
+          id={h.id}
           title={h.label}
           isConnectable
           className={h.showPlus ? "room-handle-plus" : ""}
           style={h.showPlus ? { ...plusHandleStyle, ...h.style } : { ...hiddenHandleStyle, ...h.style }}
-        />
-      ))}
-
-      {/* Target handles (invisible — receive connections) */}
-      {HANDLES.map((h) => (
-        <Handle
-          key={`target-${h.id}`}
-          type="target"
-          position={h.position}
-          id={`target-${h.id}`}
-          style={{ ...hiddenHandleStyle, ...h.style }}
-          isConnectable
         />
       ))}
 

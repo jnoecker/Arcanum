@@ -12,6 +12,7 @@ import {
   type Edge,
   type NodeMouseHandler,
   type OnNodeDrag,
+  ConnectionMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import dagre from "@dagrejs/dagre";
@@ -524,6 +525,9 @@ function ZoneAtlas() {
         onNodeDragStop={onNodeDragStop}
         minZoom={0.04}
         maxZoom={2}
+        // RoomNode ships a single source-type handle per direction; loose
+        // mode lets edge targets anchor to them.
+        connectionMode={ConnectionMode.Loose}
         fitView
         fitViewOptions={{ padding: 0.15 }}
         nodesDraggable

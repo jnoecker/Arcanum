@@ -393,10 +393,8 @@ export function zoneToGraph(
       id: `${exit.source}-${exit.direction}-${exit.target}`,
       source: exit.source,
       target: exit.target,
-      sourceHandle: `source-${exit.direction}`,
-      targetHandle: reverse
-        ? `target-${reverse.direction}`
-        : `target-${oppositeDir(exit.direction)}`,
+      sourceHandle: exit.direction,
+      targetHandle: reverse ? reverse.direction : oppositeDir(exit.direction),
       type: "exitEdge",
       label,
       animated: isCrossZone || isVertical,

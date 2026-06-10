@@ -221,29 +221,21 @@ export const RoomNode = memo(function RoomNode({ data, selected }: NodeProps<Roo
       {/* Room background image — full opacity */}
       <RoomBackground image={d.image} />
 
-      {/* Source handles (drag from these to create exits) */}
+      {/* One handle per direction, doubling as drag origin and edge anchor.
+          Requires ConnectionMode.Loose on the owning ReactFlow — loose mode
+          lets edges terminate on source-type handles, so we don't need a
+          mirrored set of target handles (which doubled the per-node handle
+          count: 20 ReactFlow components per room adds up on large maps). */}
       {HANDLES.map((h) => (
         <Handle
-          key={`source-${h.id}`}
+          key={h.id}
           type="source"
           position={h.position}
-          id={`source-${h.id}`}
+          id={h.id}
           title={h.label}
           isConnectable
           className={h.showPlus ? "room-handle-plus" : ""}
           style={h.showPlus ? { ...plusHandleStyle, ...h.style } : { ...hiddenHandleStyle, ...h.style }}
-        />
-      ))}
-
-      {/* Target handles (invisible — receive connections) */}
-      {HANDLES.map((h) => (
-        <Handle
-          key={`target-${h.id}`}
-          type="target"
-          position={h.position}
-          id={`target-${h.id}`}
-          style={{ ...hiddenHandleStyle, ...h.style }}
-          isConnectable
         />
       ))}
 

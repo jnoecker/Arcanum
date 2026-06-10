@@ -97,7 +97,7 @@ interface VoiceStore {
 
   synthesizeLine: (line: DialogueLine) => Promise<void>;
   generateAll: (lines: DialogueLine[]) => Promise<void>;
-  publishToR2: (lines: DialogueLine[]) => Promise<SyncProgress | null>;
+  publishToR2: (lines: DialogueLine[], force?: boolean) => Promise<SyncProgress | null>;
   reset: () => void;
 }
 
@@ -380,7 +380,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
     }
   },
 
-  publishToR2: async (lines) => {
+  publishToR2: async (lines, force = false) => {
     if (get().publishing) return null;
     set({ publishing: true, lastPublish: null });
     try {
@@ -398,7 +398,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => ({
           });
         }
       }
-      const progress = await invoke<SyncProgress>("deploy_voices_to_r2", { jobs });
+      const progress = await invoke<SyncProgress>("deploy_voices_to_r2", { jobs, force });
       set({ lastPublish: progress, publishing: false });
       return progress;
     } catch (e) {

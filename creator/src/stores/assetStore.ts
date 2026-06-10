@@ -42,7 +42,7 @@ interface AssetState {
   setActiveVariant: (variantGroup: string, assetId: string) => Promise<void>;
   listVariants: (variantGroup: string) => Promise<AssetEntry[]>;
 
-  syncToR2: (scope?: SyncScope) => Promise<SyncProgress>;
+  syncToR2: (scope?: SyncScope, force?: boolean) => Promise<SyncProgress>;
   getSyncStatus: () => Promise<SyncProgress>;
 
   startBatch: (progress: BatchProgress) => void;
@@ -159,10 +159,10 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     return invoke<AssetEntry[]>("list_variants", { variantGroup });
   },
 
-  syncToR2: async (scope = "approved") => {
+  syncToR2: async (scope = "approved", force = false) => {
     set({ syncing: true });
     try {
-      const result = await invoke<SyncProgress>("sync_assets", { scope });
+      const result = await invoke<SyncProgress>("sync_assets", { scope, force });
       set({ lastSyncResult: result, syncing: false });
       await get().loadAssets();
       return result;

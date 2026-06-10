@@ -107,6 +107,7 @@ export default function VoiceOverPanel() {
 
   const [savingMap, setSavingMap] = useState(false);
   const [savedMap, setSavedMap] = useState(false);
+  const [forceReupload, setForceReupload] = useState(false);
   const [sha8Map, setSha8Map] = useState<Record<string, string>>({});
 
   const hasKey = !!settings?.elevenlabs_api_key;
@@ -438,8 +439,20 @@ export default function VoiceOverPanel() {
             >
               {generating ? "Generating…" : "Generate all"}
             </button>
+            <label
+              className="flex cursor-pointer items-center gap-1.5 text-2xs text-text-muted"
+              title="Re-upload clips already on R2 so they pick up the latest cache headers. Use when seeding a new bucket or after a caching change."
+            >
+              <input
+                type="checkbox"
+                checked={forceReupload}
+                onChange={(event) => setForceReupload(event.target.checked)}
+                className="accent-[var(--accent)]"
+              />
+              Force re-upload
+            </label>
             <button
-              onClick={() => publishToR2(lines)}
+              onClick={() => publishToR2(lines, forceReupload)}
               disabled={!r2Configured || publishing || doneCount === 0}
               title={r2Configured ? undefined : "Configure Cloudflare R2 in Settings to publish."}
               className="action-button action-button-secondary action-button-sm focus-ring"

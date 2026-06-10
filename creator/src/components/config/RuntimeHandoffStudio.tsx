@@ -143,6 +143,7 @@ export function RuntimeHandoffStudio() {
     }
   });
   const [runningAll, setRunningAll] = useState(false);
+  const [forceReupload, setForceReupload] = useState(false);
   const [workflowMessage, setWorkflowMessage] = useState<string | null>(null);
   const [deployCommitMsg, setDeployCommitMsg] = useState(() =>
     `Deploy: ${new Date().toISOString().slice(0, 16).replace("T", " ")}`,
@@ -326,7 +327,7 @@ export function RuntimeHandoffStudio() {
       errors: [],
     });
     try {
-      const result = await publishCuratedAssets(syncScope);
+      const result = await publishCuratedAssets(syncScope, forceReupload);
       setStepState("assets", {
         status: result.failed > 0 ? "warning" : "success",
         detail: formatSyncResult(result, "assets"),
@@ -349,7 +350,7 @@ export function RuntimeHandoffStudio() {
       errors: [],
     });
     try {
-      const result = await publishGlobalAssets();
+      const result = await publishGlobalAssets(forceReupload);
       setStepState("globals", {
         status: result.failed > 0 ? "warning" : "success",
         detail: formatSyncResult(result, "globals"),
@@ -372,7 +373,7 @@ export function RuntimeHandoffStudio() {
       errors: [],
     });
     try {
-      const result = await publishPlayerSprites();
+      const result = await publishPlayerSprites(forceReupload);
       setStepState("sprites", {
         status: result.failed > 0 ? "warning" : "success",
         detail: formatSyncResult(result, "sprites"),
@@ -565,6 +566,18 @@ export function RuntimeHandoffStudio() {
             >
               Open validation
             </button>
+            <label
+              className="flex cursor-pointer items-center gap-2 rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-4 py-2 text-xs font-medium text-text-secondary transition hover:bg-[var(--chrome-highlight-strong)]"
+              title="Re-upload assets that are already on R2 so they pick up the latest cache headers. Slower — use after a caching change."
+            >
+              <input
+                type="checkbox"
+                checked={forceReupload}
+                onChange={(event) => setForceReupload(event.target.checked)}
+                className="accent-[var(--accent)]"
+              />
+              Force re-upload
+            </label>
           </div>
         </div>
 

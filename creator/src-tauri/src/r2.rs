@@ -13,6 +13,21 @@ use crate::settings;
 
 type HmacSha256 = Hmac<Sha256>;
 
+// ─── Cache-Control policies ─────────────────────────────────────────
+// Stored as R2 object metadata and returned verbatim on every GET, so the
+// MUD client (and the showcase CDN) can cache art instead of re-downloading
+// it on each game load. The three tiers map to how the object key behaves.
+
+/// Content-addressed objects — the filename IS a hash of the bytes, so a given
+/// URL can never change meaning. Safe to cache for a year and skip revalidation.
+const CACHE_IMMUTABLE: &str = "public, max-age=31536000, immutable";
+/// Stable-path media (sprites, global assets, cinematics) that lives at a fixed
+/// URL but can be regenerated. Cache for a day so a regen still propagates.
+const CACHE_ASSET: &str = "public, max-age=86400";
+/// Manifests and configs that decide which assets the client loads. Keep these
+/// fresh — a short TTL still spares the origin a full transfer via 304s.
+const CACHE_MANIFEST: &str = "public, max-age=60";
+
 // ─── Types ──────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -76,6 +91,7 @@ fn build_signed_put(
     object_key: &str,
     body: &[u8],
     content_type: &str,
+    cache_control: &str,
 ) -> Result<(String, Vec<(String, String)>), String> {
     let host = format!("{bucket}.{account_id}.r2.cloudflarestorage.com");
     let url = format!("https://{host}/{object_key}");
@@ -88,11 +104,12 @@ fn build_signed_put(
     let payload_hash = sha256_hex(body);
     let content_length = body.len().to_string();
 
-    // Canonical request
+    // Canonical request. Header lines must be sorted lexicographically by
+    // lowercase name, so `cache-control` sorts ahead of `content-length`.
     let canonical_headers = format!(
-        "content-length:{content_length}\ncontent-type:{content_type}\nhost:{host}\nx-amz-content-sha256:{payload_hash}\nx-amz-date:{amz_date}\n"
+        "cache-control:{cache_control}\ncontent-length:{content_length}\ncontent-type:{content_type}\nhost:{host}\nx-amz-content-sha256:{payload_hash}\nx-amz-date:{amz_date}\n"
     );
-    let signed_headers = "content-length;content-type;host;x-amz-content-sha256;x-amz-date";
+    let signed_headers = "cache-control;content-length;content-type;host;x-amz-content-sha256;x-amz-date";
     let canonical_request = format!(
         "PUT\n/{object_key}\n\n{canonical_headers}\n{signed_headers}\n{payload_hash}"
     );
@@ -111,6 +128,7 @@ fn build_signed_put(
     );
 
     let headers = vec![
+        ("Cache-Control".to_string(), cache_control.to_string()),
         ("Content-Length".to_string(), content_length),
         ("Content-Type".to_string(), content_type.to_string()),
         ("Host".to_string(), host),
@@ -386,13 +404,14 @@ async fn upload_object(
     object_key: &str,
     body: Vec<u8>,
     content_type: &str,
+    cache_control: &str,
 ) -> Result<(), String> {
     const MAX_ATTEMPTS: u32 = 4;
     let mut last_err = String::new();
 
     for attempt in 1..=MAX_ATTEMPTS {
         let (url, headers) = build_signed_put(
-            account_id, bucket, access_key, secret_key, object_key, &body, content_type,
+            account_id, bucket, access_key, secret_key, object_key, &body, content_type, cache_control,
         )?;
 
         let mut req = client.put(&url).body(body.clone());
@@ -525,12 +544,17 @@ fn should_sync_asset(asset: &AssetEntry, scope: &str, active_set: &std::collecti
 }
 
 #[tauri::command]
-pub async fn sync_assets(app: AppHandle, scope: Option<String>) -> Result<SyncProgress, String> {
+pub async fn sync_assets(
+    app: AppHandle,
+    scope: Option<String>,
+    force: Option<bool>,
+) -> Result<SyncProgress, String> {
     let s = settings::get_settings(app.clone()).await?;
     if s.r2_account_id.is_empty() || s.r2_access_key_id.is_empty() || s.r2_secret_access_key.is_empty() || s.r2_bucket.is_empty() {
         return Err("R2 credentials not configured. Set them in Settings.".to_string());
     }
 
+    let force = force.unwrap_or(false);
     let sync_scope = scope.unwrap_or_else(|| "approved".to_string());
     let assets = assets::list_assets(app.clone()).await?;
 
@@ -541,9 +565,11 @@ pub async fn sync_assets(app: AppHandle, scope: Option<String>) -> Result<SyncPr
         .map(|a| a.variant_group.clone())
         .collect();
 
+    // A forced run re-uploads already-synced assets too, so a Cache-Control
+    // backfill reaches everything — not just the not-yet-synced tail.
     let unsynced: Vec<&AssetEntry> = assets
         .iter()
-        .filter(|a| a.sync_status != "synced" && should_sync_asset(a, &sync_scope, &active_set))
+        .filter(|a| (force || a.sync_status != "synced") && should_sync_asset(a, &sync_scope, &active_set))
         .collect();
     let base_dir = assets_base_dir(&app)?;
     let client = crate::http::shared_client();
@@ -559,19 +585,23 @@ pub async fn sync_assets(app: AppHandle, scope: Option<String>) -> Result<SyncPr
     for asset in &unsynced {
         let object_key = &asset.file_name;
 
-        // Check if already exists in R2 (dedup by content hash)
-        match object_exists(&client, &s.r2_account_id, &s.r2_bucket, &s.r2_access_key_id, &s.r2_secret_access_key, object_key).await {
-            Ok(true) => {
-                // Already in R2, just mark as synced
-                assets::update_sync_status(app.clone(), &asset.id, "synced").await?;
-                progress.skipped += 1;
-                continue;
-            }
-            Ok(false) => {}
-            Err(e) => {
-                progress.failed += 1;
-                progress.errors.push(format!("{}: {e}", asset.file_name));
-                continue;
+        // Check if already exists in R2 (dedup by content hash). A forced run
+        // skips the probe and always re-PUTs so existing objects pick up the
+        // current Cache-Control header.
+        if !force {
+            match object_exists(&client, &s.r2_account_id, &s.r2_bucket, &s.r2_access_key_id, &s.r2_secret_access_key, object_key).await {
+                Ok(true) => {
+                    // Already in R2, just mark as synced
+                    assets::update_sync_status(app.clone(), &asset.id, "synced").await?;
+                    progress.skipped += 1;
+                    continue;
+                }
+                Ok(false) => {}
+                Err(e) => {
+                    progress.failed += 1;
+                    progress.errors.push(format!("{}: {e}", asset.file_name));
+                    continue;
+                }
             }
         }
 
@@ -606,6 +636,7 @@ pub async fn sync_assets(app: AppHandle, scope: Option<String>) -> Result<SyncPr
             object_key,
             body,
             content_type,
+            CACHE_IMMUTABLE,
         ).await {
             Ok(()) => {
                 assets::update_sync_status(app.clone(), &asset.id, "synced").await?;
@@ -686,7 +717,12 @@ pub async fn delete_from_r2(app: AppHandle, file_name: String) -> Result<(), Str
 /// Each sprite asset with variant_group "player_sprite:{key}" gets uploaded
 /// as "player_sprites/{key}.png" so the game server can find them.
 #[tauri::command]
-pub async fn deploy_sprites_to_r2(app: AppHandle, sprites_yaml: Option<String>) -> Result<SyncProgress, String> {
+pub async fn deploy_sprites_to_r2(
+    app: AppHandle,
+    sprites_yaml: Option<String>,
+    force: Option<bool>,
+) -> Result<SyncProgress, String> {
+    let force = force.unwrap_or(false);
     let s = settings::get_settings(app.clone()).await?;
     if s.r2_account_id.is_empty()
         || s.r2_access_key_id.is_empty()
@@ -742,8 +778,9 @@ pub async fn deploy_sprites_to_r2(app: AppHandle, sprites_yaml: Option<String>) 
         };
 
         // Skip re-upload if the source bytes match what we uploaded last time.
+        // A forced run ignores the cache so existing objects refresh their headers.
         let src_hash = sha256_hex(&body);
-        if sync_state.get(&object_key).map(|h| h.as_str()) == Some(src_hash.as_str()) {
+        if !force && sync_state.get(&object_key).map(|h| h.as_str()) == Some(src_hash.as_str()) {
             progress.skipped += 1;
             continue;
         }
@@ -760,6 +797,7 @@ pub async fn deploy_sprites_to_r2(app: AppHandle, sprites_yaml: Option<String>) 
             &object_key,
             optimized,
             "image/png",
+            CACHE_ASSET,
         )
         .await
         {
@@ -779,7 +817,7 @@ pub async fn deploy_sprites_to_r2(app: AppHandle, sprites_yaml: Option<String>) 
         progress.total += 1;
         let yaml_bytes = yaml.into_bytes();
         let src_hash = sha256_hex(&yaml_bytes);
-        if sync_state.get("sprites.yaml").map(|h| h.as_str()) == Some(src_hash.as_str()) {
+        if !force && sync_state.get("sprites.yaml").map(|h| h.as_str()) == Some(src_hash.as_str()) {
             progress.skipped += 1;
         } else {
             match upload_object(
@@ -791,6 +829,7 @@ pub async fn deploy_sprites_to_r2(app: AppHandle, sprites_yaml: Option<String>) 
                 "sprites.yaml",
                 yaml_bytes,
                 "application/x-yaml",
+                CACHE_MANIFEST,
             )
             .await
             {
@@ -817,7 +856,9 @@ pub async fn deploy_sprites_to_r2(app: AppHandle, sprites_yaml: Option<String>) 
 pub async fn deploy_global_assets_to_r2(
     app: AppHandle,
     global_assets: std::collections::HashMap<String, String>,
+    force: Option<bool>,
 ) -> Result<SyncProgress, String> {
+    let force = force.unwrap_or(false);
     let s = settings::get_settings(app.clone()).await?;
     if s.r2_account_id.is_empty()
         || s.r2_access_key_id.is_empty()
@@ -878,8 +919,9 @@ pub async fn deploy_global_assets_to_r2(
         };
 
         // Skip re-upload if the source bytes match what we uploaded last time.
+        // A forced run ignores the cache so existing objects refresh their headers.
         let src_hash = sha256_hex(&body);
-        if sync_state.get(&object_key).map(|h| h.as_str()) == Some(src_hash.as_str()) {
+        if !force && sync_state.get(&object_key).map(|h| h.as_str()) == Some(src_hash.as_str()) {
             progress.skipped += 1;
             continue;
         }
@@ -903,6 +945,7 @@ pub async fn deploy_global_assets_to_r2(
             &object_key,
             optimized,
             content_type,
+            CACHE_ASSET,
         )
         .await
         {
@@ -962,6 +1005,7 @@ pub async fn deploy_config_to_r2(
         object_key,
         body,
         "application/x-yaml",
+        CACHE_MANIFEST,
     )
     .await?;
 
@@ -996,6 +1040,7 @@ pub async fn deploy_achievements_to_r2(
         object_key,
         achievements_content.into_bytes(),
         "application/x-yaml",
+        CACHE_MANIFEST,
     )
     .await?;
 
@@ -1109,6 +1154,7 @@ pub async fn deploy_zones_to_r2(
             &object_key,
             body,
             "application/x-yaml",
+            CACHE_MANIFEST,
         )
         .await
         {
@@ -1143,7 +1189,9 @@ fn voice_object_key(zone: &str, template_key: &str, node_id: &str, text_sha8: &s
 pub async fn deploy_voices_to_r2(
     app: AppHandle,
     jobs: Vec<VoiceUploadJob>,
+    force: Option<bool>,
 ) -> Result<SyncProgress, String> {
+    let force = force.unwrap_or(false);
     let s = settings::get_settings(app.clone()).await?;
     if s.r2_account_id.is_empty()
         || s.r2_access_key_id.is_empty()
@@ -1190,8 +1238,9 @@ pub async fn deploy_voices_to_r2(
         };
 
         // Skip re-upload when the source bytes match the last publish.
+        // A forced run ignores the cache so existing objects refresh their headers.
         let src_hash = sha256_hex(&body);
-        if sync_state.get(&object_key).map(|h| h.as_str()) == Some(src_hash.as_str()) {
+        if !force && sync_state.get(&object_key).map(|h| h.as_str()) == Some(src_hash.as_str()) {
             progress.skipped += 1;
             continue;
         }
@@ -1205,6 +1254,7 @@ pub async fn deploy_voices_to_r2(
             &object_key,
             body,
             "audio/mpeg",
+            CACHE_IMMUTABLE,
         )
         .await
         {
@@ -1393,6 +1443,7 @@ pub async fn deploy_story_video_to_r2(
         &object_key,
         bytes,
         "video/mp4",
+        CACHE_ASSET,
     )
     .await?;
 
@@ -1427,6 +1478,7 @@ pub async fn deploy_showcase_to_r2(
         object_key,
         json_content.into_bytes(),
         "application/json",
+        CACHE_MANIFEST,
     )
     .await?;
 

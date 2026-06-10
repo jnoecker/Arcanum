@@ -80,8 +80,14 @@ export async function uploadImage(req: Request, env: Env, user: UserRow): Promis
   }
 
   const key = `worlds/${slug}/images/${last}`;
+  // Content-addressed (filename is the SHA-256), so the bytes behind a URL can
+  // never change — store an immutable Cache-Control alongside the object so it
+  // travels with any direct-R2 access, matching what serveImage sets on GET.
   await env.BUCKET.put(key, bytes, {
-    httpMetadata: { contentType: "image/webp" },
+    httpMetadata: {
+      contentType: "image/webp",
+      cacheControl: "public, max-age=31536000, immutable",
+    },
   });
 
   return json({ ok: true, size: bytes.byteLength }, {}, { origin: "*" });
@@ -127,8 +133,13 @@ export async function uploadManifest(req: Request, env: Env, user: UserRow): Pro
   const json_text = JSON.stringify(body.showcase);
   const bytes = new TextEncoder().encode(json_text);
 
+  // Mutable at a stable key — keep it short so a republish shows up quickly.
+  // serveShowcaseJson sets the authoritative header on GET; this just mirrors it.
   await env.BUCKET.put(`worlds/${slug}/showcase.json`, bytes, {
-    httpMetadata: { contentType: "application/json" },
+    httpMetadata: {
+      contentType: "application/json",
+      cacheControl: "public, max-age=60, s-maxage=300",
+    },
   });
 
   // Discovery metadata is derived from the manifest we just stored,

@@ -1258,6 +1258,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "login_claim_bg",
+    defaultFilename: "login_claim_bg.png",
+    label: "Login Claim Scene",
+    description:
+      "Painted full-screen scene for the demo-character claim step — \"Save Your Character\" (1448×1086). The web client maps the optional new-name field, the password field, and the Save Character / Not now controls onto the painted elements. Falls back to the CSS-only login UI when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen scene for keeping a hero's story in a cozy magical world filling the frame edge to edge — a nocturnal vista in the same aurora-and-fireflies family as the login scene, a sense of a tale being bound into a keepsake storybook, a central area with open space where rename and password fields and two choice buttons overlay, warm glow, no figures, no readable text, suitable as the save-your-character screen.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
     key: "login_picker_bg",
     defaultFilename: "login_picker_bg.png",
     label: "Login Character Picker Scene",

@@ -1203,6 +1203,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "login_bg",
+    defaultFilename: "login_bg.png",
+    label: "Login Scene",
+    description:
+      "Painted full-screen login scene (1536×1024). The web client maps the character-name field and the Create/Login + Start Demo controls onto the painted elements. Falls back to the CSS-only animated login hero when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted full-screen login scene for a cozy magical world filling the frame edge to edge — a wide nocturnal vista with an aurora-streaked starry sky, floating islands on the horizon, and drifting fireflies, a welcoming focal point in the center with open space around it where login controls overlay, warm inviting glow, no figures, no readable text, suitable as the first screen a player sees.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
     key: "dice_bg",
     defaultFilename: "dice_bg.png",
     label: "Dice Table Background",

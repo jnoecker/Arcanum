@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { ActionButton } from "./FormWidgets";
+import type { AssetContext } from "@/types/assets";
+
+export interface SketchSavedEntry {
+  id: string;
+  file_name: string;
+  width: number;
+  height: number;
+}
 
 type Tool = "pen" | "eraser" | "fill";
 
@@ -24,8 +32,10 @@ interface Props {
   height?: number;
   initialDataUrl?: string | null;
   onCancel: () => void;
-  onSave: (entry: { file_name: string; width: number; height: number }) => void;
+  onSave: (entry: SketchSavedEntry) => void;
   assetType?: string;
+  context?: AssetContext;
+  variantGroup?: string;
 }
 
 export function SketchCanvas({
@@ -35,6 +45,8 @@ export function SketchCanvas({
   onCancel,
   onSave,
   assetType = "lore_map",
+  context,
+  variantGroup,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [tool, setTool] = useState<Tool>("pen");
@@ -194,11 +206,13 @@ export function SketchCanvas({
     try {
       const dataUrl = canvas.toDataURL("image/png");
       const bytesB64 = dataUrl.replace(/^data:image\/png;base64,/, "");
-      const entry = await invoke<{ file_name: string; width: number; height: number }>(
+      const entry = await invoke<SketchSavedEntry>(
         "save_bytes_as_asset",
         {
           bytesB64,
           assetType,
+          context: context ?? null,
+          variantGroup: variantGroup ?? null,
         },
       );
       onSave(entry);

@@ -45,6 +45,12 @@ interface EntityArtGeneratorProps {
   vibe?: string;
   /** Which art-style surface to apply — "worldbuilding" for zone/entity/game art, "lore" for lore article illustrations */
   surface?: ArtStyleSurface;
+  /**
+   * Explicit variant-group key, overriding the `entity_type:zone:entity_id`
+   * derivation from `context`. Required for callers (e.g. player sprites) whose
+   * downstream contract expects a specific group format.
+   */
+  variantGroupOverride?: string;
 }
 
 function computeVariantGroup(context?: AssetContext): string {
@@ -61,13 +67,13 @@ function autoAcceptImage(
   onAccept: (filePath: string) => void,
   assetType: string | undefined,
   context: AssetContext | undefined,
+  variantGroup: string,
 ) {
   const fileName = img.file_path.split(/[\\/]/).pop() ?? img.hash;
   onAccept(fileName);
   if (assetType) {
-    const vg = computeVariantGroup(context);
     useAssetStore.getState().acceptAsset(
-      img, assetType, prompt ?? undefined, context, vg, true,
+      img, assetType, prompt ?? undefined, context, variantGroup, true,
     ).catch(() => {});
   }
 }
@@ -101,6 +107,7 @@ export function EntityArtGenerator({
   context,
   vibe: _vibe,
   surface,
+  variantGroupOverride,
 }: EntityArtGeneratorProps) {
   const settings = useAssetStore((s) => s.settings);
   const artStyle = useAssetStore((s) => s.artStyle);
@@ -145,6 +152,7 @@ export function EntityArtGenerator({
   assetTypeRef.current = assetType;
   const contextRef = useRef(context);
   contextRef.current = context;
+  const variantGroupRef = useRef("");
 
   // Mirror context-shaping props in refs so handleGenerate/handleEnhance can read
   // the latest values *after* yielding a tick — necessary because commit-on-blur
@@ -165,7 +173,7 @@ export function EntityArtGenerator({
       mountedRef.current = false;
       const img = pendingResultRef.current;
       if (!img) return;
-      autoAcceptImage(img, pendingPromptRef.current, onAcceptRef.current, assetTypeRef.current, contextRef.current);
+      autoAcceptImage(img, pendingPromptRef.current, onAcceptRef.current, assetTypeRef.current, contextRef.current, variantGroupRef.current);
     };
   }, []);
 
@@ -182,7 +190,8 @@ export function EntityArtGenerator({
   );
   const basePrompt = getPrompt(artStyle);
   const activePrompt = editedPrompt ?? basePrompt;
-  const variantGroup = computeVariantGroup(context);
+  const variantGroup = variantGroupOverride ?? computeVariantGroup(context);
+  variantGroupRef.current = variantGroup;
 
   const entityType = context?.entity_type ?? "";
   const defaultDims = ENTITY_DIMENSIONS[entityType] ?? { width: 1024, height: 1024, label: "1024×1024" };
@@ -310,7 +319,7 @@ export function EntityArtGenerator({
         negativePrompt: getNegativePrompt(assetType),
       });
       if (!mountedRef.current) {
-        autoAcceptImage(image, finalPrompt, onAcceptRef.current, assetTypeRef.current, contextRef.current);
+        autoAcceptImage(image, finalPrompt, onAcceptRef.current, assetTypeRef.current, contextRef.current, variantGroupRef.current);
         return;
       }
       pendingResultRef.current = image;
@@ -414,6 +423,10 @@ export function EntityArtGenerator({
     try {
       const newFileName = await invoke<string>("flip_image", { imageRef: currentImage });
       onAccept(newFileName);
+      // flip_image already registers the flipped asset under the source's
+      // variant group and marks it active; refresh so grouped consumers
+      // (e.g. player sprites, whose onAccept is a no-op) reflect it.
+      if (variantGroup) await useAssetStore.getState().loadAssets();
     } catch (e) {
       console.error("Flip failed:", e);
     } finally {
@@ -724,9 +737,16 @@ export function EntityArtGenerator({
         height={1024}
         initialDataUrl={savedImageSrc || null}
         assetType={assetType ?? "background"}
+        context={context}
+        variantGroup={variantGroup}
         onClose={() => setShowSketch(false)}
         onSave={(entry) => {
           onAccept(entry.file_name);
+          // For grouped callers (e.g. player sprites) the path field isn't the
+          // source of truth — the asset's variant group is. Promote the sketch
+          // to the active entry so it shows and deploys; setActiveVariant
+          // refreshes the asset list.
+          if (variantGroup) void setActiveVariant(variantGroup, entry.id);
         }}
       />
 

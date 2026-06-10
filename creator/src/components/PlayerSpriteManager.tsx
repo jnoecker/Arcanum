@@ -4,33 +4,20 @@ import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useAssetStore } from "@/stores/assetStore";
-import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
 import { resolveImageDataUrl } from "@/lib/useImageSrc";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
 import { BulkBgRemoval } from "@/components/ui/BulkBgRemoval";
-import { AI_ENABLED } from "@/lib/featureFlags";
-import { ENTITY_DIMENSIONS, modelNativelyTransparent, resolveImageModel } from "@/types/assets";
-import { generateAssetImage } from "@/lib/imageGen";
-import { getNegativePrompt } from "@/lib/arcanumPrompts";
-import {
-  buildEnhancedSpritePrompt,
-  type SpriteDimensions,
-} from "@/lib/spritePromptGen";
 import type {
   SpriteDefinition,
-  SpriteVariant,
   SpriteRequirement,
-  RequirementType,
 } from "@/types/sprites";
-import type { AssetContext, SyncProgress } from "@/types/assets";
+import type { SyncProgress } from "@/types/assets";
 import { ActionButton } from "./ui/FormWidgets";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { SpriteScaffold } from "./SpriteScaffold";
 import {
   SpriteThumbnail,
-  SpriteLightbox,
-  PromptPreviewModal,
   SpriteDetailEditor,
   collectSpriteBgTargets,
   requirementLabel,
@@ -47,55 +34,6 @@ function primaryImageId(id: string, def: SpriteDefinition): string {
 /** Get the effective image path for asset lookup. */
 function primaryAssetKey(id: string, def: SpriteDefinition): string {
   return primaryImageId(id, def);
-}
-
-function findRequirement<T extends RequirementType>(
-  requirements: SpriteRequirement[],
-  type: T,
-): Extract<SpriteRequirement, { type: T }> | undefined {
-  return requirements.find(
-    (requirement): requirement is Extract<SpriteRequirement, { type: T }> => requirement.type === type,
-  );
-}
-
-function resolveSpriteDimensions(
-  definition: SpriteDefinition,
-  variant: SpriteVariant | undefined,
-): SpriteDimensions {
-  const race = variant?.race
-    || findRequirement(definition.requirements, "race")?.race
-    || undefined;
-  const playerClass = variant?.playerClass
-    || findRequirement(definition.requirements, "class")?.playerClass
-    || undefined;
-  const gender = variant?.gender || definition.gender || undefined;
-
-  return { race, playerClass, gender };
-}
-
-function findSpriteEntry(
-  definitions: Record<string, SpriteDefinition>,
-  imageId: string,
-): { definitionId: string; definition: SpriteDefinition; variant?: SpriteVariant } | null {
-  for (const [definitionId, definition] of Object.entries(definitions)) {
-    const variant = definition.variants?.find((entry) => entry.imageId === imageId);
-    if (variant) return { definitionId, definition, variant };
-    if ((!definition.variants || definition.variants.length === 0) && definitionId === imageId) {
-      return { definitionId, definition };
-    }
-  }
-  return null;
-}
-
-function spritePromptNotes(definition: SpriteDefinition, variant?: SpriteVariant): string | undefined {
-  const notes = [
-    variant?.displayName && variant.displayName !== definition.displayName
-      ? `Variant label: ${variant.displayName}`
-      : null,
-    definition.artDirection?.trim() || definition.description?.trim() || null,
-  ].filter(Boolean);
-
-  return notes.length > 0 ? notes.join(". ") : undefined;
 }
 
 function hasAnyImage(
@@ -189,10 +127,8 @@ export function PlayerSpriteManager() {
   const assets = useAssetStore((s) => s.assets);
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const settings = useAssetStore((s) => s.settings);
-  const artStyle = useAssetStore((s) => s.artStyle);
   const loadAssets = useAssetStore((s) => s.loadAssets);
-  const acceptAsset = useAssetStore((s) => s.acceptAsset);
-  const deleteAsset = useAssetStore((s) => s.deleteAsset);
+  const deleteAssets = useAssetStore((s) => s.deleteAssets);
 
   useEffect(() => { loadAssets(); }, [loadAssets]);
 
@@ -205,27 +141,19 @@ export function PlayerSpriteManager() {
   const [filterGender, setFilterGender] = useState<string>("all");
   const [filterImage, setFilterImage] = useState<"all" | "with" | "without">("all");
   const [filterStale, setFilterStale] = useState<"all" | "race" | "class" | "any">("all");
-  const [generating, setGenerating] = useState<string | null>(null);
   const [deploying, setDeploying] = useState(false);
   const [exportingSheet, setExportingSheet] = useState(false);
   const [deployResult, setDeployResult] = useState<SyncProgress | null>(null);
-  const [viewSprite, setViewSprite] = useState<{ key: string; fileName: string; assetId: string } | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [showScaffold, setShowScaffold] = useState(false);
   const [showBulkBgRemoval, setShowBulkBgRemoval] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
-  const [promptPreview, setPromptPreview] = useState<{ imageId: string; prompt: string } | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const races = useMemo(() => config ? Object.keys(config.races) : [], [config]);
   const classes = useMemo(() => config ? Object.keys(config.classes).filter((c) => c !== "base") : [], [config]);
 
-  const imageProvider = settings?.image_provider ?? "deepinfra";
-  const hasApiKey = !!(settings && (
-    (imageProvider === "deepinfra" && settings.deepinfra_api_key.length > 0) ||
-    (imageProvider === "runware" && settings.runware_api_key.length > 0) ||
-    (imageProvider === "openai" && settings.openai_api_key.length > 0)
-  ));
   const hasLlmKey = !!(
     settings?.deepinfra_api_key ||
     settings?.anthropic_api_key ||
@@ -352,76 +280,38 @@ export function PlayerSpriteManager() {
     [selectedId, selectedDef, setDefinition],
   );
 
+  // Gather the asset ids backing a set of sprite definitions, so deletes can
+  // clean up the generated images in one batched pass.
+  const collectAssetIds = useCallback(
+    (ids: string[]) => {
+      const assetIds: string[] = [];
+      for (const id of ids) {
+        const def = definitions[id];
+        if (!def) continue;
+        const imageIds = def.variants?.length ? def.variants.map((v) => v.imageId) : [id];
+        for (const imageId of imageIds) {
+          const asset = spriteAssetMap.get(imageId);
+          if (asset) assetIds.push(asset.assetId);
+        }
+      }
+      return assetIds;
+    },
+    [definitions, spriteAssetMap],
+  );
+
   const handleDeleteSelected = useCallback(() => {
     if (!selectedId) return;
+    setShowDeleteConfirm(true);
+  }, [selectedId]);
+
+  const confirmDeleteSelected = useCallback(async () => {
+    if (!selectedId) return;
+    const assetIds = collectAssetIds([selectedId]);
     deleteDefinition(selectedId);
     setSelectedId(null);
-  }, [selectedId, deleteDefinition]);
-
-  const handleViewSprite = useCallback(
-    (imageId: string) => {
-      const entry = spriteAssetMap.get(imageId);
-      if (!entry) return;
-      setViewSprite({ key: imageId, fileName: entry.fileName, assetId: entry.assetId });
-    },
-    [spriteAssetMap],
-  );
-
-  const handleGenerateImage = useCallback(
-    async (imageId: string) => {
-      if (!AI_ENABLED || !hasApiKey || !settings) return;
-      setGenerating(imageId);
-      setGenerationError(null);
-
-      try {
-        const resolved = findSpriteEntry(definitions, imageId);
-        if (!resolved) throw new Error(`Unable to resolve sprite definition for "${imageId}".`);
-
-        const model = resolveImageModel(imageProvider, settings?.image_model);
-        if (!model) throw new Error("No image model available");
-
-        const dimensions = resolveSpriteDimensions(resolved.definition, resolved.variant);
-        const finalPrompt = await buildEnhancedSpritePrompt({
-          displayName: resolved.variant?.displayName || resolved.definition.displayName,
-          dimensions,
-          notes: spritePromptNotes(resolved.definition, resolved.variant),
-          style: artStyle,
-          nativeTransparency: modelNativelyTransparent(imageProvider, model.id),
-          enhance: hasLlmKey,
-        });
-
-        const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
-
-        const image = await generateAssetImage({
-          provider: imageProvider,
-          model,
-          prompt: finalPrompt,
-          width: dims.width,
-          height: dims.height,
-          assetType: "player_sprite",
-          negativePrompt: getNegativePrompt("player_sprite"),
-        });
-
-        const assetContext: AssetContext = { zone: "sprites", entity_type: "player_sprite", entity_id: imageId };
-        const variantGroup = `player_sprite:${imageId}`;
-
-        await acceptAsset(image, "player_sprite", finalPrompt, assetContext, variantGroup, true);
-
-        if (settings.auto_remove_bg && image.data_url) {
-          await removeBgAndSave(image.data_url, "player_sprite", assetContext, variantGroup).catch(() => {});
-        }
-
-        await loadAssets();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        setGenerationError(message);
-        console.error("Failed to generate sprite:", err);
-      } finally {
-        setGenerating(null);
-      }
-    },
-    [acceptAsset, artStyle, definitions, hasApiKey, hasLlmKey, imageProvider, loadAssets, settings],
-  );
+    setShowDeleteConfirm(false);
+    await deleteAssets(assetIds);
+  }, [selectedId, collectAssetIds, deleteDefinition, deleteAssets]);
 
   const handleExportSheet = useCallback(async () => {
     if (filteredDefs.length === 0 || exportingSheet) return;
@@ -575,106 +465,22 @@ export function PlayerSpriteManager() {
   }, [filteredDefs]);
 
   const handleBulkDelete = useCallback(async () => {
-    for (const id of checkedIds) {
-      // Delete associated generated images
-      const def = definitions[id];
-      if (def) {
-        const imageIds: string[] = [];
-        if (def.variants && def.variants.length > 0) {
-          for (const v of def.variants) imageIds.push(v.imageId);
-        } else {
-          imageIds.push(id);
-        }
-        for (const imageId of imageIds) {
-          const asset = spriteAssetMap.get(imageId);
-          if (asset) {
-            await deleteAsset(asset.assetId).catch(() => {});
-          }
-        }
-      }
-      deleteDefinition(id);
-    }
+    const ids = Array.from(checkedIds);
+
+    // Gather every associated asset up front, then remove the definitions and
+    // dismiss the dialog immediately so the UI stays responsive while the
+    // (network-bound) asset deletion runs in a single batched pass.
+    const assetIds = collectAssetIds(ids);
+
+    for (const id of ids) deleteDefinition(id);
     if (selectedId && checkedIds.has(selectedId)) {
       setSelectedId(null);
     }
     setCheckedIds(new Set());
     setShowBulkDeleteConfirm(false);
-    await loadAssets();
-  }, [checkedIds, definitions, spriteAssetMap, selectedId, deleteDefinition, deleteAsset, loadAssets]);
 
-  // ─── Prompt preview ────────────────────────────────────────────────
-
-  const handlePreviewGenerate = useCallback(
-    async (imageId: string) => {
-      const resolved = findSpriteEntry(definitions, imageId);
-      if (!resolved) return;
-
-      const model = resolveImageModel(imageProvider, settings?.image_model);
-      const dimensions = resolveSpriteDimensions(resolved.definition, resolved.variant);
-
-      setGenerating(imageId);
-      try {
-        const prompt = await buildEnhancedSpritePrompt({
-          displayName: resolved.variant?.displayName || resolved.definition.displayName,
-          dimensions,
-          notes: spritePromptNotes(resolved.definition, resolved.variant),
-          style: artStyle,
-          nativeTransparency: model ? modelNativelyTransparent(imageProvider, model.id) : false,
-          enhance: hasLlmKey,
-        });
-        setPromptPreview({ imageId, prompt });
-      } finally {
-        setGenerating(null);
-      }
-    },
-    [artStyle, definitions, hasLlmKey, imageProvider, settings],
-  );
-
-  const handleGenerateWithPrompt = useCallback(
-    async (editedPrompt: string) => {
-      if (!promptPreview || !hasApiKey || !settings) return;
-      const { imageId } = promptPreview;
-      setPromptPreview(null);
-      setGenerating(imageId);
-      setGenerationError(null);
-
-      try {
-        const finalPrompt = editedPrompt;
-        const model = resolveImageModel(imageProvider, settings?.image_model);
-        if (!model) throw new Error("No image model available");
-
-        const dims = ENTITY_DIMENSIONS.player_sprite ?? { width: 512, height: 512 };
-
-        const image = await generateAssetImage({
-          provider: imageProvider,
-          model,
-          prompt: finalPrompt,
-          width: dims.width,
-          height: dims.height,
-          assetType: "player_sprite",
-          negativePrompt: getNegativePrompt("player_sprite"),
-        });
-
-        const assetContext: AssetContext = { zone: "sprites", entity_type: "player_sprite", entity_id: imageId };
-        const variantGroup = `player_sprite:${imageId}`;
-
-        await acceptAsset(image, "player_sprite", finalPrompt, assetContext, variantGroup, true);
-
-        if (settings.auto_remove_bg && image.data_url) {
-          await removeBgAndSave(image.data_url, "player_sprite", assetContext, variantGroup).catch(() => {});
-        }
-
-        await loadAssets();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        setGenerationError(message);
-        console.error("Failed to generate sprite:", err);
-      } finally {
-        setGenerating(null);
-      }
-    },
-    [promptPreview, acceptAsset, hasApiKey, imageProvider, loadAssets, settings],
-  );
+    await deleteAssets(assetIds);
+  }, [checkedIds, collectAssetIds, selectedId, deleteDefinition, deleteAssets]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -953,14 +759,9 @@ export function PlayerSpriteManager() {
               races={races}
               classes={classes}
               spriteAssetMap={spriteAssetMap}
-              hasApiKey={hasApiKey}
               hasLlmKey={hasLlmKey}
-              generating={generating}
               onPatch={handlePatchSelected}
               onDelete={handleDeleteSelected}
-              onGenerateImage={handleGenerateImage}
-              onPreviewGenerate={handlePreviewGenerate}
-              onViewSprite={handleViewSprite}
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-sm text-text-muted">
@@ -992,43 +793,15 @@ export function PlayerSpriteManager() {
         />
       )}
 
-      {/* Sprite lightbox */}
-      {viewSprite && (
-        <SpriteLightbox
-          spriteKey={viewSprite.key}
-          fileName={viewSprite.fileName}
-          variantGroup={`player_sprite:${viewSprite.key}`}
-          canRegenerate={!generating}
-          canDelete={!generating}
-          onRegenerate={() => {
-            const key = viewSprite.key;
-            setViewSprite(null);
-            void handleGenerateImage(key);
-          }}
-          onDelete={() => {
-            const assetId = viewSprite.assetId;
-            setViewSprite(null);
-            void deleteAsset(assetId);
-          }}
-          onRemoveBg={() => {
-            setViewSprite(null);
-            void loadAssets();
-          }}
-          onFlip={() => {
-            setViewSprite(null);
-            void loadAssets();
-          }}
-          onClose={() => setViewSprite(null)}
-        />
-      )}
-
-      {/* Prompt preview modal */}
-      {promptPreview && (
-        <PromptPreviewModal
-          prompt={promptPreview.prompt}
-          imageId={promptPreview.imageId}
-          onGenerate={handleGenerateWithPrompt}
-          onClose={() => setPromptPreview(null)}
+      {/* Single delete confirmation */}
+      {showDeleteConfirm && selectedDef && (
+        <ConfirmDialog
+          title="Delete Sprite"
+          message={`Delete "${selectedDef.displayName}" and its generated image? This cannot be undone.`}
+          confirmLabel="Delete"
+          destructive
+          onConfirm={() => void confirmDeleteSelected()}
+          onCancel={() => setShowDeleteConfirm(false)}
         />
       )}
 

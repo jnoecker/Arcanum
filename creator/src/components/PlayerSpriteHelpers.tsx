@@ -1,18 +1,15 @@
 import { memo, useState, useCallback } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { useImageSrc, isR2HashPath } from "@/lib/useImageSrc";
-import { useFocusTrap } from "@/lib/useFocusTrap";
-import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
+import { useImageSrc } from "@/lib/useImageSrc";
 import { generateArtDirection } from "@/lib/spritePromptGen";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import type { BulkBgTarget } from "@/components/ui/BulkBgRemoval";
 import type {
   SpriteDefinition,
-  SpriteVariant,
   SpriteRequirement,
   RequirementType,
 } from "@/types/sprites";
 import { ActionButton } from "./ui/FormWidgets";
+import { SpriteArtGenerator } from "./SpriteArtGenerator";
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -75,129 +72,6 @@ export const SpriteThumbnail = memo(function SpriteThumbnail({
     />
   );
 });
-
-// ─── Lightbox ───────────────────────────────────────────────────────
-
-export function SpriteLightbox({
-  spriteKey: key,
-  fileName,
-  variantGroup,
-  canRegenerate,
-  canDelete,
-  onRegenerate,
-  onDelete,
-  onRemoveBg,
-  onFlip,
-  onClose,
-}: {
-  spriteKey: string;
-  fileName: string;
-  variantGroup: string;
-  canRegenerate: boolean;
-  canDelete: boolean;
-  onRegenerate: () => void;
-  onDelete: () => void;
-  onRemoveBg: () => void;
-  onFlip?: (newFileName: string) => void;
-  onClose: () => void;
-}) {
-  const src = useImageSrc(fileName);
-  const [removingBg, setRemovingBg] = useState(false);
-  const [flipping, setFlipping] = useState(false);
-  const lightboxTrapRef = useFocusTrap<HTMLDivElement>(onClose);
-
-  const handleRemoveBg = async () => {
-    if (!src) return;
-    setRemovingBg(true);
-    try {
-      const context = { zone: "sprites", entity_type: "player_sprite", entity_id: key };
-      const entry = await removeBgAndSave(src, "player_sprite", context, variantGroup);
-      if (entry) onRemoveBg();
-    } catch (err) {
-      console.error("[player sprite] bg removal failed:", err);
-    } finally {
-      setRemovingBg(false);
-    }
-  };
-
-  return (
-    <div
-      ref={lightboxTrapRef}
-      className="modal-overlay"
-      onClick={onClose}
-    >
-      <div
-        className="relative flex max-h-[90vh] max-w-[90vw] flex-col items-center gap-3"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {src ? (
-          <img
-            src={src}
-            alt={`Sprite: ${key}`}
-            className="max-h-[80vh] max-w-[80vw] rounded border border-border-default object-contain"
-            style={{ imageRendering: "auto" }}
-          />
-        ) : (
-          <div className="flex h-64 w-64 items-center justify-center rounded border border-border-default bg-bg-tertiary text-text-muted">
-            Rendering preview...
-          </div>
-        )}
-        <span className="font-mono text-xs text-text-secondary">{key}</span>
-        <div className="flex gap-2">
-          <ActionButton
-            onClick={onRegenerate}
-            disabled={!canRegenerate}
-            variant="primary"
-          >
-            Regenerate
-          </ActionButton>
-          <ActionButton
-            onClick={handleRemoveBg}
-            disabled={removingBg || !src}
-            variant="secondary"
-          >
-            {removingBg ? "Removing BG..." : "Remove BG"}
-          </ActionButton>
-          {isR2HashPath(fileName) && onFlip && (
-            <ActionButton
-              onClick={async () => {
-                setFlipping(true);
-                try {
-                  const newFileName = await invoke<string>("flip_image", { imageRef: fileName });
-                  onFlip(newFileName);
-                } catch (e) {
-                  console.error("Flip failed:", e);
-                } finally {
-                  setFlipping(false);
-                }
-              }}
-              disabled={flipping}
-              variant="secondary"
-            >
-              {flipping ? "Flipping..." : "\u21C4 Flip"}
-            </ActionButton>
-          )}
-          <ActionButton
-            onClick={onDelete}
-            disabled={!canDelete}
-            variant="danger"
-          >
-            Delete
-          </ActionButton>
-        </div>
-        <ActionButton
-          aria-label="Close"
-          onClick={onClose}
-          variant="ghost"
-          size="icon"
-          className="absolute -right-4 -top-4"
-        >
-          x
-        </ActionButton>
-      </div>
-    </div>
-  );
-}
 
 // ─── Art direction field ────────────────────────────────────────────
 
@@ -267,82 +141,6 @@ export function ArtDirectionField({
           {error.length > 60 ? `${error.slice(0, 60)}…` : error}
         </span>
       )}
-    </div>
-  );
-}
-
-// ─── Prompt preview modal ──────────────────────────────────────────
-
-interface PromptPreviewModalProps {
-  prompt: string;
-  imageId: string;
-  onGenerate: (editedPrompt: string) => void;
-  onClose: () => void;
-}
-
-export function PromptPreviewModal({
-  prompt,
-  imageId,
-  onGenerate,
-  onClose,
-}: PromptPreviewModalProps) {
-  const [editedPrompt, setEditedPrompt] = useState(prompt);
-  const trapRef = useFocusTrap<HTMLDivElement>(onClose);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-bg-abyss/70"
-      onClick={onClose}
-    >
-      <div
-        ref={trapRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="prompt-preview-title"
-        className="mx-4 flex max-h-[85vh] w-full max-w-2xl flex-col rounded-lg border border-border-default bg-bg-secondary shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
-          <div>
-            <h2 id="prompt-preview-title" className="font-display text-sm tracking-wide text-text-primary">
-              Preview & Generate
-            </h2>
-            <p className="mt-0.5 text-2xs text-text-muted">
-              Review and tweak the AI-enhanced prompt before generating &mdash; {imageId}
-            </p>
-          </div>
-          <ActionButton onClick={onClose} variant="ghost" size="icon">x</ActionButton>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          <textarea
-            className="ornate-input min-h-[20rem] w-full resize-y rounded-3xl px-4 py-3 text-sm leading-relaxed text-text-primary"
-            value={editedPrompt}
-            onChange={(e) => setEditedPrompt(e.target.value)}
-          />
-        </div>
-
-        <div className="flex items-center justify-between border-t border-border-default px-5 py-3">
-          <button
-            onClick={() => setEditedPrompt(prompt)}
-            className="text-2xs text-text-muted hover:text-text-secondary"
-          >
-            Reset to original
-          </button>
-          <div className="flex gap-2">
-            <ActionButton onClick={onClose} variant="secondary" size="sm">
-              Cancel
-            </ActionButton>
-            <ActionButton
-              onClick={() => onGenerate(editedPrompt)}
-              variant="primary"
-              size="sm"
-            >
-              Generate
-            </ActionButton>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -440,141 +238,6 @@ export function RequirementRow({
   );
 }
 
-// ─── Variant editor ─────────────────────────────────────────────────
-
-interface VariantRowProps {
-  variant: SpriteVariant;
-  index: number;
-  races: string[];
-  classes: string[];
-  assetFileName: string | undefined;
-  generating: boolean;
-  hasApiKey: boolean;
-  onPatch: (index: number, patch: Partial<SpriteVariant>) => void;
-  onRemove: (index: number) => void;
-  onGenerate: (variant: SpriteVariant) => void;
-  onPreview: (variant: SpriteVariant) => void;
-  onClickThumbnail?: () => void;
-}
-
-export function VariantRow({
-  variant,
-  index,
-  races,
-  classes,
-  assetFileName,
-  generating,
-  hasApiKey,
-  onPatch,
-  onRemove,
-  onGenerate,
-  onPreview,
-  onClickThumbnail,
-}: VariantRowProps) {
-  return (
-    <div className="flex items-start gap-3 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3">
-      <SpriteThumbnail fileName={assetFileName} label={variant.imageId} onClick={onClickThumbnail} />
-
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <div className="grid grid-cols-2 gap-2">
-          <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
-            Image ID
-            <input
-              className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
-              value={variant.imageId}
-              onChange={(e) => {
-                const imageId = e.target.value;
-                onPatch(index, { imageId, imagePath: `player_sprites/${imageId}.png` });
-              }}
-            />
-          </label>
-          <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
-            Display Name
-            <input
-              className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
-              placeholder="(inherits parent)"
-              value={variant.displayName ?? ""}
-              onChange={(e) => onPatch(index, { displayName: e.target.value || undefined })}
-            />
-          </label>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
-            Race Filter
-            <select
-              className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
-              value={variant.race ?? ""}
-              onChange={(e) => onPatch(index, { race: e.target.value || undefined })}
-            >
-              <option value="">Any</option>
-              {races.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
-            Class Filter
-            <select
-              className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
-              value={variant.playerClass ?? ""}
-              onChange={(e) => onPatch(index, { playerClass: e.target.value || undefined })}
-            >
-              <option value="">Any</option>
-              {classes.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
-            Gender
-            <select
-              className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
-              value={variant.gender ?? ""}
-              onChange={(e) => onPatch(index, { gender: e.target.value || undefined })}
-            >
-              <option value="">Any</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="nonbinary">Nonbinary</option>
-            </select>
-          </label>
-        </div>
-      </div>
-
-      <div className="flex shrink-0 flex-col gap-1">
-        {AI_ENABLED && (
-          <>
-            <ActionButton
-              onClick={() => onGenerate(variant)}
-              disabled={!hasApiKey || generating}
-              variant="secondary"
-              size="sm"
-            >
-              {generating ? "..." : "Render"}
-            </ActionButton>
-            <ActionButton
-              onClick={() => onPreview(variant)}
-              disabled={!hasApiKey || generating}
-              variant="ghost"
-              size="sm"
-            >
-              Preview
-            </ActionButton>
-          </>
-        )}
-        <ActionButton
-          onClick={() => onRemove(index)}
-          variant="danger"
-          size="sm"
-        >
-          Remove
-        </ActionButton>
-      </div>
-    </div>
-  );
-}
-
 // ─── Sprite detail editor ───────────────────────────────────────────
 
 interface SpriteDetailEditorProps {
@@ -583,14 +246,9 @@ interface SpriteDetailEditorProps {
   races: string[];
   classes: string[];
   spriteAssetMap: Map<string, { fileName: string; assetId: string }>;
-  hasApiKey: boolean;
   hasLlmKey: boolean;
-  generating: string | null;
   onPatch: (patch: Partial<SpriteDefinition>) => void;
   onDelete: () => void;
-  onGenerateImage: (imageId: string) => void;
-  onPreviewGenerate: (imageId: string) => void;
-  onViewSprite: (imageId: string) => void;
 }
 
 export function SpriteDetailEditor({
@@ -599,17 +257,10 @@ export function SpriteDetailEditor({
   races,
   classes,
   spriteAssetMap,
-  hasApiKey,
   hasLlmKey,
-  generating,
   onPatch,
   onDelete,
-  onGenerateImage,
-  onPreviewGenerate,
-  onViewSprite,
 }: SpriteDetailEditorProps) {
-  const useVariants = (def.variants && def.variants.length > 0) || false;
-
   const handleAddRequirement = useCallback(() => {
     onPatch({ requirements: [...def.requirements, emptyRequirement("minLevel")] });
   }, [def.requirements, onPatch]);
@@ -623,47 +274,6 @@ export function SpriteDetailEditor({
   const handleRemoveRequirement = useCallback((index: number) => {
     onPatch({ requirements: def.requirements.filter((_, i) => i !== index) });
   }, [def.requirements, onPatch]);
-
-  const handleSwitchToVariants = useCallback(() => {
-    const variants: SpriteVariant[] = [{
-      imageId: id,
-      imagePath: def.image || `player_sprites/${id}.png`,
-    }];
-    onPatch({ variants, image: undefined });
-  }, [id, def.image, onPatch]);
-
-  const handleSwitchToSingleImage = useCallback(() => {
-    const image = def.variants?.[0]?.imagePath || `player_sprites/${id}.png`;
-    onPatch({ image, variants: undefined });
-  }, [id, def.variants, onPatch]);
-
-  const handlePatchVariant = useCallback((index: number, patch: Partial<SpriteVariant>) => {
-    if (!def.variants) return;
-    const variants = def.variants.map((v, i) => (i === index ? { ...v, ...patch } : v));
-    onPatch({ variants });
-  }, [def.variants, onPatch]);
-
-  const handleRemoveVariant = useCallback((index: number) => {
-    if (!def.variants) return;
-    onPatch({ variants: def.variants.filter((_, i) => i !== index) });
-  }, [def.variants, onPatch]);
-
-  const handleAddVariant = useCallback(() => {
-    const suffix = def.variants ? def.variants.length : 0;
-    const newVariant: SpriteVariant = {
-      imageId: `${id}_v${suffix}`,
-      imagePath: `player_sprites/${id}_v${suffix}.png`,
-    };
-    onPatch({ variants: [...(def.variants ?? []), newVariant] });
-  }, [id, def.variants, onPatch]);
-
-  const handleGenerateForVariant = useCallback((variant: SpriteVariant) => {
-    onGenerateImage(variant.imageId);
-  }, [onGenerateImage]);
-
-  const handlePreviewForVariant = useCallback((variant: SpriteVariant) => {
-    onPreviewGenerate(variant.imageId);
-  }, [onPreviewGenerate]);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
@@ -771,104 +381,14 @@ export function SpriteDetailEditor({
         </div>
       </div>
 
-      {/* Image / Variants */}
+      {/* Image */}
       <div>
-        <div className="mb-2 flex items-center justify-between">
-          <h4 className="font-display text-sm text-text-primary">
-            {useVariants ? `Variants (${def.variants?.length ?? 0})` : "Image"}
-          </h4>
-          <div className="flex gap-2">
-            {useVariants ? (
-              <>
-                <ActionButton
-                  onClick={handleAddVariant}
-                  variant="secondary"
-                  size="sm"
-                >
-                  Add Variant
-                </ActionButton>
-                {(def.variants?.length ?? 0) <= 1 && (
-                  <ActionButton
-                    onClick={handleSwitchToSingleImage}
-                    variant="ghost"
-                    size="sm"
-                  >
-                    Use Single Image
-                  </ActionButton>
-                )}
-              </>
-            ) : (
-              <ActionButton
-                onClick={handleSwitchToVariants}
-                variant="ghost"
-                size="sm"
-              >
-                Use Variants
-              </ActionButton>
-            )}
-          </div>
-        </div>
-
-        {useVariants ? (
-          <div className="flex flex-col gap-3">
-            {def.variants?.map((variant, idx) => (
-              <VariantRow
-                key={variant.imageId}
-                variant={variant}
-                index={idx}
-                races={races}
-                classes={classes}
-                assetFileName={spriteAssetMap.get(variant.imageId)?.fileName}
-                generating={generating === variant.imageId}
-                hasApiKey={hasApiKey}
-                onPatch={handlePatchVariant}
-                onRemove={handleRemoveVariant}
-                onGenerate={handleGenerateForVariant}
-                onPreview={handlePreviewForVariant}
-                onClickThumbnail={() => onViewSprite(variant.imageId)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 rounded-xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3">
-            <SpriteThumbnail
-              fileName={spriteAssetMap.get(id)?.fileName}
-              label={id}
-              size="h-16 w-16"
-              onClick={() => onViewSprite(id)}
-            />
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <label className="flex flex-col gap-0.5 text-2xs text-text-muted">
-                Image Path
-                <input
-                  className="ornate-input min-h-11 rounded-2xl px-3 py-3 text-sm text-text-primary"
-                  value={def.image ?? `player_sprites/${id}.png`}
-                  onChange={(e) => onPatch({ image: e.target.value })}
-                />
-              </label>
-            </div>
-            {AI_ENABLED && (
-              <div className="flex shrink-0 flex-col gap-1">
-                <ActionButton
-                  onClick={() => onGenerateImage(id)}
-                  disabled={!hasApiKey || generating === id}
-                  variant="primary"
-                  size="sm"
-                >
-                  {generating === id ? "Generating..." : "Generate"}
-                </ActionButton>
-                <ActionButton
-                  onClick={() => onPreviewGenerate(id)}
-                  disabled={!hasApiKey || generating === id}
-                  variant="secondary"
-                  size="sm"
-                >
-                  Preview
-                </ActionButton>
-              </div>
-            )}
-          </div>
-        )}
+        <h4 className="mb-2 font-display text-sm text-text-primary">Image</h4>
+        <SpriteArtGenerator
+          id={id}
+          def={def}
+          currentImage={spriteAssetMap.get(id)?.fileName}
+        />
       </div>
     </div>
   );

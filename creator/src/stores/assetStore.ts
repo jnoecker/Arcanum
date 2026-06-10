@@ -38,6 +38,7 @@ interface AssetState {
     isActive?: boolean,
   ) => Promise<AssetEntry>;
   deleteAsset: (id: string) => Promise<void>;
+  deleteAssets: (ids: string[]) => Promise<void>;
 
   setActiveVariant: (variantGroup: string, assetId: string) => Promise<void>;
   listVariants: (variantGroup: string) => Promise<AssetEntry[]>;
@@ -147,6 +148,17 @@ export const useAssetStore = create<AssetState>((set, get) => ({
       await invoke("delete_from_r2", { fileName: asset.file_name }).catch(() => {});
     }
     await invoke("delete_asset", { id });
+    await get().loadAssets();
+  },
+
+  deleteAssets: async (ids: string[]) => {
+    if (ids.length === 0) return;
+    const idSet = new Set(ids);
+    const synced = get().assets.filter((a) => idSet.has(a.id) && a.sync_status === "synced");
+    await Promise.allSettled(
+      synced.map((a) => invoke("delete_from_r2", { fileName: a.file_name })),
+    );
+    await invoke("delete_assets", { ids });
     await get().loadAssets();
   },
 

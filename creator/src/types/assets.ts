@@ -308,7 +308,11 @@ export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; 
   dungeonRoom: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   housing_room: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   player_sprite: { width: 1024, height: 1024, label: "1024×1024 (Portrait)" },
-  race_portrait: { width: 1024, height: 1536, label: "1024×1536 (Portrait)" },
+  race_portrait: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
+  class_portrait: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
+  // Editor generators look up by entity_type ("race" / "class"), not asset type.
+  race: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
+  class: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   lore_character: { width: 1024, height: 1536, label: "1024×1536 (Portrait)" },
   lore_location: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   lore_organization: { width: 1024, height: 1024, label: "1024×1024 (Banner)" },

@@ -34,7 +34,7 @@ function portraitAssetType(target: PortraitTarget): "race_portrait" | "class_por
 }
 
 function dimensionsForPortrait(_kind: PortraitKind): { width: number; height: number } {
-  return { width: 512, height: 768 };
+  return { width: 768, height: 512 };
 }
 
 function buildRaceContext(id: string, race: NonNullable<ReturnType<typeof useConfigStore.getState>["config"]>["races"][string]): string {

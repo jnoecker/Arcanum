@@ -92,6 +92,12 @@ describe("trackLabel", () => {
     );
   });
 
+  it("collapses full sha256 prompts despite the 48-char truncation", () => {
+    const hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+    expect(trackLabel(makeAsset({ prompt: `Imported: ${hash}` }))).toBe("Untitled (e3b0c442…)");
+    expect(trackLabel(makeAsset({ prompt: `Imported: ${hash}.mp3` }))).toBe("Untitled (e3b0c442…)");
+  });
+
   it("keeps short non-hash file names intact", () => {
     expect(trackLabel(makeAsset({ file_name: "abcdef.mp3" }))).toBe("abcdef.mp3");
   });

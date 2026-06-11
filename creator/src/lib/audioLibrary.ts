@@ -27,13 +27,12 @@ export function listAudioTracks(assets: AssetEntry[], kind: AudioTrackKind): Ass
 export function trackLabel(entry: AssetEntry): string {
   if (entry.display_name) return entry.display_name;
   const prompt = entry.prompt.replace(/^Imported:\s*/, "").trim();
-  const label = prompt
-    ? prompt.length > 48 ? `${prompt.slice(0, 48)}…` : prompt
-    : entry.file_name;
-  // Content-addressed file names make terrible labels — collapse them.
-  const stem = label === entry.file_name ? label.replace(/\.[^.]+$/, "") : label;
+  // Content-addressed hashes make terrible labels — collapse them before the
+  // 48-char truncation below can disguise a full sha256 as ordinary text.
+  const stem = (prompt || entry.file_name).replace(/\.[^.]+$/, "");
   if (HASH_LIKE_RE.test(stem)) return `Untitled (${stem.slice(0, 8)}…)`;
-  return label;
+  if (prompt) return prompt.length > 48 ? `${prompt.slice(0, 48)}…` : prompt;
+  return entry.file_name;
 }
 
 export interface TrackUsage {

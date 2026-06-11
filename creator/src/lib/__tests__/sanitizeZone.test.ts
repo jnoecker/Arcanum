@@ -334,7 +334,14 @@ describe("sanitizeZone — jukebox", () => {
           title: "Tavern",
           description: "A cozy tavern.",
           jukebox: [
-            { title: "  Hearth Song  ", artist: "  The Bards  ", file: " hearth.mp3 ", durationSeconds: 90, cost: 5 },
+            {
+              title: "  Hearth Song  ",
+              artist: "  The Bards  ",
+              file: " hearth.mp3 ",
+              durationSeconds: 90,
+              cost: 5,
+              description: "  A foot-stomping reel.  ",
+            },
           ],
         },
       },
@@ -349,16 +356,17 @@ describe("sanitizeZone — jukebox", () => {
       file: "hearth.mp3",
       durationSeconds: 90,
       cost: 5,
+      description: "A foot-stomping reel.",
     });
   });
 
-  it("drops the artist key when empty and keeps a free (cost 0) song", () => {
+  it("drops empty artist/description and keeps a free (cost 0) song", () => {
     const world = makeWorld({
       rooms: {
         room_a: {
           title: "Tavern",
           description: "A cozy tavern.",
-          jukebox: [{ title: "Anthem", artist: "   ", file: "anthem.mp3", durationSeconds: 60, cost: 0 }],
+          jukebox: [{ title: "Anthem", artist: "   ", description: "  ", file: "anthem.mp3", durationSeconds: 60, cost: 0 }],
         },
       },
     });
@@ -367,6 +375,23 @@ describe("sanitizeZone — jukebox", () => {
     expect(songs).toHaveLength(1);
     expect(songs[0]!.cost).toBe(0);
     expect("artist" in songs[0]!).toBe(false);
+    expect("description" in songs[0]!).toBe(false);
+  });
+
+  it("omits cost entirely when unset so the server applies its default", () => {
+    const world = makeWorld({
+      rooms: {
+        room_a: {
+          title: "Tavern",
+          description: "A cozy tavern.",
+          jukebox: [{ title: "Anthem", file: "anthem.mp3", durationSeconds: 60 }],
+        },
+      },
+    });
+
+    const songs = sanitizeZone(world).rooms["room_a"]!.jukebox!;
+    expect(songs).toHaveLength(1);
+    expect("cost" in songs[0]!).toBe(false);
   });
 
   it("drops songs missing a title or file", () => {

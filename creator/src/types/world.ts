@@ -112,15 +112,19 @@ export interface ZoneAudioDefaults {
 /** A single jukebox track a player can pay to play in a room. The `file` is an
  *  audio asset filename resolved against the zone's audio base (same as
  *  `RoomFile.music` / `ambient`). Playing locks the room's music to this track
- *  for `durationSeconds`, then it reverts to the room default. */
+ *  for `durationSeconds`, then it reverts to the room default. Mirrors the
+ *  server's `JukeboxSongFile` authoring DTO. */
 export interface JukeboxSong {
   title: string;
-  artist?: string;
   file: string;
-  /** Length of the track in seconds; also the room's music-lock window. */
+  /** Length of the track in seconds; also the room's music-lock window. Integer > 0. */
   durationSeconds: number;
-  /** Gold cost to play. 0 is a valid (free) song. */
-  cost: number;
+  /** Gold cost to play (integer). Omitted means the server's configured default
+   *  cost; an explicit 0 is a free song. */
+  cost?: number;
+  artist?: string;
+  /** Optional lore flavour shown in the song list / web panel. */
+  description?: string;
 }
 
 export interface RoomFile {

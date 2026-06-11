@@ -152,9 +152,11 @@ function normalizeFeatureFile(feature: FeatureFile): FeatureFile {
   return out;
 }
 
-/** Clean a jukebox playlist for output: trim text, drop empty `artist`, drop
- *  songs missing a title or file, coerce numbers. Returns undefined when the
- *  result is empty so the `jukebox` key is omitted entirely. */
+/** Clean a jukebox playlist for output: trim text, drop empty optional fields,
+ *  drop songs missing a title or file. `cost` is preserved only when it's a real
+ *  number (an explicit 0 stays; an unset cost is omitted so the server applies
+ *  its configured default). Returns undefined when the result is empty so the
+ *  `jukebox` key is omitted entirely. Key order mirrors the server DTO. */
 function normalizeJukebox(songs?: JukeboxSong[]): JukeboxSong[] | undefined {
   if (!songs || songs.length === 0) return undefined;
   const cleaned: JukeboxSong[] = [];
@@ -166,10 +168,14 @@ function normalizeJukebox(songs?: JukeboxSong[]): JukeboxSong[] | undefined {
       title,
       file,
       durationSeconds: Number(song.durationSeconds) || 0,
-      cost: Number(song.cost) || 0,
     };
+    if (typeof song.cost === "number" && Number.isFinite(song.cost)) {
+      out.cost = song.cost;
+    }
     const artist = song.artist?.trim();
     if (artist) out.artist = artist;
+    const description = song.description?.trim();
+    if (description) out.description = description;
     cleaned.push(out);
   }
   return cleaned.length > 0 ? cleaned : undefined;

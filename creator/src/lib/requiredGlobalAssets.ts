@@ -339,6 +339,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
+    key: "jukebox_widget",
+    defaultFilename: "jukebox_widget.png",
+    label: "Jukebox",
+    description: "Badge shown on rooms with a jukebox; opens the song-picker panel.",
+    assetType: "ability_icon",
+    defaultPrompt: "A single ornate fantasy jukebox cabinet glowing with warm light, centered, brass and stained-glass accents.",
+    transparent: true,
+    optional: true,
+  },
+  {
     key: "duel_arena_widget",
     defaultFilename: "duel_arena_widget.png",
     label: "Duel Arena",
@@ -848,6 +858,18 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     assetType: "background",
     defaultPrompt:
       "A dim treasury vault interior filling the frame edge to edge — polished marble walls and floor, gleaming brass fittings and a great round vault door suggested in the background, rows of safety-deposit drawers along one side, warm aurum-gold light pooling softly, deep secure atmosphere, no coins in focus, no figures, no readable text, suitable as a backdrop behind a bank panel.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "jukebox_bg",
+    defaultFilename: "jukebox_bg.png",
+    label: "Jukebox Panel Background",
+    description: "Backdrop behind the jukebox song-picker panel. The playlist and now-playing countdown render on top. Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A warm tavern corner filling the frame edge to edge — an ornate fantasy jukebox cabinet glowing with stained-glass light, worn wooden floorboards, hanging lanterns casting amber pools, faint motes of music in the air, cozy intimate atmosphere, no figures, no readable text, suitable as a backdrop behind a song-list panel.",
     transparent: false,
     aspect: "landscape",
     optional: true,

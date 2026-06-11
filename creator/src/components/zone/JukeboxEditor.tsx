@@ -11,7 +11,6 @@ const EMPTY_SONG: JukeboxSong = {
   title: "",
   file: "",
   durationSeconds: 0,
-  cost: 0,
 };
 
 export function JukeboxEditor({ songs, onChange }: JukeboxEditorProps) {
@@ -102,6 +101,15 @@ export function JukeboxEditor({ songs, onChange }: JukeboxEditorProps) {
                 />
               </FieldRow>
 
+              <FieldRow label="Description">
+                <TextInput
+                  value={song.description ?? ""}
+                  onCommit={(v) => update(index, { description: v || undefined })}
+                  placeholder="Optional lore flavour"
+                  dense
+                />
+              </FieldRow>
+
               <AudioTrackPicker
                 kind="music"
                 label="Track"
@@ -123,9 +131,10 @@ export function JukeboxEditor({ songs, onChange }: JukeboxEditorProps) {
                 <FieldRow label="Cost (gold)">
                   <NumberInput
                     value={song.cost}
-                    onCommit={(v) => update(index, { cost: v ?? 0 })}
-                    placeholder="0"
+                    onCommit={(v) => update(index, { cost: v })}
+                    placeholder="default"
                     min={0}
+                    step={1}
                     dense
                   />
                 </FieldRow>

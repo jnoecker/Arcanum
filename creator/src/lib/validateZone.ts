@@ -539,8 +539,10 @@ export function validateZone(
       if (!isPositiveInteger(song.durationSeconds)) {
         addIssue(issues, "error", entity, `Jukebox song ${label} needs a positive duration in seconds`);
       }
-      if (typeof song.cost !== "number" || song.cost < 0 || !Number.isFinite(song.cost)) {
-        addIssue(issues, "error", entity, `Jukebox song ${label} has an invalid cost (must be 0 or more)`);
+      // cost is optional — omitted means the server's configured default. When
+      // present it must be a whole, non-negative number of gold.
+      if (song.cost != null && (!Number.isInteger(song.cost) || song.cost < 0)) {
+        addIssue(issues, "error", entity, `Jukebox song ${label} has an invalid cost (whole gold, 0 or more)`);
       }
     });
   }

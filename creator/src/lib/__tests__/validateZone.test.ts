@@ -717,6 +717,23 @@ describe("validateZone", () => {
       expect(errors(validateZone(world))).toHaveLength(0);
     });
 
+    it("accepts a song with no cost (server applies its default)", () => {
+      const world = makeValidWorld();
+      world.rooms.room1!.jukebox = [
+        { title: "Anthem", file: "anthem.mp3", durationSeconds: 60 },
+      ];
+      expect(errors(validateZone(world))).toHaveLength(0);
+    });
+
+    it("errors on a fractional cost", () => {
+      const world = makeValidWorld();
+      world.rooms.room1!.jukebox = [
+        { title: "Hearth Song", file: "hearth.mp3", durationSeconds: 90, cost: 5.5 },
+      ];
+      const errs = errors(validateZone(world));
+      expect(errs.some((e) => /invalid cost/i.test(e.message))).toBe(true);
+    });
+
     it("errors on a missing audio file", () => {
       const world = makeValidWorld();
       world.rooms.room1!.jukebox = [

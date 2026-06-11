@@ -86,6 +86,107 @@ describe("validateZone", () => {
     expect(issues).toHaveLength(0);
   });
 
+  // ─── Room jukebox ────────────────────────────────────────────
+  const JUKEBOX_OUTPUT = [
+    undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+    { jukeboxOutput: true },
+  ] as const;
+
+  it("errors on a jukebox song with a blank file", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.jukebox = [{ file: "song.mp3" }, { file: "   " }];
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.entity === "room:room1" && i.message.includes("Jukebox song #2"))).toBe(true);
+  });
+
+  it("warns on a jukebox with no songs", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.jukebox = [];
+    const issues = validateZone(world);
+    expect(errors(issues)).toHaveLength(0);
+    expect(warnings(issues).some((i) => i.entity === "room:room1" && i.message.includes("Jukebox has no songs"))).toBe(true);
+  });
+
+  it("accepts a populated jukebox without issues", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.jukebox = [
+      { title: "Tune", file: "song.mp3", durationSeconds: 30, lyrics: ["la", "la"] },
+    ];
+    expect(validateZone(world)).toHaveLength(0);
+  });
+
+  it("errors on a negative cost but accepts zero", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.jukebox = [
+      { file: "a.mp3", cost: -1 },
+      { file: "b.mp3", cost: 0 },
+    ];
+    const issues = errors(validateZone(world));
+    expect(issues).toHaveLength(1);
+    expect(issues[0].message).toContain("Jukebox song #1");
+    expect(issues[0].message).toContain("negative cost");
+  });
+
+  it("errors on a blank lyric line", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.jukebox = [{ file: "a.mp3", lyrics: ["fine line", "   "] }];
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.includes("blank lyric line"))).toBe(true);
+  });
+
+  it("errors when lyrics exceed one line per 3 seconds of duration", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.jukebox = [
+      { file: "a.mp3", durationSeconds: 10, lyrics: ["one", "two", "three", "four"] },
+    ];
+    const issues = errors(validateZone(world));
+    expect(issues).toHaveLength(1);
+    expect(issues[0].message).toContain("at most one lyric line per 3 seconds");
+    expect(issues[0].message).toContain("at most 3");
+  });
+
+  it("accepts lyrics exactly at the density limit", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.jukebox = [
+      { title: "Tune", file: "a.mp3", durationSeconds: 9, lyrics: ["one", "two", "three"] },
+    ];
+    expect(validateZone(world)).toHaveLength(0);
+  });
+
+  it("skips the density check while the duration is still unknown", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.jukebox = [{ file: "a.mp3", lyrics: ["one", "two", "three", "four"] }];
+    expect(errors(validateZone(world))).toHaveLength(0);
+  });
+
+  it("requires title and duration only when validating enriched output", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.jukebox = [{ file: "song.mp3" }];
+
+    expect(validateZone(world)).toHaveLength(0);
+
+    const issues = errors(validateZone(world, ...JUKEBOX_OUTPUT));
+    expect(issues).toHaveLength(2);
+    expect(issues.some((i) => i.message.includes("no title"))).toBe(true);
+    expect(issues.some((i) => i.message.includes("set the track's duration in the Audio Studio"))).toBe(true);
+  });
+
+  it("passes the strict output check for a fully enriched song", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.jukebox = [
+      {
+        title: "The Borrowed Song",
+        file: "song.mp3",
+        durationSeconds: 96,
+        cost: 5,
+        artist: "The Wandering Bards",
+        description: "A waltz that remembers being hummed.",
+        lyrics: ["When the lanterns lean in low,", "the teacups start to sway."],
+      },
+    ];
+    expect(validateZone(world, ...JUKEBOX_OUTPUT)).toHaveLength(0);
+  });
+
   it("warns on door key that is not a known item", () => {
     const world = makeValidWorld();
     world.rooms.room1.exits = {

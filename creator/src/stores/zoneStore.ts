@@ -18,6 +18,8 @@ interface ZoneStore {
   loadZone: (zoneId: string, filePath: string, data: WorldFile) => void;
   updateZone: (zoneId: string, data: WorldFile) => void;
   markClean: (zoneId: string) => void;
+  /** Flag a zone as needing a save without touching its data or undo history. */
+  markDirty: (zoneId: string) => void;
   /**
    * Re-key a loaded zone from `oldId` to `newId`, updating its file path and
    * the `zone` field inside its data. Preserves undo/redo history. No-op if
@@ -76,6 +78,15 @@ export const useZoneStore = create<ZoneStore>((set, get) => ({
       if (existing) {
         zones.set(zoneId, { ...existing, dirty: false });
       }
+      return { zones };
+    }),
+
+  markDirty: (zoneId) =>
+    set((state) => {
+      const existing = state.zones.get(zoneId);
+      if (!existing || existing.dirty) return state;
+      const zones = new Map(state.zones);
+      zones.set(zoneId, { ...existing, dirty: true });
       return { zones };
     }),
 

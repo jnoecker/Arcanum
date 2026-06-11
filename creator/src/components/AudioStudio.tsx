@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -7,18 +7,24 @@ import { useZoneStore } from "@/stores/zoneStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { useMediaSrc } from "@/lib/useMediaSrc";
 import { AI_ENABLED } from "@/lib/featureFlags";
-import { getAudioSystemPrompt, getDefaultDuration } from "@/lib/musicPrompts";
+import {
+  SONG_METADATA_SYSTEM_PROMPT,
+  buildSongMetadataUserPrompt,
+  getAudioSystemPrompt,
+  getDefaultDuration,
+} from "@/lib/musicPrompts";
 import {
   buildUsageIndex,
   listAudioTracks,
   setRoomTrack,
   setZoneDefaultTrack,
+  splitLyricsLines,
   trackLabel,
   usageSummary,
   type AudioTrackKind,
   type TrackUsage,
 } from "@/lib/audioLibrary";
-import type { AssetEntry, AssetContext } from "@/types/assets";
+import type { AssetEntry, AssetContext, Settings } from "@/types/assets";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
 
 const AUDIO_EXTENSIONS = ["mp3", "ogg", "flac", "wav"];
@@ -43,10 +49,33 @@ function defaultTrackName(roomTitle: string, kind: AudioTrackKind): string {
   return `${roomTitle} ${kind === "music" ? "Theme" : "Ambience"}`;
 }
 
+function hasLlmKey(settings: Settings | null): boolean {
+  return !!settings && (
+    settings.deepinfra_api_key.length > 0 ||
+    settings.anthropic_api_key.length > 0 ||
+    settings.openrouter_api_key.length > 0 ||
+    (settings.use_hub_ai && settings.hub_api_key.length > 0)
+  );
+}
+
+function formatDuration(seconds: number): string {
+  const total = Math.round(seconds);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
+function stripJsonFences(raw: string): string {
+  return raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
+}
+
 export function AudioStudio() {
   const assets = useAssetStore((s) => s.assets);
   const importAsset = useAssetStore((s) => s.importAsset);
+  const backfillAudioMeta = useAssetStore((s) => s.backfillAudioMeta);
   const zones = useZoneStore((s) => s.zones);
+
+  useEffect(() => {
+    backfillAudioMeta().catch(() => {});
+  }, [backfillAudioMeta]);
 
   const [lane, setLane] = useState<AudioTrackKind>("music");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -134,7 +163,7 @@ export function AudioStudio() {
                 <TrackRow
                   key={track.id}
                   track={track}
-                  usage={usageIndex.get(track.file_name) ?? { zoneDefaults: [], rooms: [] }}
+                  usage={usageIndex.get(track.file_name) ?? { zoneDefaults: [], rooms: [], jukeboxes: [] }}
                   expanded={selectedId === track.id}
                   onToggle={() => setSelectedId(selectedId === track.id ? null : track.id)}
                   onAssign={() => setAssignTrackId(track.id)}
@@ -172,7 +201,7 @@ function TrackRow({
   onToggle: () => void;
   onAssign: () => void;
 }) {
-  const used = usage.zoneDefaults.length > 0 || usage.rooms.length > 0;
+  const used = usage.zoneDefaults.length > 0 || usage.rooms.length > 0 || usage.jukeboxes.length > 0;
   return (
     <div
       className={`rounded-2xl border transition ${
@@ -204,18 +233,97 @@ function TrackDetail({
   onAssign: () => void;
 }) {
   const renameAsset = useAssetStore((s) => s.renameAsset);
+  const updateAssetMetadata = useAssetStore((s) => s.updateAssetMetadata);
   const deleteAsset = useAssetStore((s) => s.deleteAsset);
+  const settings = useAssetStore((s) => s.settings);
   const [name, setName] = useState(track.display_name);
+  const [description, setDescription] = useState(track.description);
+  const [artist, setArtist] = useState(track.artist);
+  const [lyrics, setLyrics] = useState(track.lyrics);
+  const [durationText, setDurationText] = useState(() => String(Math.round(track.duration_seconds)));
+  const [composing, setComposing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const src = useMediaSrc(track.file_name);
 
-  const used = usage.zoneDefaults.length > 0 || usage.rooms.length > 0;
+  const isMusic = track.asset_type === "music";
+  const used = usage.zoneDefaults.length > 0 || usage.rooms.length > 0 || usage.jukeboxes.length > 0;
+  const usedCount = usage.zoneDefaults.length + usage.rooms.length + usage.jukeboxes.length;
+
+  const durationSeconds = Math.max(0, Math.round(Number(durationText) || 0));
+  const lyricLineCount = splitLyricsLines(lyrics).length;
+  const lyricBudget = durationSeconds > 0 ? Math.floor(durationSeconds / 3) : null;
 
   const commitName = () => {
     const next = name.trim();
     if (next === track.display_name) return;
     renameAsset(track.id, next).catch((e) => setError(String(e)));
+  };
+
+  const commitDescription = () => {
+    const next = description.trim();
+    if (next === track.description) return;
+    updateAssetMetadata(track.id, { description: next }).catch((e) => setError(String(e)));
+  };
+
+  const commitArtist = () => {
+    const next = artist.trim();
+    if (next === track.artist) return;
+    updateAssetMetadata(track.id, { artist: next }).catch((e) => setError(String(e)));
+  };
+
+  const commitLyrics = () => {
+    const next = lyrics.trimEnd();
+    if (next === track.lyrics) return;
+    updateAssetMetadata(track.id, { lyrics: next }).catch((e) => setError(String(e)));
+  };
+
+  const commitDuration = () => {
+    setDurationText(String(durationSeconds));
+    if (durationSeconds === Math.round(track.duration_seconds)) return;
+    updateAssetMetadata(track.id, { durationSeconds }).catch((e) => setError(String(e)));
+  };
+
+  const handleCompose = async () => {
+    setComposing(true);
+    setError(null);
+    try {
+      const raw = await invoke<string>("llm_complete", {
+        systemPrompt: SONG_METADATA_SYSTEM_PROMPT,
+        userPrompt: buildSongMetadataUserPrompt({
+          name: track.display_name || name.trim(),
+          prompt: track.prompt,
+          enhancedPrompt: track.enhanced_prompt,
+          durationSeconds,
+        }),
+      });
+      const parsed = JSON.parse(stripJsonFences(raw)) as {
+        title?: string;
+        artist?: string;
+        description?: string;
+        lyrics?: string;
+      };
+      const nextDescription = (parsed.description ?? "").trim();
+      const nextArtist = (parsed.artist ?? "").trim();
+      const nextLyrics = (parsed.lyrics ?? "").trimEnd();
+      setDescription(nextDescription);
+      setArtist(nextArtist);
+      setLyrics(nextLyrics);
+      await updateAssetMetadata(track.id, {
+        description: nextDescription,
+        artist: nextArtist,
+        lyrics: nextLyrics,
+      });
+      const title = (parsed.title ?? "").trim();
+      if (!track.display_name && title) {
+        setName(title);
+        await renameAsset(track.id, title);
+      }
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setComposing(false);
+    }
   };
 
   const handleDelete = () => {
@@ -238,10 +346,79 @@ function TrackDetail({
           aria-label="Track name"
           className="ornate-input min-h-9 flex-1 px-2 py-1 text-xs text-text-primary"
         />
+        <label className="flex shrink-0 items-center gap-1 text-3xs text-text-muted">
+          <input
+            type="number"
+            min={0}
+            value={durationText}
+            onChange={(e) => setDurationText(e.target.value)}
+            onBlur={commitDuration}
+            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+            aria-label="Track duration in seconds"
+            title="Play length in seconds — the jukebox needs this; edit it when audio probing fails"
+            className="w-14 rounded border border-border-default bg-bg-secondary px-1.5 py-0.5 text-right text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+          />
+          s{durationSeconds > 0 ? ` · ${formatDuration(durationSeconds)}` : ""}
+        </label>
         <span className="font-mono text-3xs text-text-muted" title={track.file_name}>
           {track.file_name.slice(0, 10)}…
         </span>
       </div>
+
+      <input
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        onBlur={commitDescription}
+        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+        placeholder={isMusic ? "Description — a songbook blurb for jukebox listings" : "Description"}
+        aria-label="Track description"
+        className="ornate-input min-h-9 w-full px-2 py-1 text-xs text-text-primary"
+      />
+
+      {isMusic && (
+        <input
+          value={artist}
+          onChange={(e) => setArtist(e.target.value)}
+          onBlur={commitArtist}
+          onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+          placeholder="Artist — in-world performer or band, shown in jukebox listings"
+          aria-label="Track artist"
+          className="ornate-input min-h-9 w-full px-2 py-1 text-xs text-text-primary"
+        />
+      )}
+
+      {isMusic && (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-2xs text-text-muted">
+              Lyrics — broadcast line-by-line while a jukebox plays this song.
+              {lyricBudget !== null && (
+                <span className={lyricLineCount > lyricBudget ? "text-status-warning" : ""}>
+                  {" "}{lyricLineCount} line{lyricLineCount === 1 ? "" : "s"} · max {lyricBudget} for {formatDuration(durationSeconds)}
+                </span>
+              )}
+            </span>
+            {AI_ENABLED && hasLlmKey(settings) && (
+              <button
+                onClick={handleCompose}
+                disabled={composing}
+                className="focus-ring shrink-0 rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+              >
+                {composing ? <Spinner /> : "Compose details"}
+              </button>
+            )}
+          </div>
+          <textarea
+            value={lyrics}
+            onChange={(e) => setLyrics(e.target.value)}
+            onBlur={commitLyrics}
+            rows={6}
+            placeholder="When the lanterns lean in low…"
+            aria-label="Track lyrics"
+            className="w-full resize-y rounded border border-border-default bg-bg-secondary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+          />
+        </div>
+      )}
 
       {src ? <audio controls src={src} className="h-8 w-full" /> : <div className="text-2xs italic text-text-muted">Loading preview…</div>}
 
@@ -254,6 +431,10 @@ function TrackDetail({
             <span key={`${u.zoneId}:${u.roomId}:${u.kind}`}>{u.roomTitle} ({u.zoneId})</span>
           ))}
           {usage.rooms.length > 6 && <span>…and {usage.rooms.length - 6} more rooms</span>}
+          {usage.jukeboxes.slice(0, 6).map((u) => (
+            <span key={`${u.zoneId}:${u.roomId}:jukebox`}>Jukebox — {u.roomTitle} ({u.zoneId})</span>
+          ))}
+          {usage.jukeboxes.length > 6 && <span>…and {usage.jukeboxes.length - 6} more jukeboxes</span>}
         </div>
       )}
 
@@ -268,7 +449,7 @@ function TrackDetail({
             confirmDelete ? "bg-status-error/20 font-medium text-status-error" : "text-text-muted hover:text-status-error"
           }`}
         >
-          {confirmDelete ? (used ? `Used by ${usage.zoneDefaults.length + usage.rooms.length} — delete anyway?` : "Confirm delete") : "Delete"}
+          {confirmDelete ? (used ? `Used by ${usedCount} — delete anyway?` : "Confirm delete") : "Delete"}
         </button>
       </div>
 
@@ -286,12 +467,7 @@ function GenerateTrackCard({ kind, onCreated }: { kind: AudioTrackKind; onCreate
 
   const hasRunwareKey = !!settings && settings.runware_api_key.length > 0;
   const hasElevenKey = !!settings && settings.elevenlabs_api_key.length > 0;
-  const hasLlmKey = !!settings && (
-    settings.deepinfra_api_key.length > 0 ||
-    settings.anthropic_api_key.length > 0 ||
-    settings.openrouter_api_key.length > 0 ||
-    (settings.use_hub_ai && settings.hub_api_key.length > 0)
-  );
+  const llmReady = hasLlmKey(settings);
 
   // ElevenLabs sound effects suit ambience, not music.
   const providers: AudioProvider[] = kind === "ambient"
@@ -520,7 +696,7 @@ function GenerateTrackCard({ kind, onCreated }: { kind: AudioTrackKind; onCreate
           </label>
         )}
         <div className="ml-auto flex gap-1">
-          {hasLlmKey && (
+          {llmReady && (
             <button
               onClick={handleEnhance}
               disabled={enhancing}

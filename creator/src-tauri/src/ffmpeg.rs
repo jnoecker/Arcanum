@@ -107,6 +107,51 @@ fn parse_ffmpeg_version(text: &str) -> Option<String> {
     Some(token.to_string())
 }
 
+/// Probes a media file's duration by running `ffmpeg -i <path>` and
+/// parsing the `Duration: HH:MM:SS.cc` line from stderr. ffmpeg exits
+/// non-zero without an output file, so the exit status is ignored —
+/// only the stderr metadata matters. Returns `None` on any failure
+/// (ffmpeg unavailable, spawn error, unparseable output); duration is
+/// best-effort metadata, never a hard error.
+pub async fn probe_media_duration_seconds(app: &AppHandle, media_path: &Path) -> Option<f64> {
+    let status = resolve_ffmpeg(app).await;
+    if !status.available {
+        return None;
+    }
+    let bin = status.path?;
+    let output = tokio::process::Command::new(&bin)
+        .arg("-hide_banner")
+        .arg("-i")
+        .arg(media_path)
+        .output()
+        .await
+        .ok()?;
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    parse_duration_seconds(&stderr)
+}
+
+/// Parses `Duration: HH:MM:SS.cc` from ffmpeg's stderr metadata dump.
+/// Returns `None` when the line is missing, reads `N/A`, or yields a
+/// non-positive total.
+fn parse_duration_seconds(text: &str) -> Option<f64> {
+    for line in text.lines() {
+        let Some(rest) = line.trim().strip_prefix("Duration:") else {
+            continue;
+        };
+        let token = rest.split(',').next()?.trim();
+        let mut parts = token.split(':');
+        let hours: f64 = parts.next()?.trim().parse().ok()?;
+        let minutes: f64 = parts.next()?.trim().parse().ok()?;
+        let seconds: f64 = parts.next()?.trim().parse().ok()?;
+        if parts.next().is_some() {
+            return None;
+        }
+        let total = hours * 3600.0 + minutes * 60.0 + seconds;
+        return (total > 0.0).then_some(total);
+    }
+    None
+}
+
 // ─── Resolution ──────────────────────────────────────────────────
 
 /// Attempts to find ffmpeg in the bundled location first, then on
@@ -298,6 +343,32 @@ mod tests {
     fn ignores_lines_after_the_first() {
         let sample = "ffmpeg version 7.0.0 Copyright\nrandom second line\n6.1.1 trailing";
         assert_eq!(parse_ffmpeg_version(sample), Some("7.0.0".to_string()));
+    }
+
+    // ─── parse_duration_seconds ──────────────────────────────────
+
+    #[test]
+    fn parses_duration_line_from_stderr_dump() {
+        let sample = "Input #0, mp3, from 'song.mp3':\n\
+                      \x20 Duration: 00:01:36.05, start: 0.025057, bitrate: 192 kb/s\n\
+                      \x20 Stream #0:0: Audio: mp3, 44100 Hz, stereo";
+        let parsed = parse_duration_seconds(sample).expect("should parse");
+        assert!((parsed - 96.05).abs() < 0.001, "got {parsed}");
+    }
+
+    #[test]
+    fn parses_duration_with_hours() {
+        let sample = "  Duration: 01:02:03.50, bitrate: 128 kb/s";
+        let parsed = parse_duration_seconds(sample).expect("should parse");
+        assert!((parsed - 3723.5).abs() < 0.001, "got {parsed}");
+    }
+
+    #[test]
+    fn duration_returns_none_for_na_or_missing() {
+        assert_eq!(parse_duration_seconds("  Duration: N/A, bitrate: N/A"), None);
+        assert_eq!(parse_duration_seconds("no duration here"), None);
+        assert_eq!(parse_duration_seconds(""), None);
+        assert_eq!(parse_duration_seconds("  Duration: 00:00:00.00, start: 0"), None);
     }
 
     #[test]

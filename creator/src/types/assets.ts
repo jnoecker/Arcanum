@@ -27,6 +27,10 @@ export interface AssetEntry {
   variant_group: string;
   is_active: boolean;
   display_name: string;
+  description: string;
+  artist: string;
+  lyrics: string;
+  duration_seconds: number;
 }
 
 export interface AssetContext {

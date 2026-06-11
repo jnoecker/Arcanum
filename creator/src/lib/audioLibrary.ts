@@ -1,9 +1,10 @@
 import type { AssetEntry } from "@/types/assets";
-import type { WorldFile } from "@/types/world";
+import type { JukeboxSongFile, RoomFile, WorldFile } from "@/types/world";
 
 export type AudioTrackKind = "music" | "ambient";
 
 const AUDIO_EXTENSION = /\.(mp3|ogg|flac|wav)$/i;
+const HASH_LIKE_RE = /^[0-9a-f]{16,}$/i;
 
 /** Asset types surfaced in each studio lane. Legacy untyped "audio" imports
  *  (the old room foley slot) land in the ambient lane so they stay reachable. */
@@ -26,6 +27,10 @@ export function listAudioTracks(assets: AssetEntry[], kind: AudioTrackKind): Ass
 export function trackLabel(entry: AssetEntry): string {
   if (entry.display_name) return entry.display_name;
   const prompt = entry.prompt.replace(/^Imported:\s*/, "").trim();
+  // Content-addressed hashes make terrible labels — collapse them before the
+  // 48-char truncation below can disguise a full sha256 as ordinary text.
+  const stem = (prompt || entry.file_name).replace(/\.[^.]+$/, "");
+  if (HASH_LIKE_RE.test(stem)) return `Untitled (${stem.slice(0, 8)}…)`;
   if (prompt) return prompt.length > 48 ? `${prompt.slice(0, 48)}…` : prompt;
   return entry.file_name;
 }
@@ -35,13 +40,15 @@ export interface TrackUsage {
   zoneDefaults: { zoneId: string; kind: AudioTrackKind }[];
   /** Rooms referencing the track directly. */
   rooms: { zoneId: string; roomId: string; roomTitle: string; kind: AudioTrackKind }[];
+  /** Room jukeboxes whose song list includes the track. */
+  jukeboxes: { zoneId: string; roomId: string; roomTitle: string }[];
 }
 
 export function scanTrackUsage(
   zones: Iterable<[string, { data: WorldFile }]>,
   fileName: string,
 ): TrackUsage {
-  return buildUsageIndex(zones).get(fileName) ?? { zoneDefaults: [], rooms: [] };
+  return buildUsageIndex(zones).get(fileName) ?? { zoneDefaults: [], rooms: [], jukeboxes: [] };
 }
 
 /** Single pass over all loaded zones: file name → everywhere it's referenced. */
@@ -52,7 +59,7 @@ export function buildUsageIndex(
   const entry = (fileName: string): TrackUsage => {
     let usage = index.get(fileName);
     if (!usage) {
-      usage = { zoneDefaults: [], rooms: [] };
+      usage = { zoneDefaults: [], rooms: [], jukeboxes: [] };
       index.set(fileName, usage);
     }
     return usage;
@@ -63,13 +70,23 @@ export function buildUsageIndex(
     for (const [roomId, room] of Object.entries(data.rooms)) {
       if (room.music) entry(room.music).rooms.push({ zoneId, roomId, roomTitle: room.title, kind: "music" });
       if (room.ambient) entry(room.ambient).rooms.push({ zoneId, roomId, roomTitle: room.title, kind: "ambient" });
+      if (room.jukebox) {
+        const seen = new Set<string>();
+        for (const song of room.jukebox) {
+          if (!song.file || seen.has(song.file)) continue;
+          seen.add(song.file);
+          entry(song.file).jukeboxes.push({ zoneId, roomId, roomTitle: room.title });
+        }
+      }
     }
   }
   return index;
 }
 
 export function usageSummary(usage: TrackUsage): string {
-  if (usage.zoneDefaults.length === 0 && usage.rooms.length === 0) return "Unused";
+  if (usage.zoneDefaults.length === 0 && usage.rooms.length === 0 && usage.jukeboxes.length === 0) {
+    return "Unused";
+  }
   const parts: string[] = [];
   if (usage.zoneDefaults.length > 0) {
     parts.push(`${usage.zoneDefaults.length} zone default${usage.zoneDefaults.length === 1 ? "" : "s"}`);
@@ -77,6 +94,9 @@ export function usageSummary(usage: TrackUsage): string {
   if (usage.rooms.length > 0) {
     const zoneCount = new Set(usage.rooms.map((r) => r.zoneId)).size;
     parts.push(`${usage.rooms.length} room${usage.rooms.length === 1 ? "" : "s"} in ${zoneCount} zone${zoneCount === 1 ? "" : "s"}`);
+  }
+  if (usage.jukeboxes.length > 0) {
+    parts.push(`${usage.jukeboxes.length} jukebox${usage.jukeboxes.length === 1 ? "" : "es"}`);
   }
   return parts.join(" · ");
 }
@@ -103,4 +123,84 @@ export function setRoomTrack(
     ...world,
     rooms: { ...world.rooms, [roomId]: { ...room, [kind]: fileName } },
   };
+}
+
+export interface AudioTrackMeta {
+  name: string;
+  artist: string;
+  description: string;
+  lyrics: string;
+  durationSeconds: number;
+}
+
+export function buildAudioMetaIndex(assets: AssetEntry[]): Map<string, AudioTrackMeta> {
+  const index = new Map<string, AudioTrackMeta>();
+  for (const entry of assets) {
+    index.set(entry.file_name, {
+      name: trackLabel(entry),
+      artist: entry.artist,
+      description: entry.description,
+      lyrics: entry.lyrics,
+      durationSeconds: Math.round(entry.duration_seconds),
+    });
+  }
+  return index;
+}
+
+/** Lyrics are edited as one text blob but the server contract is a list of
+ *  non-blank lines. */
+export function splitLyricsLines(lyrics: string): string[] {
+  return lyrics
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
+/**
+ * Denormalize library metadata into jukebox song entries at save time.
+ * Songs whose file is in the index are rebuilt from it in the server
+ * contract's key order (so stale titles, descriptions, and lyrics clear when
+ * the library entry empties); songs from other machines stay verbatim. The
+ * per-song `cost` is zone-side authoring, not library metadata, so it always
+ * survives. Blank-file songs are dropped, and a jukebox with no surviving
+ * songs disappears.
+ */
+export function enrichJukeboxSongs(
+  world: WorldFile,
+  meta: Map<string, AudioTrackMeta>,
+): WorldFile {
+  let changed = false;
+  const rooms: Record<string, RoomFile> = {};
+  for (const [roomId, room] of Object.entries(world.rooms)) {
+    if (!room.jukebox) {
+      rooms[roomId] = room;
+      continue;
+    }
+    const songs: JukeboxSongFile[] = [];
+    for (const song of room.jukebox) {
+      if (!song.file || !song.file.trim()) continue;
+      const track = meta.get(song.file);
+      if (!track) {
+        songs.push(song);
+        continue;
+      }
+      const enriched: JukeboxSongFile = { title: track.name, file: song.file };
+      if (track.durationSeconds > 0) {
+        enriched.durationSeconds = track.durationSeconds;
+      } else if (typeof song.durationSeconds === "number" && song.durationSeconds > 0) {
+        enriched.durationSeconds = Math.round(song.durationSeconds);
+      }
+      if (typeof song.cost === "number" && song.cost >= 0) enriched.cost = song.cost;
+      if (track.artist) enriched.artist = track.artist;
+      if (track.description) enriched.description = track.description;
+      const lyrics = splitLyricsLines(track.lyrics);
+      if (lyrics.length > 0) enriched.lyrics = lyrics;
+      songs.push(enriched);
+    }
+    rooms[roomId] = songs.length > 0
+      ? { ...room, jukebox: songs }
+      : { ...room, jukebox: undefined };
+    changed = true;
+  }
+  return changed ? { ...world, rooms } : world;
 }

@@ -427,6 +427,9 @@ export function validateZone(
   /** Class id -> ordered statPriorities. Used to warn when an item uses an
    *  archetypal stat slot that no class fills (the bonus would silently drop). */
   classStatPriorities?: Record<string, string[]>,
+  /** `jukeboxOutput` enables the server's strict title/duration checks, which
+   *  only hold after save-time enrichment — in-editor songs are bare file refs. */
+  opts?: { jukeboxOutput?: boolean },
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const roomIds = new Set(Object.keys(world.rooms));
@@ -526,6 +529,51 @@ export function validateZone(
 
     for (const [featureId, feature] of Object.entries(room.features ?? {})) {
       validateFeature(issues, entity, featureId, feature, itemIds);
+    }
+
+    if (room.jukebox) {
+      if (room.jukebox.length === 0) {
+        addIssue(issues, "warning", entity, "Jukebox has no songs — add tracks or remove it");
+      }
+      for (const [index, song] of room.jukebox.entries()) {
+        const where = `Jukebox song #${index + 1}`;
+        if (!song.file?.trim()) {
+          addIssue(issues, "error", entity, `${where} has no audio file`);
+        }
+        if (song.cost != null && song.cost < 0) {
+          addIssue(issues, "error", entity, `${where} has a negative cost (${song.cost})`);
+        }
+        if (song.lyrics) {
+          if (song.lyrics.some((line) => typeof line !== "string" || !line.trim())) {
+            addIssue(issues, "error", entity, `${where} has a blank lyric line`);
+          }
+          const duration = song.durationSeconds;
+          if (typeof duration === "number" && duration > 0) {
+            const maxLines = Math.floor(duration / 3);
+            if (song.lyrics.length > maxLines) {
+              addIssue(
+                issues,
+                "error",
+                entity,
+                `${where} has ${song.lyrics.length} lyric lines but durationSeconds=${duration} allows at most ${maxLines} — at most one lyric line per 3 seconds`,
+              );
+            }
+          }
+        }
+        if (opts?.jukeboxOutput) {
+          if (!song.title?.trim()) {
+            addIssue(issues, "error", entity, `${where} has no title — name the track in the Audio Studio`);
+          }
+          if (typeof song.durationSeconds !== "number" || song.durationSeconds <= 0) {
+            addIssue(
+              issues,
+              "error",
+              entity,
+              `${where} has no playable duration — set the track's duration in the Audio Studio`,
+            );
+          }
+        }
+      }
     }
   }
 

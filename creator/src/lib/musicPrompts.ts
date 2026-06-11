@@ -40,6 +40,47 @@ Guidelines:
 
 Output ONLY the prompt text — no labels, no markdown, no commentary. Keep it under 150 words.`;
 
+/** System prompt for composing jukebox-facing song metadata (title, artist, blurb, lyrics) */
+export const SONG_METADATA_SYSTEM_PROMPT = `You are a music director for a fantasy RPG. Given an audio track's generation prompt and its current name, invent in-world song metadata for the game's jukebox listings.
+
+Return STRICT JSON only — no markdown, no commentary — with exactly these keys:
+{"title": string, "artist": string, "description": string, "lyrics": string}
+
+Rules:
+- title: 5 words or fewer, evocative, no quotation marks
+- artist: an in-world band or performer name, 1 to 4 words
+- description: one sentence — a songbook blurb players read in a jukebox listing
+- lyrics: 6 to 14 short lines separated by \\n, with a singable verse/chorus feel; no timestamps, no stage directions, no markdown`;
+
+interface SongMetadataTrack {
+  name: string;
+  prompt: string;
+  enhancedPrompt: string;
+  durationSeconds?: number;
+}
+
+function formatTrackLength(seconds: number): string {
+  const total = Math.round(seconds);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
+export function buildSongMetadataUserPrompt(track: SongMetadataTrack): string {
+  const parts = [
+    track.name && `Current name: ${track.name}`,
+    track.prompt && `Generation prompt: ${track.prompt}`,
+    track.enhancedPrompt && `Enhanced prompt: ${track.enhancedPrompt}`,
+  ].filter(Boolean);
+  if (parts.length === 0) parts.push("An instrumental fantasy melody.");
+  const duration = track.durationSeconds ?? 0;
+  if (duration > 0) {
+    const maxLines = Math.min(14, Math.floor(duration / 3));
+    parts.push(
+      `Track length: ${formatTrackLength(duration)}. Lyrics must have at most ${maxLines} lines (one line per 3 seconds of music).`,
+    );
+  }
+  return parts.join("\n");
+}
+
 /** Get the system prompt for a given audio track type */
 export function getAudioSystemPrompt(trackType: AudioTrackType): string {
   return trackType === "music" ? MUSIC_SYSTEM_PROMPT : AMBIENT_SYSTEM_PROMPT;

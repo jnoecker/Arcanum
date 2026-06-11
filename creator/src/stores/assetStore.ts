@@ -3,12 +3,34 @@ import { invoke } from "@tauri-apps/api/core";
 import type { AssetContext, AssetEntry, GeneratedImage, ProjectSettings, Settings, SyncProgress, SyncScope } from "@/types/assets";
 import type { ArtStyle } from "@/lib/arcanumPrompts";
 import { useProjectStore } from "@/stores/projectStore";
+import { useZoneStore } from "@/stores/zoneStore";
 
 interface BatchProgress {
   total: number;
   completed: number;
   failed: number;
   errors: string[];
+}
+
+interface AssetMetadataPatch {
+  displayName?: string;
+  description?: string;
+  artist?: string;
+  lyrics?: string;
+  durationSeconds?: number;
+}
+
+/** Saved zone YAML denormalizes jukebox song metadata, so a metadata edit
+ *  means every zone whose jukeboxes reference the track needs a re-save. */
+function markJukeboxZonesDirty(fileName: string | undefined): void {
+  if (!fileName) return;
+  const zoneStore = useZoneStore.getState();
+  for (const [zoneId, zone] of zoneStore.zones) {
+    const referenced = Object.values(zone.data.rooms).some((room) =>
+      (room.jukebox ?? []).some((song) => song.file === fileName),
+    );
+    if (referenced) zoneStore.markDirty(zoneId);
+  }
 }
 
 interface AssetState {
@@ -22,6 +44,7 @@ interface AssetState {
   syncing: boolean;
   lastSyncResult: SyncProgress | null;
   batchProgress: BatchProgress | null;
+  audioMetaBackfilled: boolean;
 
   loadSettings: () => Promise<void>;
   saveSettings: (settings: Settings) => Promise<void>;
@@ -39,6 +62,8 @@ interface AssetState {
     displayName?: string,
   ) => Promise<AssetEntry>;
   renameAsset: (assetId: string, displayName: string) => Promise<void>;
+  updateAssetMetadata: (assetId: string, patch: AssetMetadataPatch) => Promise<void>;
+  backfillAudioMeta: () => Promise<void>;
   deleteAsset: (id: string) => Promise<void>;
   deleteAssets: (ids: string[]) => Promise<void>;
 
@@ -71,6 +96,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   syncing: false,
   lastSyncResult: null,
   batchProgress: null,
+  audioMetaBackfilled: false,
 
   loadSettings: async () => {
     const projectDir = useProjectStore.getState().project?.mudDir;
@@ -146,8 +172,31 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   },
 
   renameAsset: async (assetId, displayName) => {
+    const fileName = get().assets.find((a) => a.id === assetId)?.file_name;
     await invoke("rename_asset", { assetId, displayName });
     await get().loadAssets();
+    markJukeboxZonesDirty(fileName);
+  },
+
+  updateAssetMetadata: async (assetId, patch) => {
+    const fileName = get().assets.find((a) => a.id === assetId)?.file_name;
+    await invoke("update_asset_metadata", {
+      assetId,
+      displayName: patch.displayName ?? null,
+      description: patch.description ?? null,
+      artist: patch.artist ?? null,
+      lyrics: patch.lyrics ?? null,
+      durationSeconds: patch.durationSeconds ?? null,
+    });
+    await get().loadAssets();
+    markJukeboxZonesDirty(fileName);
+  },
+
+  backfillAudioMeta: async () => {
+    if (get().audioMetaBackfilled) return;
+    set({ audioMetaBackfilled: true });
+    const count = await invoke<number>("backfill_audio_meta");
+    if (count > 0) await get().loadAssets();
   },
 
   deleteAsset: async (id: string) => {

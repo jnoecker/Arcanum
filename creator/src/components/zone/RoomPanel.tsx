@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { WorldFile, ExitValue, DoorFile } from "@/types/world";
+import type { WorldFile, ExitValue, DoorFile, JukeboxSongFile } from "@/types/world";
 import {
   updateRoom,
   deleteRoom,
@@ -23,6 +23,7 @@ import { YamlPreview } from "@/components/ui/YamlPreview";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
 import { AudioTrackPicker } from "@/components/ui/AudioTrackPicker";
+import { buildAudioMetaIndex, listAudioTracks, trackLabel } from "@/lib/audioLibrary";
 import { VideoGenerator } from "@/components/ui/VideoGenerator";
 import { roomPrompt, roomContext } from "@/lib/entityPrompts";
 import { getTrainerClasses } from "@/lib/trainers";
@@ -1245,6 +1246,7 @@ export function RoomPanel({
             onChange={(v) => onWorldChange(updateRoom(world, roomId, { ambient: v }))}
             hint="Overrides the zone's default soundscape for this room."
           />
+          <JukeboxEditor world={world} roomId={roomId} onWorldChange={onWorldChange} />
         </div>
       </Section>
       </>
@@ -1276,6 +1278,177 @@ export function RoomPanel({
           }}
           onClose={() => setRenaming(false)}
         />
+      )}
+    </div>
+  );
+}
+
+interface JukeboxEditorProps {
+  world: WorldFile;
+  roomId: string;
+  onWorldChange: (world: WorldFile) => void;
+}
+
+function formatSongDuration(seconds: number): string {
+  const total = Math.round(seconds);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
+/** Ordered song list for the room's jukebox. New songs are stored as bare
+ *  file refs — titles, artists, lyrics, and durations are denormalized from
+ *  the audio library at save time. Per-song cost is authored here because it
+ *  is zone content, not library metadata. */
+function JukeboxEditor({ world, roomId, onWorldChange }: JukeboxEditorProps) {
+  const assets = useAssetStore((s) => s.assets);
+  const metaIndex = useMemo(() => buildAudioMetaIndex(assets), [assets]);
+  const musicTracks = useMemo(() => listAudioTracks(assets, "music"), [assets]);
+
+  const room = world.rooms[roomId];
+  if (!room) return null;
+  const songs = room.jukebox ?? [];
+  const inList = new Set(songs.map((s) => s.file));
+  const addable = musicTracks.filter((t) => !inList.has(t.file_name));
+
+  const setSongs = (next: JukeboxSongFile[]) =>
+    onWorldChange(updateRoom(world, roomId, { jukebox: next }));
+
+  const setSong = (index: number, next: JukeboxSongFile) =>
+    setSongs(songs.map((s, i) => (i === index ? next : s)));
+
+  const move = (index: number, delta: number) => {
+    const target = index + delta;
+    if (target < 0 || target >= songs.length) return;
+    const next = [...songs];
+    const a = next[index];
+    const b = next[target];
+    if (!a || !b) return;
+    next[index] = b;
+    next[target] = a;
+    setSongs(next);
+  };
+
+  const songButtonClass =
+    "focus-ring shrink-0 rounded px-1 text-2xs text-text-muted transition-colors hover:text-text-primary disabled:opacity-30";
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="flex cursor-pointer items-center gap-1.5 text-xs text-text-secondary">
+        <input
+          type="checkbox"
+          checked={!!room.jukebox}
+          onChange={(e) =>
+            onWorldChange(
+              updateRoom(world, roomId, { jukebox: e.target.checked ? [] : undefined }),
+            )
+          }
+          className="accent-[rgb(var(--accent-rgb))]"
+        />
+        Jukebox in this room
+      </label>
+      {room.jukebox && (
+        <div className="flex flex-col gap-1 pl-5">
+          {songs.map((song, index) => {
+            const meta = metaIndex.get(song.file);
+            const songDuration =
+              typeof song.durationSeconds === "number" && song.durationSeconds > 0
+                ? Math.round(song.durationSeconds)
+                : 0;
+            const duration = meta && meta.durationSeconds > 0 ? meta.durationSeconds : songDuration;
+            return (
+              <div key={`${song.file}:${index}`} className="flex items-center gap-1 text-2xs">
+                <span className="w-4 shrink-0 text-right text-text-muted">{index + 1}.</span>
+                <span className="min-w-0 flex-1 truncate text-text-secondary" title={song.file}>
+                  {meta?.name ?? song.title ?? song.file}
+                </span>
+                {duration > 0 && (
+                  <span className="shrink-0 text-3xs text-text-muted">{formatSongDuration(duration)}</span>
+                )}
+                {!meta && (
+                  <span className="shrink-0 rounded bg-status-warning/15 px-1 py-0.5 text-3xs text-status-warning">
+                    unknown track
+                  </span>
+                )}
+                {meta && duration <= 0 && (
+                  <span
+                    title="Saving is blocked until this song has a play length — set the track's duration in the Audio Studio."
+                    className="shrink-0 rounded bg-status-warning/15 px-1 py-0.5 text-3xs text-status-warning"
+                  >
+                    no duration
+                  </span>
+                )}
+                {meta && !meta.lyrics && (
+                  <span className="shrink-0 rounded bg-bg-secondary px-1 py-0.5 text-3xs text-text-muted">
+                    no lyrics
+                  </span>
+                )}
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={song.cost ?? ""}
+                  onChange={(e) => {
+                    if (e.target.value === "") {
+                      const { cost: _unused, ...rest } = song;
+                      setSong(index, rest);
+                    } else {
+                      setSong(index, { ...song, cost: Math.max(0, Math.round(Number(e.target.value))) });
+                    }
+                  }}
+                  placeholder="cost"
+                  title={`Gold cost to play song ${index + 1} — blank uses the server's default price`}
+                  aria-label={`Song ${index + 1} gold cost`}
+                  className="w-12 shrink-0 rounded border border-border-default bg-bg-secondary px-1 py-0.5 text-right text-2xs text-text-secondary placeholder:text-text-muted outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+                />
+                <button
+                  onClick={() => move(index, -1)}
+                  disabled={index === 0}
+                  title="Move up"
+                  aria-label={`Move song ${index + 1} up`}
+                  className={songButtonClass}
+                >
+                  ↑
+                </button>
+                <button
+                  onClick={() => move(index, 1)}
+                  disabled={index === songs.length - 1}
+                  title="Move down"
+                  aria-label={`Move song ${index + 1} down`}
+                  className={songButtonClass}
+                >
+                  ↓
+                </button>
+                <button
+                  onClick={() => setSongs(songs.filter((_, i) => i !== index))}
+                  title="Remove song"
+                  aria-label={`Remove song ${index + 1}`}
+                  className="focus-ring shrink-0 rounded px-1 text-2xs text-text-muted transition-colors hover:text-status-danger"
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
+          <select
+            value=""
+            onChange={(e) => {
+              if (!e.target.value) return;
+              setSongs([...songs, { file: e.target.value }]);
+            }}
+            aria-label="Add song to jukebox"
+            className="w-full rounded border border-border-default bg-bg-secondary px-2 py-1 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active [&>option]:bg-bg-secondary"
+          >
+            <option value="">Add song…</option>
+            {addable.map((t) => (
+              <option key={t.id} value={t.file_name}>
+                {trackLabel(t)}
+              </option>
+            ))}
+          </select>
+          <p className="text-2xs text-text-muted">
+            Players use <code className="font-mono">jukebox play &lt;n&gt;</code> — titles, artists, and
+            lyrics come from the Audio Studio library. A blank cost charges the server's default price.
+          </p>
+        </div>
       )}
     </div>
   );

@@ -808,6 +808,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     aspect: "landscape",
   },
   {
+    key: "monster_manual_portrait_frame",
+    defaultFilename: "monster_manual_portrait_frame.png",
+    label: "Monster Manual Portrait Frame",
+    description:
+      "Ornamental border overlaid on top of the bestiary portrait box in the monster-manual (mob inspect) card. Its opaque painted edge hides the obvious seam left by the rare-mob colorize filter, so the center must be fully transparent for the creature to show through. Falls back to no overlay when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A 2:3 portrait ornamental picture frame with a fully transparent empty center window, the painted border occupying only the outer tenth of each edge, hand-painted parchment-and-vine style matching an illuminated bestiary, lush twining vines with colorful butterflies, speckled mushrooms, and blooming flowers in jewel tones, no fill in the center, no creature, no figures, no readable text, transparent PNG suitable as a frame overlaid on top of a creature portrait.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
     key: "inventory_satchel_bg",
     defaultFilename: "inventory_satchel_bg.png",
     label: "Inventory Satchel Texture",

@@ -918,3 +918,68 @@ describe("sanitizeZone — videoText / videoTextSeconds", () => {
     expect(result.items!["orb"]!.videoText).toBe("The orb pulses with trapped light.");
   });
 });
+
+describe("sanitizeZone — room jukebox", () => {
+  it("rebuilds songs in contract key order with empty optionals omitted", () => {
+    const world = makeWorld({
+      rooms: {
+        room_a: {
+          title: "A",
+          description: "A",
+          jukebox: {
+            songs: [
+              {
+                durationSeconds: 96.4,
+                lyrics: "When the lanterns lean in low,\nthe teacups start to sway.",
+                name: "The Borrowed Song",
+                file: "song.mp3",
+                description: "A waltz that remembers being hummed.",
+              },
+              { file: "plain.mp3", name: "", description: "  ", lyrics: "", durationSeconds: 0 },
+            ],
+          },
+        },
+      },
+    });
+
+    const result = sanitizeZone(world);
+    const songs = result.rooms["room_a"]!.jukebox!.songs;
+    expect(Object.keys(songs[0]!)).toEqual(["file", "name", "description", "lyrics", "durationSeconds"]);
+    expect(songs[0]).toEqual({
+      file: "song.mp3",
+      name: "The Borrowed Song",
+      description: "A waltz that remembers being hummed.",
+      lyrics: "When the lanterns lean in low,\nthe teacups start to sway.",
+      durationSeconds: 96,
+    });
+    expect(songs[1]).toEqual({ file: "plain.mp3" });
+    expect(Object.keys(songs[1]!)).toEqual(["file"]);
+  });
+
+  it("drops blank-file songs and removes the jukebox when none survive", () => {
+    const world = makeWorld({
+      rooms: {
+        room_a: {
+          title: "A",
+          description: "A",
+          jukebox: { songs: [{ file: "" }, { file: "   ", name: "Ghost" }] },
+        },
+        room_b: {
+          title: "B",
+          description: "B",
+          jukebox: { songs: [{ file: "" }, { file: "keeper.mp3" }] },
+        },
+      },
+    });
+
+    const result = sanitizeZone(world);
+    expect(result.rooms["room_a"]!.jukebox).toBeUndefined();
+    expect(result.rooms["room_b"]!.jukebox!.songs).toEqual([{ file: "keeper.mp3" }]);
+  });
+
+  it("leaves rooms without a jukebox alone", () => {
+    const world = makeWorld();
+    const result = sanitizeZone(world);
+    expect(result.rooms["room_a"]!.jukebox).toBeUndefined();
+  });
+});

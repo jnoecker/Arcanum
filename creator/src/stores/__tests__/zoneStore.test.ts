@@ -134,4 +134,21 @@ describe("zoneStore undo/redo", () => {
     useZoneStore.getState().undo("test");
     expect(useZoneStore.getState().zones.get("test")!.dirty).toBe(true);
   });
+
+  it("markDirty flags the zone without data changes or history entries", () => {
+    const store = useZoneStore.getState();
+    store.loadZone("test", "/path/test.yaml", makeWorld());
+    const before = useZoneStore.getState().zones.get("test")!.data;
+
+    useZoneStore.getState().markDirty("test");
+
+    const zone = useZoneStore.getState().zones.get("test")!;
+    expect(zone.dirty).toBe(true);
+    expect(zone.data).toBe(before);
+    expect(useZoneStore.getState().canUndo("test")).toBe(false);
+    expect(useZoneStore.getState().canRedo("test")).toBe(false);
+
+    useZoneStore.getState().markDirty("missing");
+    expect(useZoneStore.getState().zones.get("missing")).toBeUndefined();
+  });
 });

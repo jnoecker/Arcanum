@@ -137,8 +137,21 @@ export interface RoomFile {
   videoTextSeconds?: number;
   music?: string;
   ambient?: string;
+  jukebox?: JukeboxFile;
   /** Legacy Arcanum-only alias; stripped on output. */
   audio?: string;
+}
+
+export interface JukeboxSongFile {
+  file: string;
+  name?: string;
+  description?: string;
+  lyrics?: string;
+  durationSeconds?: number;
+}
+
+export interface JukeboxFile {
+  songs: JukeboxSongFile[];
 }
 
 export interface ExitValue {

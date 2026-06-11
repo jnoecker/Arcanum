@@ -40,6 +40,32 @@ Guidelines:
 
 Output ONLY the prompt text — no labels, no markdown, no commentary. Keep it under 150 words.`;
 
+/** System prompt for composing jukebox-facing song metadata (title, blurb, lyrics) */
+export const SONG_METADATA_SYSTEM_PROMPT = `You are a music director for a fantasy RPG. Given an audio track's generation prompt and its current name, invent in-world song metadata for the game's jukebox listings.
+
+Return STRICT JSON only — no markdown, no commentary — with exactly these keys:
+{"title": string, "description": string, "lyrics": string}
+
+Rules:
+- title: 5 words or fewer, evocative, no quotation marks
+- description: one sentence — a songbook blurb players read in a jukebox listing
+- lyrics: 6 to 14 short lines separated by \\n, with a singable verse/chorus feel; no timestamps, no stage directions, no markdown`;
+
+interface SongMetadataTrack {
+  name: string;
+  prompt: string;
+  enhancedPrompt: string;
+}
+
+export function buildSongMetadataUserPrompt(track: SongMetadataTrack): string {
+  const parts = [
+    track.name && `Current name: ${track.name}`,
+    track.prompt && `Generation prompt: ${track.prompt}`,
+    track.enhancedPrompt && `Enhanced prompt: ${track.enhancedPrompt}`,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join("\n") : "An instrumental fantasy melody.";
+}
+
 /** Get the system prompt for a given audio track type */
 export function getAudioSystemPrompt(trackType: AudioTrackType): string {
   return trackType === "music" ? MUSIC_SYSTEM_PROMPT : AMBIENT_SYSTEM_PROMPT;

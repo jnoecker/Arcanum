@@ -86,6 +86,30 @@ describe("validateZone", () => {
     expect(issues).toHaveLength(0);
   });
 
+  // ─── Room jukebox ────────────────────────────────────────────
+  it("errors on a jukebox song with a blank file", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.jukebox = { songs: [{ file: "song.mp3" }, { file: "   " }] };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.entity === "room:room1" && i.message.includes("Jukebox song #2"))).toBe(true);
+  });
+
+  it("warns on a jukebox with no songs", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.jukebox = { songs: [] };
+    const issues = validateZone(world);
+    expect(errors(issues)).toHaveLength(0);
+    expect(warnings(issues).some((i) => i.entity === "room:room1" && i.message.includes("Jukebox has no songs"))).toBe(true);
+  });
+
+  it("accepts a populated jukebox without issues", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.jukebox = {
+      songs: [{ file: "song.mp3", name: "Tune", lyrics: "la\nla", durationSeconds: 30 }],
+    };
+    expect(validateZone(world)).toHaveLength(0);
+  });
+
   it("warns on door key that is not a known item", () => {
     const world = makeValidWorld();
     world.rooms.room1.exits = {

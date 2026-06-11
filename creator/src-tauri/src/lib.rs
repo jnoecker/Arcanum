@@ -88,6 +88,8 @@ macro_rules! base_handler {
             assets::read_media_data_url,
             assets::import_asset,
             assets::rename_asset,
+            assets::update_asset_metadata,
+            assets::backfill_audio_meta,
             assets::set_active_variant,
             assets::list_variants,
             assets::save_bytes_as_asset,

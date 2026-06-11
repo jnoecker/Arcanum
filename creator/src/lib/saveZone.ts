@@ -1,8 +1,10 @@
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { stringify } from "yaml";
 import { normalizeWorldAssetRefs } from "@/lib/assetRefs";
+import { buildAudioMetaIndex, enrichJukeboxSongs } from "@/lib/audioLibrary";
 import { sanitizeZone } from "@/lib/sanitizeZone";
 import { validateZone } from "@/lib/validateZone";
+import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { YAML_OPTS } from "@/lib/yamlOpts";
@@ -14,7 +16,10 @@ import { YAML_OPTS } from "@/lib/yamlOpts";
 export function serializeZone(zoneId: string): string {
   const zone = useZoneStore.getState().zones.get(zoneId);
   if (!zone) throw new Error(`Zone "${zoneId}" not found`);
-  const sanitized = normalizeWorldAssetRefs(sanitizeZone(zone.data));
+  const sanitized = enrichJukeboxSongs(
+    normalizeWorldAssetRefs(sanitizeZone(zone.data)),
+    buildAudioMetaIndex(useAssetStore.getState().assets),
+  );
   const config = useConfigStore.getState().config;
   const validClasses = config ? new Set(Object.keys(config.classes).map((id) => id.toUpperCase())) : undefined;
   const knownFactions = config?.factions?.definitions

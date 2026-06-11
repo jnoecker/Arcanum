@@ -527,6 +527,18 @@ export function validateZone(
     for (const [featureId, feature] of Object.entries(room.features ?? {})) {
       validateFeature(issues, entity, featureId, feature, itemIds);
     }
+
+    if (room.jukebox) {
+      const songs = room.jukebox.songs ?? [];
+      if (songs.length === 0) {
+        addIssue(issues, "warning", entity, "Jukebox has no songs — add tracks or remove it");
+      }
+      for (const [index, song] of songs.entries()) {
+        if (!song.file?.trim()) {
+          addIssue(issues, "error", entity, `Jukebox song #${index + 1} has no audio file`);
+        }
+      }
+    }
   }
 
   for (const [mobId, mob] of Object.entries(world.mobs ?? {})) {

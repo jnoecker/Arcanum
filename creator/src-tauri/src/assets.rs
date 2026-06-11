@@ -37,6 +37,12 @@ pub struct AssetEntry {
     pub is_active: bool,
     #[serde(default)]
     pub display_name: String,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub lyrics: String,
+    #[serde(default)]
+    pub duration_seconds: f64,
 }
 
 fn default_sync_status() -> String {
@@ -139,6 +145,9 @@ pub async fn accept_asset(
         variant_group: vg.clone(),
         is_active: active,
         display_name: display_name.unwrap_or_default(),
+        description: String::new(),
+        lyrics: String::new(),
+        duration_seconds: 0.0,
     };
 
     let _lock = MANIFEST_LOCK.lock().await;
@@ -447,6 +456,14 @@ pub async fn import_asset(
     let vg = variant_group.unwrap_or_default();
     let active = is_active.unwrap_or(false);
 
+    let duration_seconds = if subdir == "audio" {
+        crate::ffmpeg::probe_media_duration_seconds(&app, &dest)
+            .await
+            .unwrap_or(0.0)
+    } else {
+        0.0
+    };
+
     let entry = AssetEntry {
         id: uuid::Uuid::new_v4().to_string(),
         hash,
@@ -463,6 +480,9 @@ pub async fn import_asset(
         variant_group: vg.clone(),
         is_active: active,
         display_name: display_name.unwrap_or_default(),
+        description: String::new(),
+        lyrics: String::new(),
+        duration_seconds,
     };
 
     let _lock = MANIFEST_LOCK.lock().await;
@@ -497,6 +517,74 @@ pub async fn rename_asset(
         .ok_or_else(|| format!("Asset not found: {asset_id}"))?;
     entry.display_name = display_name.trim().to_string();
     save_manifest(&app, &manifest).await
+}
+
+#[tauri::command]
+pub async fn update_asset_metadata(
+    app: AppHandle,
+    asset_id: String,
+    display_name: Option<String>,
+    description: Option<String>,
+    lyrics: Option<String>,
+) -> Result<(), String> {
+    let _lock = MANIFEST_LOCK.lock().await;
+    let mut manifest = load_manifest(&app).await?;
+    let entry = manifest
+        .assets
+        .iter_mut()
+        .find(|a| a.id == asset_id)
+        .ok_or_else(|| format!("Asset not found: {asset_id}"))?;
+    if let Some(name) = display_name {
+        entry.display_name = name.trim().to_string();
+    }
+    if let Some(text) = description {
+        entry.description = text.trim().to_string();
+    }
+    if let Some(text) = lyrics {
+        entry.lyrics = text.trim_end().to_string();
+    }
+    save_manifest(&app, &manifest).await
+}
+
+const AUDIO_ASSET_TYPES: [&str; 3] = ["music", "ambient", "audio"];
+const AUDIO_EXTENSIONS: [&str; 4] = ["mp3", "ogg", "flac", "wav"];
+
+/// Probe durations for audio library entries that don't have one yet.
+/// Best-effort: missing files and unprobeable tracks are skipped silently.
+#[tauri::command]
+pub async fn backfill_audio_meta(app: AppHandle) -> Result<u32, String> {
+    let audio_dir = assets_dir(&app)?.join("audio");
+    let _lock = MANIFEST_LOCK.lock().await;
+    let mut manifest = load_manifest(&app).await?;
+    let mut updated = 0u32;
+
+    for entry in manifest.assets.iter_mut() {
+        if !AUDIO_ASSET_TYPES.contains(&entry.asset_type.as_str()) {
+            continue;
+        }
+        if entry.duration_seconds > 0.0 {
+            continue;
+        }
+        let ext = extension_from_path(&entry.file_name)
+            .map(|e| e.to_lowercase())
+            .unwrap_or_default();
+        if !AUDIO_EXTENSIONS.contains(&ext.as_str()) {
+            continue;
+        }
+        let path = audio_dir.join(&entry.file_name);
+        if !path.exists() {
+            continue;
+        }
+        if let Some(seconds) = crate::ffmpeg::probe_media_duration_seconds(&app, &path).await {
+            entry.duration_seconds = seconds;
+            updated += 1;
+        }
+    }
+
+    if updated > 0 {
+        save_manifest(&app, &manifest).await?;
+    }
+    Ok(updated)
 }
 
 #[tauri::command]
@@ -601,6 +689,9 @@ pub async fn save_bytes_as_asset(
         variant_group: variant_group.unwrap_or_default(),
         is_active: false,
         display_name: String::new(),
+        description: String::new(),
+        lyrics: String::new(),
+        duration_seconds: 0.0,
     };
 
     manifest.assets.retain(|a| a.hash != entry.hash);
@@ -886,6 +977,9 @@ pub async fn import_player_sprites(
             variant_group,
             is_active: true,
             display_name: String::new(),
+            description: String::new(),
+            lyrics: String::new(),
+            duration_seconds: 0.0,
         };
 
         manifest.assets.push(entry);
@@ -1021,6 +1115,9 @@ pub async fn bulk_import_images(
             variant_group: format!("{entity_type}:{stem}"),
             is_active: true,
             display_name: String::new(),
+            description: String::new(),
+            lyrics: String::new(),
+            duration_seconds: 0.0,
         };
 
         manifest.assets.push(asset_entry);
@@ -1118,6 +1215,9 @@ pub async fn flip_image(app: AppHandle, image_ref: String) -> Result<String, Str
             variant_group: source.map_or_else(String::new, |s| s.variant_group.clone()),
             is_active: true,
             display_name: String::new(),
+            description: String::new(),
+            lyrics: String::new(),
+            duration_seconds: 0.0,
         };
 
         let vg = &entry.variant_group;

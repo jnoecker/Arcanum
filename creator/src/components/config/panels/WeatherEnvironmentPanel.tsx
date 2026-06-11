@@ -18,6 +18,7 @@ import {
   IconButton,
 } from "@/components/ui/FormWidgets";
 import { RegistryPanel } from "./RegistryPanel";
+import { BUILTIN_MOB_VARIANTS } from "@/lib/mobVariantDefaults";
 import { useZoneStore } from "@/stores/zoneStore";
 
 // ─── Constants ────────────────────────────────────────────────────
@@ -383,6 +384,16 @@ function MobVariantsTab({
     [mv.variants, patchVariants],
   );
 
+  const missingBuiltins = useMemo(
+    () => Object.keys(BUILTIN_MOB_VARIANTS).filter((id) => !(id in mv.variants)),
+    [mv.variants],
+  );
+
+  const loadBuiltins = useCallback(() => {
+    // Built-ins first, then existing entries so the author's edits win on ID clash.
+    patchVariants({ ...BUILTIN_MOB_VARIANTS, ...mv.variants });
+  }, [mv.variants, patchVariants]);
+
   return (
     <>
       <Section
@@ -397,7 +408,7 @@ function MobVariantsTab({
           />
           <FieldRow
             label="Base Chance"
-            hint="Probability an eligible mob rolls as a rare variant on each dynamic spawn (zone reset, respawn, conditional spawn). 0–1; default 0.04."
+            hint="Probability an eligible mob rolls as a rare variant on each spawn opportunity (cold start, zone reset, respawn, conditional spawn). 0–1; default 0.04."
           >
             <NumberInput
               value={mv.chance}
@@ -407,13 +418,20 @@ function MobVariantsTab({
               step={0.01}
             />
           </FieldRow>
-          {!hasCustom && (
-            <p className="text-2xs text-text-muted">
-              No custom archetypes defined — the server's built-in palette
-              (albino, verdant, shadow-touched, ember, glimmering, frostbound,
-              spectral, ancient) is used. Add archetypes below to define your own
-              palette; once any exist, only your archetypes spawn.
-            </p>
+          <p className="text-2xs text-text-muted">
+            {hasCustom
+              ? "This palette replaces the server's built-ins entirely — only the archetypes below can spawn. Load the built-ins to combine them with your own."
+              : "No custom archetypes defined — the server's built-in palette (albino, verdant, shadow-touched, ember, glimmering, frostbound, spectral, ancient) is used and tracks future server updates. Load it below to tweak or extend it; once the palette is non-empty it fully replaces the built-ins, so include any you still want."}
+          </p>
+          {missingBuiltins.length > 0 && (
+            <button
+              onClick={loadBuiltins}
+              className="self-start rounded bg-accent/20 px-2.5 py-1 text-xs text-accent hover:bg-accent/30"
+            >
+              {hasCustom
+                ? `Add ${missingBuiltins.length} built-in archetype${missingBuiltins.length === 1 ? "" : "s"}`
+                : "Load built-in palette"}
+            </button>
           )}
         </div>
       </Section>

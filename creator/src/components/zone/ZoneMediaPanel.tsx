@@ -38,6 +38,14 @@ const VideoIcon = () => (
   </svg>
 );
 
+const JukeboxIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+    <path d="M6 3h12a2 2 0 0 1 2 2v16H4V5a2 2 0 0 1 2-2Z" />
+    <circle cx="12" cy="13" r="3" />
+    <path d="M8 7h8" />
+  </svg>
+);
+
 export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelProps) {
   const assetsDir = useAssetStore((s) => s.assetsDir);
 
@@ -48,6 +56,7 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
     const musicCount = Object.values(rooms).filter((r) => r.music).length;
     const ambientCount = Object.values(rooms).filter((r) => r.ambient).length;
     const videoCount = Object.values(rooms).filter((r) => r.video).length;
+    const jukeboxCount = Object.values(rooms).filter((r) => r.jukebox?.length).length;
     return {
       zoneImagePath: firstWithImage?.image && assetsDir
         ? `${assetsDir}\\images\\${firstWithImage.image}`
@@ -55,7 +64,7 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
       roomNames: Object.entries(rooms)
         .map(([id, r]) => `- ${r.title} (${id})`)
         .join("\n"),
-      stats: { music: musicCount, ambient: ambientCount, video: videoCount },
+      stats: { music: musicCount, ambient: ambientCount, video: videoCount, jukebox: jukeboxCount },
       totalRooms: total,
     };
   }, [world.rooms, assetsDir]);
@@ -87,6 +96,7 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
               <StatsPill icon={<MusicIcon />} label="music" count={stats.music} total={totalRooms} />
               <StatsPill icon={<AmbientIcon />} label="ambient" count={stats.ambient} total={totalRooms} />
               <StatsPill icon={<VideoIcon />} label="video" count={stats.video} total={totalRooms} />
+              <StatsPill icon={<JukeboxIcon />} label="jukebox" count={stats.jukebox} total={totalRooms} />
             </div>
           </div>
 

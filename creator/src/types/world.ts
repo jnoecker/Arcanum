@@ -109,6 +109,20 @@ export interface ZoneAudioDefaults {
   ambient?: string;
 }
 
+/** A single jukebox track a player can pay to play in a room. The `file` is an
+ *  audio asset filename resolved against the zone's audio base (same as
+ *  `RoomFile.music` / `ambient`). Playing locks the room's music to this track
+ *  for `durationSeconds`, then it reverts to the room default. */
+export interface JukeboxSong {
+  title: string;
+  artist?: string;
+  file: string;
+  /** Length of the track in seconds; also the room's music-lock window. */
+  durationSeconds: number;
+  /** Gold cost to play. 0 is a valid (free) song. */
+  cost: number;
+}
+
 export interface RoomFile {
   title: string;
   description: string;
@@ -139,6 +153,10 @@ export interface RoomFile {
   ambient?: string;
   /** Legacy Arcanum-only alias; stripped on output. */
   audio?: string;
+  /** Player-playable jukebox playlist. Empty/omitted means the room has no
+   *  jukebox. Each song is paid for in gold and locks the room's music for its
+   *  `durationSeconds` before reverting to the room default. */
+  jukebox?: JukeboxSong[];
 }
 
 export interface ExitValue {

@@ -698,4 +698,60 @@ describe("validateZone", () => {
       expect(issues).toHaveLength(0);
     });
   });
+
+  // ─── Jukebox ─────────────────────────────────────────────────
+  describe("jukebox", () => {
+    it("accepts a valid jukebox song", () => {
+      const world = makeValidWorld();
+      world.rooms.room1!.jukebox = [
+        { title: "Hearth Song", file: "hearth.mp3", durationSeconds: 90, cost: 5 },
+      ];
+      expect(validateZone(world)).toHaveLength(0);
+    });
+
+    it("accepts a free song (cost 0)", () => {
+      const world = makeValidWorld();
+      world.rooms.room1!.jukebox = [
+        { title: "Anthem", file: "anthem.mp3", durationSeconds: 60, cost: 0 },
+      ];
+      expect(errors(validateZone(world))).toHaveLength(0);
+    });
+
+    it("errors on a missing audio file", () => {
+      const world = makeValidWorld();
+      world.rooms.room1!.jukebox = [
+        { title: "Hearth Song", file: "", durationSeconds: 90, cost: 5 },
+      ];
+      const errs = errors(validateZone(world));
+      expect(errs).toHaveLength(1);
+      expect(errs[0]!.message).toMatch(/no audio file/i);
+    });
+
+    it("errors on a non-positive duration", () => {
+      const world = makeValidWorld();
+      world.rooms.room1!.jukebox = [
+        { title: "Hearth Song", file: "hearth.mp3", durationSeconds: 0, cost: 5 },
+      ];
+      const errs = errors(validateZone(world));
+      expect(errs.some((e) => /positive duration/i.test(e.message))).toBe(true);
+    });
+
+    it("errors on a negative cost", () => {
+      const world = makeValidWorld();
+      world.rooms.room1!.jukebox = [
+        { title: "Hearth Song", file: "hearth.mp3", durationSeconds: 90, cost: -1 },
+      ];
+      const errs = errors(validateZone(world));
+      expect(errs.some((e) => /invalid cost/i.test(e.message))).toBe(true);
+    });
+
+    it("warns on a missing title", () => {
+      const world = makeValidWorld();
+      world.rooms.room1!.jukebox = [
+        { title: "", file: "hearth.mp3", durationSeconds: 90, cost: 5 },
+      ];
+      const warns = warnings(validateZone(world));
+      expect(warns.some((w) => /no title/i.test(w.message))).toBe(true);
+    });
+  });
 });

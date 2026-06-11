@@ -13,6 +13,7 @@ import type {
   FeatureFile,
   DoorFile,
   DungeonLootTable,
+  JukeboxSong,
 } from "@/types/world";
 import { resolveDoorKeyId } from "./doorHelpers";
 import { getTrainerClasses } from "./trainers";
@@ -151,8 +152,31 @@ function normalizeFeatureFile(feature: FeatureFile): FeatureFile {
   return out;
 }
 
+/** Clean a jukebox playlist for output: trim text, drop empty `artist`, drop
+ *  songs missing a title or file, coerce numbers. Returns undefined when the
+ *  result is empty so the `jukebox` key is omitted entirely. */
+function normalizeJukebox(songs?: JukeboxSong[]): JukeboxSong[] | undefined {
+  if (!songs || songs.length === 0) return undefined;
+  const cleaned: JukeboxSong[] = [];
+  for (const song of songs) {
+    const title = song.title?.trim() ?? "";
+    const file = song.file?.trim() ?? "";
+    if (!title || !file) continue;
+    const out: JukeboxSong = {
+      title,
+      file,
+      durationSeconds: Number(song.durationSeconds) || 0,
+      cost: Number(song.cost) || 0,
+    };
+    const artist = song.artist?.trim();
+    if (artist) out.artist = artist;
+    cleaned.push(out);
+  }
+  return cleaned.length > 0 ? cleaned : undefined;
+}
+
 function normalizeRoomOutput(room: RoomFile): RoomFile {
-  let next: RoomFile = { ...room, audio: undefined };
+  let next: RoomFile = { ...room, audio: undefined, jukebox: normalizeJukebox(room.jukebox) };
   if (room.exits) {
     const exits: Record<string, string | ExitValue> = {};
     for (const [dir, exit] of Object.entries(room.exits)) {

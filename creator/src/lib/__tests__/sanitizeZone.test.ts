@@ -326,6 +326,81 @@ describe("sanitizeZone — invalid entity stripping", () => {
   });
 });
 
+describe("sanitizeZone — jukebox", () => {
+  it("preserves a valid jukebox playlist and trims fields", () => {
+    const world = makeWorld({
+      rooms: {
+        room_a: {
+          title: "Tavern",
+          description: "A cozy tavern.",
+          jukebox: [
+            { title: "  Hearth Song  ", artist: "  The Bards  ", file: " hearth.mp3 ", durationSeconds: 90, cost: 5 },
+          ],
+        },
+      },
+    });
+
+    const result = sanitizeZone(world);
+    const songs = result.rooms["room_a"]!.jukebox!;
+    expect(songs).toHaveLength(1);
+    expect(songs[0]).toEqual({
+      title: "Hearth Song",
+      artist: "The Bards",
+      file: "hearth.mp3",
+      durationSeconds: 90,
+      cost: 5,
+    });
+  });
+
+  it("drops the artist key when empty and keeps a free (cost 0) song", () => {
+    const world = makeWorld({
+      rooms: {
+        room_a: {
+          title: "Tavern",
+          description: "A cozy tavern.",
+          jukebox: [{ title: "Anthem", artist: "   ", file: "anthem.mp3", durationSeconds: 60, cost: 0 }],
+        },
+      },
+    });
+
+    const songs = sanitizeZone(world).rooms["room_a"]!.jukebox!;
+    expect(songs).toHaveLength(1);
+    expect(songs[0]!.cost).toBe(0);
+    expect("artist" in songs[0]!).toBe(false);
+  });
+
+  it("drops songs missing a title or file", () => {
+    const world = makeWorld({
+      rooms: {
+        room_a: {
+          title: "Tavern",
+          description: "A cozy tavern.",
+          jukebox: [
+            { title: "", file: "good.mp3", durationSeconds: 30, cost: 1 },
+            { title: "No File", file: "  ", durationSeconds: 30, cost: 1 },
+            { title: "Keeper", file: "keep.mp3", durationSeconds: 30, cost: 1 },
+          ],
+        },
+      },
+    });
+
+    const songs = sanitizeZone(world).rooms["room_a"]!.jukebox!;
+    expect(songs).toHaveLength(1);
+    expect(songs[0]!.title).toBe("Keeper");
+  });
+
+  it("omits the jukebox key entirely when the playlist is empty", () => {
+    const world = makeWorld({
+      rooms: {
+        room_a: { title: "Tavern", description: "A cozy tavern.", jukebox: [] },
+      },
+    });
+
+    const room = sanitizeZone(world).rooms["room_a"]!;
+    expect(room.jukebox).toBeUndefined();
+  });
+});
+
 // ─── sanitizeZone — dangling reference cleanup ────────────────────
 
 describe("sanitizeZone — dangling reference cleanup", () => {

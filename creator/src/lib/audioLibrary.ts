@@ -63,6 +63,9 @@ export function buildUsageIndex(
     for (const [roomId, room] of Object.entries(data.rooms)) {
       if (room.music) entry(room.music).rooms.push({ zoneId, roomId, roomTitle: room.title, kind: "music" });
       if (room.ambient) entry(room.ambient).rooms.push({ zoneId, roomId, roomTitle: room.title, kind: "ambient" });
+      for (const song of room.jukebox ?? []) {
+        if (song.file) entry(song.file).rooms.push({ zoneId, roomId, roomTitle: room.title, kind: "music" });
+      }
     }
   }
   return index;

@@ -18,6 +18,7 @@ import {
 } from "@/lib/zoneEdits";
 import { ExitDoorEditor } from "./ExitDoorEditor";
 import { RoomFeaturesEditor } from "./RoomFeaturesEditor";
+import { JukeboxEditor } from "./JukeboxEditor";
 import { EditableField, EditableTextArea, Section, IconButton, FieldRow, TextInput, SelectInput, TabBar } from "@/components/ui/FormWidgets";
 import { YamlPreview } from "@/components/ui/YamlPreview";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
@@ -1245,6 +1246,19 @@ export function RoomPanel({
             onChange={(v) => onWorldChange(updateRoom(world, roomId, { ambient: v }))}
             hint="Overrides the zone's default soundscape for this room."
           />
+          <MediaDisclosure
+            label={`Jukebox${room.jukebox?.length ? ` (${room.jukebox.length})` : ""}`}
+            hasValue={!!room.jukebox?.length}
+          >
+            <JukeboxEditor
+              songs={room.jukebox ?? []}
+              onChange={(songs) =>
+                onWorldChange(
+                  updateRoom(world, roomId, { jukebox: songs.length ? songs : undefined }),
+                )
+              }
+            />
+          </MediaDisclosure>
         </div>
       </Section>
       </>

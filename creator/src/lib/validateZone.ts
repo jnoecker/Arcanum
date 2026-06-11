@@ -527,6 +527,22 @@ export function validateZone(
     for (const [featureId, feature] of Object.entries(room.features ?? {})) {
       validateFeature(issues, entity, featureId, feature, itemIds);
     }
+
+    (room.jukebox ?? []).forEach((song, index) => {
+      const label = song.title?.trim() || `#${index + 1}`;
+      if (!song.title?.trim()) {
+        addIssue(issues, "warning", entity, `Jukebox song ${label} has no title`);
+      }
+      if (!song.file?.trim()) {
+        addIssue(issues, "error", entity, `Jukebox song ${label} has no audio file`);
+      }
+      if (!isPositiveInteger(song.durationSeconds)) {
+        addIssue(issues, "error", entity, `Jukebox song ${label} needs a positive duration in seconds`);
+      }
+      if (typeof song.cost !== "number" || song.cost < 0 || !Number.isFinite(song.cost)) {
+        addIssue(issues, "error", entity, `Jukebox song ${label} has an invalid cost (must be 0 or more)`);
+      }
+    });
   }
 
   for (const [mobId, mob] of Object.entries(world.mobs ?? {})) {

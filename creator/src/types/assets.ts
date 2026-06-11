@@ -26,6 +26,7 @@ export interface AssetEntry {
   sync_status: string;
   variant_group: string;
   is_active: boolean;
+  display_name: string;
 }
 
 export interface AssetContext {

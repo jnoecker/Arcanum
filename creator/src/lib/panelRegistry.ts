@@ -59,7 +59,7 @@ const ART_STYLE_PANEL: PanelDef = {
 
 const STUDIO_PANELS: PanelDef[] = [
   { id: "art", label: "Art", host: "studio", kicker: "Studio", title: "Art", description: "Zone vibes, entity art, defaults, and free-form generation.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F3A8}" },
-  { id: "media", label: "Media", host: "studio", kicker: "Studio", title: "Media", description: "Music, ambience, and cinematic staging.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F5BC}\uFE0F" },
+  { id: "media", label: "Audio", host: "studio", kicker: "Studio", title: "Audio", description: "Named music and ambient track libraries \u2014 import, generate, and assign to zones and rooms.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F3B5}" },
   { id: "portraits", label: "Portraits", host: "studio", kicker: "Studio", title: "Portraits", description: "Race and class portrait creation.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F464}", aiOnly: true },
   { id: "studioAbilities", label: "Icons", host: "studio", kicker: "Studio", title: "Icons", description: "Ability and status-effect icon generation.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F532}", aiOnly: true },
   { id: "sprites", label: "Player Sprites", host: "command", kicker: "Studio", title: "Player sprites", description: "Visible identity, unlockable variants, and portrait logic.", maxWidth: "max-w-7xl", island: "forge", glyph: "\u{1F9CD}" },

@@ -36,7 +36,9 @@ interface AssetState {
     context?: AssetContext,
     variantGroup?: string,
     isActive?: boolean,
+    displayName?: string,
   ) => Promise<AssetEntry>;
+  renameAsset: (assetId: string, displayName: string) => Promise<void>;
   deleteAsset: (id: string) => Promise<void>;
   deleteAssets: (ids: string[]) => Promise<void>;
 
@@ -130,16 +132,22 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     await get().loadAssets();
   },
 
-  importAsset: async (sourcePath, assetType, context, variantGroup, isActive) => {
+  importAsset: async (sourcePath, assetType, context, variantGroup, isActive, displayName) => {
     const entry = await invoke<AssetEntry>("import_asset", {
       sourcePath,
       assetType,
       context: context ?? null,
       variantGroup: variantGroup ?? null,
       isActive: isActive ?? null,
+      displayName: displayName ?? null,
     });
     await get().loadAssets();
     return entry;
+  },
+
+  renameAsset: async (assetId, displayName) => {
+    await invoke("rename_asset", { assetId, displayName });
+    await get().loadAssets();
   },
 
   deleteAsset: async (id: string) => {

@@ -490,6 +490,112 @@ fn to_data_url(bytes: &[u8]) -> String {
     format!("data:audio/mpeg;base64,{b64}")
 }
 
+// ─── Sound effects ───────────────────────────────────────────────
+
+#[derive(Debug, Serialize)]
+struct SoundGenerationRequest {
+    text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    duration_seconds: Option<f32>,
+    #[serde(rename = "loop", skip_serializing_if = "Option::is_none")]
+    looping: Option<bool>,
+}
+
+/// Generate an ambient sound effect via ElevenLabs `/v1/sound-generation`.
+/// Saves the MP3 content-addressed under `app_data_dir/assets/audio/` (the
+/// same staging directory Runware audio uses) and returns the absolute path,
+/// ready for `import_asset`.
+#[tauri::command]
+pub async fn elevenlabs_generate_sound_effect(
+    app: AppHandle,
+    text: String,
+    duration_seconds: Option<f32>,
+    seamless_loop: Option<bool>,
+) -> Result<String, String> {
+    if text.trim().is_empty() {
+        return Err("Sound effect description is empty.".to_string());
+    }
+    let settings = settings::get_settings(app.clone()).await?;
+    if settings.elevenlabs_api_key.is_empty() {
+        return Err("ElevenLabs API key not configured. Set it in Settings.".to_string());
+    }
+
+    let body = SoundGenerationRequest {
+        text: text.trim().to_string(),
+        // ElevenLabs accepts 0.5–30 seconds; omitted means auto duration.
+        duration_seconds: duration_seconds.map(|d| d.clamp(0.5, 30.0)),
+        looping: seamless_loop.filter(|l| *l),
+    };
+
+    let client = crate::http::shared_client();
+    let url = format!("{API_BASE}/sound-generation?output_format={OUTPUT_FORMAT}");
+    const MAX_ATTEMPTS: u32 = 3;
+    let mut last_err = String::new();
+    let mut bytes = None;
+
+    for attempt in 1..=MAX_ATTEMPTS {
+        match client
+            .post(&url)
+            .header("xi-api-key", &settings.elevenlabs_api_key)
+            .header("Accept", "audio/mpeg")
+            .json(&body)
+            .send()
+            .await
+        {
+            Ok(resp) if resp.status().is_success() => {
+                let b = resp
+                    .bytes()
+                    .await
+                    .map_err(|e| format!("Failed to read sound effect bytes: {e}"))?;
+                bytes = Some(b);
+                break;
+            }
+            Ok(resp) => {
+                let status = resp.status();
+                let text = resp.text().await.unwrap_or_default();
+                let retryable = status.is_server_error() || status.as_u16() == 429;
+                last_err = format!("ElevenLabs sound generation failed ({status}): {text}");
+                if !retryable || attempt == MAX_ATTEMPTS {
+                    return Err(last_err);
+                }
+            }
+            Err(e) => {
+                last_err = format!("ElevenLabs sound generation request failed: {e}");
+                if attempt == MAX_ATTEMPTS {
+                    return Err(last_err);
+                }
+            }
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(600u64 << (attempt - 1))).await;
+    }
+
+    let bytes = bytes.ok_or(last_err)?;
+    if bytes.is_empty() {
+        return Err("ElevenLabs returned an empty audio body.".to_string());
+    }
+
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+    let hash = format!("{:x}", hasher.finalize());
+
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {e}"))?
+        .join("assets")
+        .join("audio");
+    tokio::fs::create_dir_all(&dir)
+        .await
+        .map_err(|e| format!("Failed to create audio dir: {e}"))?;
+
+    let file_path = dir.join(format!("{hash}.mp3"));
+    tokio::fs::write(&file_path, &bytes)
+        .await
+        .map_err(|e| format!("Failed to write sound effect: {e}"))?;
+
+    Ok(file_path.to_string_lossy().to_string())
+}
+
 // ─── Cache status + readback (panel rehydration) ─────────────────
 
 #[derive(Debug, Deserialize)]

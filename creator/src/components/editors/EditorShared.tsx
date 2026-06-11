@@ -3,7 +3,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { Section, FieldRow, TextInput, CommitTextarea, NumberInput } from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
-import { MusicGenerator } from "@/components/ui/MusicGenerator";
 import { VideoGenerator } from "@/components/ui/VideoGenerator";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { AI_ENABLED } from "@/lib/featureFlags";
@@ -339,92 +338,3 @@ export function MediaSection({
   );
 }
 
-export function AudioSection({
-  music,
-  onMusicChange,
-  ambient,
-  onAmbientChange,
-  audio,
-  onAudioChange,
-  roomTitle,
-  roomDescription,
-  vibe,
-}: {
-  music?: string;
-  onMusicChange?: (v: string | undefined) => void;
-  ambient?: string;
-  onAmbientChange?: (v: string | undefined) => void;
-  audio?: string;
-  onAudioChange?: (v: string | undefined) => void;
-  roomTitle?: string;
-  roomDescription?: string;
-  vibe?: string;
-}) {
-  const hasAny = onMusicChange || onAmbientChange || onAudioChange;
-  if (!hasAny) return null;
-
-  return (
-    <Section title="Audio">
-      <div className="flex flex-col gap-3">
-        {onMusicChange && (
-          <MediaDisclosure label="Music" hasValue={!!music}>
-            <FieldRow label="Music">
-              <TextInput
-                value={music ?? ""}
-                onCommit={(v) => onMusicChange(v || undefined)}
-                placeholder="None"
-              />
-            </FieldRow>
-            <MediaPicker
-              value={music}
-              onChange={onMusicChange}
-              mediaType="audio"
-              assetType="music"
-            />
-            <MusicGenerator
-              roomTitle={roomTitle}
-              roomDescription={roomDescription}
-              vibe={vibe}
-              currentAudio={music}
-              onAccept={(filePath) => onMusicChange(filePath)}
-            />
-          </MediaDisclosure>
-        )}
-        {onAmbientChange && (
-          <MediaDisclosure label="Ambient" hasValue={!!ambient}>
-            <FieldRow label="Ambient">
-              <TextInput
-                value={ambient ?? ""}
-                onCommit={(v) => onAmbientChange(v || undefined)}
-                placeholder="None"
-              />
-            </FieldRow>
-            <MediaPicker
-              value={ambient}
-              onChange={onAmbientChange}
-              mediaType="audio"
-              assetType="ambient"
-            />
-          </MediaDisclosure>
-        )}
-        {onAudioChange && (
-          <MediaDisclosure label="Audio" hasValue={!!audio}>
-            <FieldRow label="Audio">
-              <TextInput
-                value={audio ?? ""}
-                onCommit={(v) => onAudioChange(v || undefined)}
-                placeholder="None"
-              />
-            </FieldRow>
-            <MediaPicker
-              value={audio}
-              onChange={onAudioChange}
-              mediaType="audio"
-              assetType="audio"
-            />
-          </MediaDisclosure>
-        )}
-      </div>
-    </Section>
-  );
-}

@@ -339,6 +339,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
+    key: "jukebox_widget",
+    defaultFilename: "jukebox_widget.png",
+    label: "Jukebox",
+    description: "Badge shown on rooms with a jukebox; opens the song-picker panel.",
+    assetType: "ability_icon",
+    defaultPrompt: "A single ornate fantasy jukebox cabinet glowing with warm light, centered, brass and stained-glass accents.",
+    transparent: true,
+    optional: true,
+  },
+  {
     key: "duel_arena_widget",
     defaultFilename: "duel_arena_widget.png",
     label: "Duel Arena",

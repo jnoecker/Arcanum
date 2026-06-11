@@ -18,6 +18,7 @@ import {
   listAudioTracks,
   setRoomTrack,
   setZoneDefaultTrack,
+  splitLyricsLines,
   trackLabel,
   usageSummary,
   type AudioTrackKind,
@@ -237,7 +238,9 @@ function TrackDetail({
   const settings = useAssetStore((s) => s.settings);
   const [name, setName] = useState(track.display_name);
   const [description, setDescription] = useState(track.description);
+  const [artist, setArtist] = useState(track.artist);
   const [lyrics, setLyrics] = useState(track.lyrics);
+  const [durationText, setDurationText] = useState(() => String(Math.round(track.duration_seconds)));
   const [composing, setComposing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -246,6 +249,10 @@ function TrackDetail({
   const isMusic = track.asset_type === "music";
   const used = usage.zoneDefaults.length > 0 || usage.rooms.length > 0 || usage.jukeboxes.length > 0;
   const usedCount = usage.zoneDefaults.length + usage.rooms.length + usage.jukeboxes.length;
+
+  const durationSeconds = Math.max(0, Math.round(Number(durationText) || 0));
+  const lyricLineCount = splitLyricsLines(lyrics).length;
+  const lyricBudget = durationSeconds > 0 ? Math.floor(durationSeconds / 3) : null;
 
   const commitName = () => {
     const next = name.trim();
@@ -259,10 +266,22 @@ function TrackDetail({
     updateAssetMetadata(track.id, { description: next }).catch((e) => setError(String(e)));
   };
 
+  const commitArtist = () => {
+    const next = artist.trim();
+    if (next === track.artist) return;
+    updateAssetMetadata(track.id, { artist: next }).catch((e) => setError(String(e)));
+  };
+
   const commitLyrics = () => {
     const next = lyrics.trimEnd();
     if (next === track.lyrics) return;
     updateAssetMetadata(track.id, { lyrics: next }).catch((e) => setError(String(e)));
+  };
+
+  const commitDuration = () => {
+    setDurationText(String(durationSeconds));
+    if (durationSeconds === Math.round(track.duration_seconds)) return;
+    updateAssetMetadata(track.id, { durationSeconds }).catch((e) => setError(String(e)));
   };
 
   const handleCompose = async () => {
@@ -275,18 +294,26 @@ function TrackDetail({
           name: track.display_name || name.trim(),
           prompt: track.prompt,
           enhancedPrompt: track.enhanced_prompt,
+          durationSeconds,
         }),
       });
       const parsed = JSON.parse(stripJsonFences(raw)) as {
         title?: string;
+        artist?: string;
         description?: string;
         lyrics?: string;
       };
       const nextDescription = (parsed.description ?? "").trim();
+      const nextArtist = (parsed.artist ?? "").trim();
       const nextLyrics = (parsed.lyrics ?? "").trimEnd();
       setDescription(nextDescription);
+      setArtist(nextArtist);
       setLyrics(nextLyrics);
-      await updateAssetMetadata(track.id, { description: nextDescription, lyrics: nextLyrics });
+      await updateAssetMetadata(track.id, {
+        description: nextDescription,
+        artist: nextArtist,
+        lyrics: nextLyrics,
+      });
       const title = (parsed.title ?? "").trim();
       if (!track.display_name && title) {
         setName(title);
@@ -319,9 +346,20 @@ function TrackDetail({
           aria-label="Track name"
           className="ornate-input min-h-9 flex-1 px-2 py-1 text-xs text-text-primary"
         />
-        {track.duration_seconds > 0 && (
-          <span className="text-3xs text-text-muted">{formatDuration(track.duration_seconds)}</span>
-        )}
+        <label className="flex shrink-0 items-center gap-1 text-3xs text-text-muted">
+          <input
+            type="number"
+            min={0}
+            value={durationText}
+            onChange={(e) => setDurationText(e.target.value)}
+            onBlur={commitDuration}
+            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+            aria-label="Track duration in seconds"
+            title="Play length in seconds — the jukebox needs this; edit it when audio probing fails"
+            className="w-14 rounded border border-border-default bg-bg-secondary px-1.5 py-0.5 text-right text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+          />
+          s{durationSeconds > 0 ? ` · ${formatDuration(durationSeconds)}` : ""}
+        </label>
         <span className="font-mono text-3xs text-text-muted" title={track.file_name}>
           {track.file_name.slice(0, 10)}…
         </span>
@@ -338,10 +376,27 @@ function TrackDetail({
       />
 
       {isMusic && (
+        <input
+          value={artist}
+          onChange={(e) => setArtist(e.target.value)}
+          onBlur={commitArtist}
+          onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+          placeholder="Artist — in-world performer or band, shown in jukebox listings"
+          aria-label="Track artist"
+          className="ornate-input min-h-9 w-full px-2 py-1 text-xs text-text-primary"
+        />
+      )}
+
+      {isMusic && (
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between gap-2">
             <span className="text-2xs text-text-muted">
               Lyrics — broadcast line-by-line while a jukebox plays this song.
+              {lyricBudget !== null && (
+                <span className={lyricLineCount > lyricBudget ? "text-status-warning" : ""}>
+                  {" "}{lyricLineCount} line{lyricLineCount === 1 ? "" : "s"} · max {lyricBudget} for {formatDuration(durationSeconds)}
+                </span>
+              )}
             </span>
             {AI_ENABLED && hasLlmKey(settings) && (
               <button

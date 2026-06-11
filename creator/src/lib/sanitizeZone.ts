@@ -13,7 +13,6 @@ import type {
   FeatureFile,
   DoorFile,
   DungeonLootTable,
-  JukeboxFile,
   JukeboxSongFile,
 } from "@/types/world";
 import { resolveDoorKeyId } from "./doorHelpers";
@@ -153,23 +152,33 @@ function normalizeFeatureFile(feature: FeatureFile): FeatureFile {
   return out;
 }
 
-/** Rebuild each song in the server contract's key order, omitting empty
+/** Rebuild each song in the server contract's key order (title, file,
+ *  durationSeconds, cost, artist, description, lyrics), omitting empty
  *  optional fields. A jukebox with no valid songs is dropped entirely. */
-function normalizeJukebox(jukebox?: JukeboxFile): JukeboxFile | undefined {
+function normalizeJukebox(jukebox?: JukeboxSongFile[]): JukeboxSongFile[] | undefined {
   if (!jukebox) return undefined;
   const songs: JukeboxSongFile[] = [];
-  for (const song of jukebox.songs ?? []) {
+  for (const song of jukebox) {
     if (!song.file || !song.file.trim()) continue;
-    const out: JukeboxSongFile = { file: song.file };
-    if (typeof song.name === "string" && song.name.trim()) out.name = song.name;
-    if (typeof song.description === "string" && song.description.trim()) out.description = song.description;
-    if (typeof song.lyrics === "string" && song.lyrics.trim()) out.lyrics = song.lyrics;
+    const out: JukeboxSongFile =
+      typeof song.title === "string" && song.title.trim()
+        ? { title: song.title, file: song.file }
+        : { file: song.file };
     if (typeof song.durationSeconds === "number" && song.durationSeconds > 0) {
       out.durationSeconds = Math.round(song.durationSeconds);
     }
+    if (typeof song.cost === "number" && song.cost >= 0) out.cost = Math.round(song.cost);
+    if (typeof song.artist === "string" && song.artist.trim()) out.artist = song.artist;
+    if (typeof song.description === "string" && song.description.trim()) out.description = song.description;
+    if (Array.isArray(song.lyrics)) {
+      const lines = song.lyrics
+        .map((line) => (typeof line === "string" ? line.trim() : ""))
+        .filter((line) => line.length > 0);
+      if (lines.length > 0) out.lyrics = lines;
+    }
     songs.push(out);
   }
-  return songs.length > 0 ? { songs } : undefined;
+  return songs.length > 0 ? songs : undefined;
 }
 
 function normalizeRoomOutput(room: RoomFile): RoomFile {

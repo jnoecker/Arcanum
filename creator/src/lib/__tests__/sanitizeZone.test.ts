@@ -926,34 +926,53 @@ describe("sanitizeZone — room jukebox", () => {
         room_a: {
           title: "A",
           description: "A",
-          jukebox: {
-            songs: [
-              {
-                durationSeconds: 96.4,
-                lyrics: "When the lanterns lean in low,\nthe teacups start to sway.",
-                name: "The Borrowed Song",
-                file: "song.mp3",
-                description: "A waltz that remembers being hummed.",
-              },
-              { file: "plain.mp3", name: "", description: "  ", lyrics: "", durationSeconds: 0 },
-            ],
-          },
+          jukebox: [
+            {
+              durationSeconds: 96.4,
+              lyrics: ["  When the lanterns lean in low,  ", "", "the teacups start to sway."],
+              description: "A waltz that remembers being hummed.",
+              artist: "The Wandering Bards",
+              cost: 5.4,
+              file: "song.mp3",
+              title: "The Borrowed Song",
+            },
+            { file: "plain.mp3", title: "", artist: " ", description: "  ", lyrics: [], durationSeconds: 0, cost: -1 },
+          ],
         },
       },
     });
 
     const result = sanitizeZone(world);
-    const songs = result.rooms["room_a"]!.jukebox!.songs;
-    expect(Object.keys(songs[0]!)).toEqual(["file", "name", "description", "lyrics", "durationSeconds"]);
+    const songs = result.rooms["room_a"]!.jukebox!;
+    expect(Object.keys(songs[0]!)).toEqual([
+      "title", "file", "durationSeconds", "cost", "artist", "description", "lyrics",
+    ]);
     expect(songs[0]).toEqual({
+      title: "The Borrowed Song",
       file: "song.mp3",
-      name: "The Borrowed Song",
-      description: "A waltz that remembers being hummed.",
-      lyrics: "When the lanterns lean in low,\nthe teacups start to sway.",
       durationSeconds: 96,
+      cost: 5,
+      artist: "The Wandering Bards",
+      description: "A waltz that remembers being hummed.",
+      lyrics: ["When the lanterns lean in low,", "the teacups start to sway."],
     });
     expect(songs[1]).toEqual({ file: "plain.mp3" });
     expect(Object.keys(songs[1]!)).toEqual(["file"]);
+  });
+
+  it("keeps a zero cost — free songs are valid", () => {
+    const world = makeWorld({
+      rooms: {
+        room_a: {
+          title: "A",
+          description: "A",
+          jukebox: [{ title: "Free Tune", file: "free.mp3", durationSeconds: 20, cost: 0 }],
+        },
+      },
+    });
+
+    const result = sanitizeZone(world);
+    expect(result.rooms["room_a"]!.jukebox![0]!.cost).toBe(0);
   });
 
   it("drops blank-file songs and removes the jukebox when none survive", () => {
@@ -962,19 +981,19 @@ describe("sanitizeZone — room jukebox", () => {
         room_a: {
           title: "A",
           description: "A",
-          jukebox: { songs: [{ file: "" }, { file: "   ", name: "Ghost" }] },
+          jukebox: [{ file: "" }, { file: "   ", title: "Ghost" }],
         },
         room_b: {
           title: "B",
           description: "B",
-          jukebox: { songs: [{ file: "" }, { file: "keeper.mp3" }] },
+          jukebox: [{ file: "" }, { file: "keeper.mp3" }],
         },
       },
     });
 
     const result = sanitizeZone(world);
     expect(result.rooms["room_a"]!.jukebox).toBeUndefined();
-    expect(result.rooms["room_b"]!.jukebox!.songs).toEqual([{ file: "keeper.mp3" }]);
+    expect(result.rooms["room_b"]!.jukebox).toEqual([{ file: "keeper.mp3" }]);
   });
 
   it("leaves rooms without a jukebox alone", () => {

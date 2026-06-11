@@ -8,6 +8,7 @@ import {
   scanTrackUsage,
   setRoomTrack,
   setZoneDefaultTrack,
+  splitLyricsLines,
   trackLabel,
   usageSummary,
 } from "@/lib/audioLibrary";
@@ -33,6 +34,7 @@ function makeAsset(overrides: Partial<AssetEntry>): AssetEntry {
     is_active: false,
     display_name: "",
     description: "",
+    artist: "",
     lyrics: "",
     duration_seconds: 0,
     ...overrides,
@@ -123,7 +125,7 @@ describe("usage scanning", () => {
             parlor: {
               title: "Parlor",
               description: "",
-              jukebox: { songs: [{ file: "theme.mp3" }, { file: "waltz.mp3" }, { file: "theme.mp3" }] },
+              jukebox: [{ file: "theme.mp3" }, { file: "waltz.mp3" }, { file: "theme.mp3" }],
             },
           } as WorldFile["rooms"],
         }),
@@ -138,7 +140,7 @@ describe("usage scanning", () => {
               title: "Inn",
               description: "",
               ambient: "crickets.mp3",
-              jukebox: { songs: [{ file: "waltz.mp3" }] },
+              jukebox: [{ file: "waltz.mp3" }],
             },
           } as WorldFile["rooms"],
         }),
@@ -207,12 +209,33 @@ describe("assignment helpers", () => {
   });
 });
 
+describe("splitLyricsLines", () => {
+  it("splits on newlines, trims, and drops blank lines", () => {
+    expect(splitLyricsLines("When the lanterns lean in low,\n  the teacups start to sway.  \n\n   \nfinal line")).toEqual([
+      "When the lanterns lean in low,",
+      "the teacups start to sway.",
+      "final line",
+    ]);
+  });
+
+  it("handles CRLF, empty, and whitespace-only input", () => {
+    expect(splitLyricsLines("line one\r\nline two\r\n")).toEqual(["line one", "line two"]);
+    expect(splitLyricsLines("")).toEqual([]);
+    expect(splitLyricsLines("   \n\t\n")).toEqual([]);
+  });
+
+  it("passes a single line through", () => {
+    expect(splitLyricsLines("only line")).toEqual(["only line"]);
+  });
+});
+
 describe("buildAudioMetaIndex", () => {
   it("maps file names to label, metadata, and rounded duration", () => {
     const index = buildAudioMetaIndex([
       makeAsset({
         file_name: "song.mp3",
         display_name: "The Borrowed Song",
+        artist: "The Wandering Bards",
         description: "A waltz that remembers being hummed.",
         lyrics: "When the lanterns lean in low,\nthe teacups start to sway.",
         duration_seconds: 96.4,
@@ -221,12 +244,14 @@ describe("buildAudioMetaIndex", () => {
     ]);
     expect(index.get("song.mp3")).toEqual({
       name: "The Borrowed Song",
+      artist: "The Wandering Bards",
       description: "A waltz that remembers being hummed.",
       lyrics: "When the lanterns lean in low,\nthe teacups start to sway.",
       durationSeconds: 96,
     });
     expect(index.get("raw.mp3")).toEqual({
       name: "raw.mp3",
+      artist: "",
       description: "",
       lyrics: "",
       durationSeconds: 0,
@@ -239,6 +264,7 @@ describe("enrichJukeboxSongs", () => {
     makeAsset({
       file_name: "song.mp3",
       display_name: "The Borrowed Song",
+      artist: "The Wandering Bards",
       description: "A waltz that remembers being hummed.",
       lyrics: "When the lanterns lean in low,\nthe teacups start to sway.",
       duration_seconds: 96.4,
@@ -246,60 +272,113 @@ describe("enrichJukeboxSongs", () => {
     makeAsset({ id: "2", file_name: "bare.mp3", display_name: "Bare Bones" }),
   ]);
 
-  it("rewrites library-known songs entirely from the index", () => {
+  it("rewrites library-known songs from the index in the server key order", () => {
     const world = makeWorld({
       rooms: {
         parlor: {
           title: "Parlor",
           description: "",
-          jukebox: {
-            songs: [{ file: "song.mp3", name: "Stale Name", description: "stale", lyrics: "stale lines" }],
-          },
+          jukebox: [{ file: "song.mp3", title: "Stale Name", description: "stale", lyrics: ["stale lines"] }],
         },
       } as WorldFile["rooms"],
     });
     const next = enrichJukeboxSongs(world, meta);
-    expect(next.rooms.parlor?.jukebox?.songs).toEqual([
-      {
-        file: "song.mp3",
-        name: "The Borrowed Song",
-        description: "A waltz that remembers being hummed.",
-        lyrics: "When the lanterns lean in low,\nthe teacups start to sway.",
-        durationSeconds: 96,
-      },
+    const song = next.rooms.parlor?.jukebox?.[0];
+    expect(song).toEqual({
+      title: "The Borrowed Song",
+      file: "song.mp3",
+      durationSeconds: 96,
+      artist: "The Wandering Bards",
+      description: "A waltz that remembers being hummed.",
+      lyrics: ["When the lanterns lean in low,", "the teacups start to sway."],
+    });
+    expect(Object.keys(song!)).toEqual(["title", "file", "durationSeconds", "artist", "description", "lyrics"]);
+  });
+
+  it("converts the library's lyrics blob to a list of non-blank lines", () => {
+    const blobMeta = buildAudioMetaIndex([
+      makeAsset({
+        file_name: "song.mp3",
+        display_name: "The Borrowed Song",
+        lyrics: "first line\n\n  second line  \n\n",
+        duration_seconds: 30,
+      }),
+    ]);
+    const world = makeWorld({
+      rooms: {
+        parlor: { title: "Parlor", description: "", jukebox: [{ file: "song.mp3" }] },
+      } as WorldFile["rooms"],
+    });
+    const next = enrichJukeboxSongs(world, blobMeta);
+    expect(next.rooms.parlor?.jukebox?.[0]?.lyrics).toEqual(["first line", "second line"]);
+  });
+
+  it("keeps the zone-authored cost — it is not library metadata", () => {
+    const world = makeWorld({
+      rooms: {
+        parlor: {
+          title: "Parlor",
+          description: "",
+          jukebox: [
+            { file: "song.mp3", cost: 0 },
+            { file: "bare.mp3", cost: 12 },
+          ],
+        },
+      } as WorldFile["rooms"],
+    });
+    const next = enrichJukeboxSongs(world, meta);
+    expect(next.rooms.parlor?.jukebox?.[0]?.cost).toBe(0);
+    expect(next.rooms.parlor?.jukebox?.[1]?.cost).toBe(12);
+    expect(Object.keys(next.rooms.parlor!.jukebox![0]!)).toEqual([
+      "title", "file", "durationSeconds", "cost", "artist", "description", "lyrics",
     ]);
   });
 
-  it("clears stale description and lyrics when the library fields are empty", () => {
+  it("clears stale description and lyrics but keeps the song's own duration as fallback", () => {
     const world = makeWorld({
       rooms: {
         parlor: {
           title: "Parlor",
           description: "",
-          jukebox: {
-            songs: [{ file: "bare.mp3", description: "old blurb", lyrics: "old lines", durationSeconds: 30 }],
-          },
+          jukebox: [{ file: "bare.mp3", description: "old blurb", lyrics: ["old lines"], durationSeconds: 30 }],
         },
       } as WorldFile["rooms"],
     });
     const next = enrichJukeboxSongs(world, meta);
-    expect(next.rooms.parlor?.jukebox?.songs).toEqual([{ file: "bare.mp3", name: "Bare Bones" }]);
+    expect(next.rooms.parlor?.jukebox).toEqual([
+      { title: "Bare Bones", file: "bare.mp3", durationSeconds: 30 },
+    ]);
+  });
+
+  it("prefers the library duration over the song's stale one", () => {
+    const world = makeWorld({
+      rooms: {
+        parlor: {
+          title: "Parlor",
+          description: "",
+          jukebox: [{ file: "song.mp3", durationSeconds: 12 }],
+        },
+      } as WorldFile["rooms"],
+    });
+    const next = enrichJukeboxSongs(world, meta);
+    expect(next.rooms.parlor?.jukebox?.[0]?.durationSeconds).toBe(96);
   });
 
   it("preserves songs that are not in the library verbatim", () => {
     const foreign = {
+      title: "Foreign Tune",
       file: "elsewhere.mp3",
-      name: "Foreign Tune",
-      lyrics: "lines from another machine",
       durationSeconds: 42,
+      cost: 7,
+      lyrics: ["lines from another machine"],
     };
     const world = makeWorld({
       rooms: {
-        parlor: { title: "Parlor", description: "", jukebox: { songs: [foreign] } },
+        parlor: { title: "Parlor", description: "", jukebox: [foreign] },
       } as WorldFile["rooms"],
     });
     const next = enrichJukeboxSongs(world, meta);
-    expect(next.rooms.parlor?.jukebox?.songs?.[0]).toBe(foreign);
+    expect(next.rooms.parlor?.jukebox?.[0]).toBe(foreign);
   });
 
   it("drops blank-file songs and the jukebox itself when nothing remains", () => {
@@ -308,7 +387,7 @@ describe("enrichJukeboxSongs", () => {
         parlor: {
           title: "Parlor",
           description: "",
-          jukebox: { songs: [{ file: "" }, { file: "   " }] },
+          jukebox: [{ file: "" }, { file: "   " }],
         },
       } as WorldFile["rooms"],
     });
@@ -320,7 +399,7 @@ describe("enrichJukeboxSongs", () => {
     const world = makeWorld({
       rooms: {
         glade: { title: "Glade", description: "" },
-        parlor: { title: "Parlor", description: "", jukebox: { songs: [{ file: "song.mp3" }] } },
+        parlor: { title: "Parlor", description: "", jukebox: [{ file: "song.mp3" }] },
       } as WorldFile["rooms"],
     });
     const next = enrichJukeboxSongs(world, meta);
@@ -341,18 +420,18 @@ describe("jukebox YAML round-trip", () => {
         parlor: {
           title: "The Jukebox Parlor",
           description: "A parlor.",
-          jukebox: {
-            songs: [
-              {
-                file: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.mp3",
-                name: "The Borrowed Song",
-                description: "A waltz that remembers being hummed.",
-                lyrics: "When the lanterns lean in low,\nthe teacups start to sway.\n",
-                durationSeconds: 96,
-              },
-              { file: "plain.mp3", name: "Plain Tune" },
-            ],
-          },
+          jukebox: [
+            {
+              title: "The Borrowed Song",
+              file: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.mp3",
+              durationSeconds: 96,
+              cost: 5,
+              artist: "The Wandering Bards",
+              description: "A waltz that remembers being hummed.",
+              lyrics: ["When the lanterns lean in low,", "the teacups start to sway."],
+            },
+            { title: "Plain Tune", file: "plain.mp3", durationSeconds: 30 },
+          ],
         },
       } as WorldFile["rooms"],
     });

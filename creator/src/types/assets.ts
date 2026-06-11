@@ -28,6 +28,7 @@ export interface AssetEntry {
   is_active: boolean;
   display_name: string;
   description: string;
+  artist: string;
   lyrics: string;
   duration_seconds: number;
 }

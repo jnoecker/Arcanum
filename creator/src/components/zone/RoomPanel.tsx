@@ -1289,9 +1289,15 @@ interface JukeboxEditorProps {
   onWorldChange: (world: WorldFile) => void;
 }
 
+function formatSongDuration(seconds: number): string {
+  const total = Math.round(seconds);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
 /** Ordered song list for the room's jukebox. New songs are stored as bare
- *  file refs — names, lyrics, and durations are denormalized from the audio
- *  library at save time. */
+ *  file refs — titles, artists, lyrics, and durations are denormalized from
+ *  the audio library at save time. Per-song cost is authored here because it
+ *  is zone content, not library metadata. */
 function JukeboxEditor({ world, roomId, onWorldChange }: JukeboxEditorProps) {
   const assets = useAssetStore((s) => s.assets);
   const metaIndex = useMemo(() => buildAudioMetaIndex(assets), [assets]);
@@ -1299,12 +1305,15 @@ function JukeboxEditor({ world, roomId, onWorldChange }: JukeboxEditorProps) {
 
   const room = world.rooms[roomId];
   if (!room) return null;
-  const songs = room.jukebox?.songs ?? [];
+  const songs = room.jukebox ?? [];
   const inList = new Set(songs.map((s) => s.file));
   const addable = musicTracks.filter((t) => !inList.has(t.file_name));
 
   const setSongs = (next: JukeboxSongFile[]) =>
-    onWorldChange(updateRoom(world, roomId, { jukebox: { songs: next } }));
+    onWorldChange(updateRoom(world, roomId, { jukebox: next }));
+
+  const setSong = (index: number, next: JukeboxSongFile) =>
+    setSongs(songs.map((s, i) => (i === index ? next : s)));
 
   const move = (index: number, delta: number) => {
     const target = index + delta;
@@ -1329,7 +1338,7 @@ function JukeboxEditor({ world, roomId, onWorldChange }: JukeboxEditorProps) {
           checked={!!room.jukebox}
           onChange={(e) =>
             onWorldChange(
-              updateRoom(world, roomId, { jukebox: e.target.checked ? { songs: [] } : undefined }),
+              updateRoom(world, roomId, { jukebox: e.target.checked ? [] : undefined }),
             )
           }
           className="accent-[rgb(var(--accent-rgb))]"
@@ -1340,15 +1349,31 @@ function JukeboxEditor({ world, roomId, onWorldChange }: JukeboxEditorProps) {
         <div className="flex flex-col gap-1 pl-5">
           {songs.map((song, index) => {
             const meta = metaIndex.get(song.file);
+            const songDuration =
+              typeof song.durationSeconds === "number" && song.durationSeconds > 0
+                ? Math.round(song.durationSeconds)
+                : 0;
+            const duration = meta && meta.durationSeconds > 0 ? meta.durationSeconds : songDuration;
             return (
               <div key={`${song.file}:${index}`} className="flex items-center gap-1 text-2xs">
                 <span className="w-4 shrink-0 text-right text-text-muted">{index + 1}.</span>
                 <span className="min-w-0 flex-1 truncate text-text-secondary" title={song.file}>
-                  {meta?.name ?? song.name ?? song.file}
+                  {meta?.name ?? song.title ?? song.file}
                 </span>
+                {duration > 0 && (
+                  <span className="shrink-0 text-3xs text-text-muted">{formatSongDuration(duration)}</span>
+                )}
                 {!meta && (
                   <span className="shrink-0 rounded bg-status-warning/15 px-1 py-0.5 text-3xs text-status-warning">
                     unknown track
+                  </span>
+                )}
+                {meta && duration <= 0 && (
+                  <span
+                    title="Saving is blocked until this song has a play length — set the track's duration in the Audio Studio."
+                    className="shrink-0 rounded bg-status-warning/15 px-1 py-0.5 text-3xs text-status-warning"
+                  >
+                    no duration
                   </span>
                 )}
                 {meta && !meta.lyrics && (
@@ -1356,6 +1381,24 @@ function JukeboxEditor({ world, roomId, onWorldChange }: JukeboxEditorProps) {
                     no lyrics
                   </span>
                 )}
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={song.cost ?? ""}
+                  onChange={(e) => {
+                    if (e.target.value === "") {
+                      const { cost: _unused, ...rest } = song;
+                      setSong(index, rest);
+                    } else {
+                      setSong(index, { ...song, cost: Math.max(0, Math.round(Number(e.target.value))) });
+                    }
+                  }}
+                  placeholder="cost"
+                  title={`Gold cost to play song ${index + 1} — blank uses the server's default price`}
+                  aria-label={`Song ${index + 1} gold cost`}
+                  className="w-12 shrink-0 rounded border border-border-default bg-bg-secondary px-1 py-0.5 text-right text-2xs text-text-secondary placeholder:text-text-muted outline-none focus-visible:ring-2 focus-visible:ring-border-active"
+                />
                 <button
                   onClick={() => move(index, -1)}
                   disabled={index === 0}
@@ -1402,8 +1445,8 @@ function JukeboxEditor({ world, roomId, onWorldChange }: JukeboxEditorProps) {
             ))}
           </select>
           <p className="text-2xs text-text-muted">
-            Players use <code className="font-mono">jukebox play &lt;n&gt;</code> — lyrics and names
-            come from the Audio Studio library.
+            Players use <code className="font-mono">jukebox play &lt;n&gt;</code> — titles, artists, and
+            lyrics come from the Audio Studio library. A blank cost charges the server's default price.
           </p>
         </div>
       )}

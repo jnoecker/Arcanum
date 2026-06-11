@@ -44,6 +44,7 @@ export function serializeZone(zoneId: string): string {
     config?.mobTiers,
     config?.progression.quests,
     classStatPriorities,
+    { jukeboxOutput: true },
   );
   const errors = issues.filter((issue) => issue.severity === "error");
   if (errors.length > 0) {

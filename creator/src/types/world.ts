@@ -137,21 +137,23 @@ export interface RoomFile {
   videoTextSeconds?: number;
   music?: string;
   ambient?: string;
-  jukebox?: JukeboxFile;
+  /** Bare song list — non-empty means the room has a jukebox. */
+  jukebox?: JukeboxSongFile[];
   /** Legacy Arcanum-only alias; stripped on output. */
   audio?: string;
 }
 
+/** Server contract (AmbonMUD #1316). `title` and `durationSeconds` are
+ *  required by the server loader but optional here because in-editor
+ *  entries are bare `{ file }` refs until save-time enrichment. */
 export interface JukeboxSongFile {
+  title?: string;
   file: string;
-  name?: string;
-  description?: string;
-  lyrics?: string;
   durationSeconds?: number;
-}
-
-export interface JukeboxFile {
-  songs: JukeboxSongFile[];
+  cost?: number;
+  artist?: string;
+  description?: string;
+  lyrics?: string[];
 }
 
 export interface ExitValue {

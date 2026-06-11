@@ -40,6 +40,8 @@ pub struct AssetEntry {
     #[serde(default)]
     pub description: String,
     #[serde(default)]
+    pub artist: String,
+    #[serde(default)]
     pub lyrics: String,
     #[serde(default)]
     pub duration_seconds: f64,
@@ -146,6 +148,7 @@ pub async fn accept_asset(
         is_active: active,
         display_name: display_name.unwrap_or_default(),
         description: String::new(),
+        artist: String::new(),
         lyrics: String::new(),
         duration_seconds: 0.0,
     };
@@ -481,6 +484,7 @@ pub async fn import_asset(
         is_active: active,
         display_name: display_name.unwrap_or_default(),
         description: String::new(),
+        artist: String::new(),
         lyrics: String::new(),
         duration_seconds,
     };
@@ -525,7 +529,9 @@ pub async fn update_asset_metadata(
     asset_id: String,
     display_name: Option<String>,
     description: Option<String>,
+    artist: Option<String>,
     lyrics: Option<String>,
+    duration_seconds: Option<f64>,
 ) -> Result<(), String> {
     let _lock = MANIFEST_LOCK.lock().await;
     let mut manifest = load_manifest(&app).await?;
@@ -540,8 +546,14 @@ pub async fn update_asset_metadata(
     if let Some(text) = description {
         entry.description = text.trim().to_string();
     }
+    if let Some(text) = artist {
+        entry.artist = text.trim().to_string();
+    }
     if let Some(text) = lyrics {
         entry.lyrics = text.trim_end().to_string();
+    }
+    if let Some(seconds) = duration_seconds {
+        entry.duration_seconds = seconds.max(0.0);
     }
     save_manifest(&app, &manifest).await
 }
@@ -690,6 +702,7 @@ pub async fn save_bytes_as_asset(
         is_active: false,
         display_name: String::new(),
         description: String::new(),
+        artist: String::new(),
         lyrics: String::new(),
         duration_seconds: 0.0,
     };
@@ -978,6 +991,7 @@ pub async fn import_player_sprites(
             is_active: true,
             display_name: String::new(),
             description: String::new(),
+            artist: String::new(),
             lyrics: String::new(),
             duration_seconds: 0.0,
         };
@@ -1116,6 +1130,7 @@ pub async fn bulk_import_images(
             is_active: true,
             display_name: String::new(),
             description: String::new(),
+            artist: String::new(),
             lyrics: String::new(),
             duration_seconds: 0.0,
         };
@@ -1216,6 +1231,7 @@ pub async fn flip_image(app: AppHandle, image_ref: String) -> Result<String, Str
             is_active: true,
             display_name: String::new(),
             description: String::new(),
+            artist: String::new(),
             lyrics: String::new(),
             duration_seconds: 0.0,
         };

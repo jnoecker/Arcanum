@@ -15,7 +15,9 @@ interface BatchProgress {
 interface AssetMetadataPatch {
   displayName?: string;
   description?: string;
+  artist?: string;
   lyrics?: string;
+  durationSeconds?: number;
 }
 
 /** Saved zone YAML denormalizes jukebox song metadata, so a metadata edit
@@ -25,7 +27,7 @@ function markJukeboxZonesDirty(fileName: string | undefined): void {
   const zoneStore = useZoneStore.getState();
   for (const [zoneId, zone] of zoneStore.zones) {
     const referenced = Object.values(zone.data.rooms).some((room) =>
-      (room.jukebox?.songs ?? []).some((song) => song.file === fileName),
+      (room.jukebox ?? []).some((song) => song.file === fileName),
     );
     if (referenced) zoneStore.markDirty(zoneId);
   }
@@ -182,7 +184,9 @@ export const useAssetStore = create<AssetState>((set, get) => ({
       assetId,
       displayName: patch.displayName ?? null,
       description: patch.description ?? null,
+      artist: patch.artist ?? null,
       lyrics: patch.lyrics ?? null,
+      durationSeconds: patch.durationSeconds ?? null,
     });
     await get().loadAssets();
     markJukeboxZonesDirty(fileName);

@@ -72,7 +72,7 @@ export function buildUsageIndex(
       if (room.ambient) entry(room.ambient).rooms.push({ zoneId, roomId, roomTitle: room.title, kind: "ambient" });
       if (room.jukebox) {
         const seen = new Set<string>();
-        for (const song of room.jukebox.songs ?? []) {
+        for (const song of room.jukebox) {
           if (!song.file || seen.has(song.file)) continue;
           seen.add(song.file);
           entry(song.file).jukeboxes.push({ zoneId, roomId, roomTitle: room.title });
@@ -127,6 +127,7 @@ export function setRoomTrack(
 
 export interface AudioTrackMeta {
   name: string;
+  artist: string;
   description: string;
   lyrics: string;
   durationSeconds: number;
@@ -137,6 +138,7 @@ export function buildAudioMetaIndex(assets: AssetEntry[]): Map<string, AudioTrac
   for (const entry of assets) {
     index.set(entry.file_name, {
       name: trackLabel(entry),
+      artist: entry.artist,
       description: entry.description,
       lyrics: entry.lyrics,
       durationSeconds: Math.round(entry.duration_seconds),
@@ -145,12 +147,23 @@ export function buildAudioMetaIndex(assets: AssetEntry[]): Map<string, AudioTrac
   return index;
 }
 
+/** Lyrics are edited as one text blob but the server contract is a list of
+ *  non-blank lines. */
+export function splitLyricsLines(lyrics: string): string[] {
+  return lyrics
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
 /**
  * Denormalize library metadata into jukebox song entries at save time.
- * Songs whose file is in the index are rewritten entirely from it (so stale
- * descriptions and lyrics clear when the library entry empties); songs from
- * other machines stay verbatim. Blank-file songs are dropped, and a jukebox
- * with no surviving songs disappears.
+ * Songs whose file is in the index are rebuilt from it in the server
+ * contract's key order (so stale titles, descriptions, and lyrics clear when
+ * the library entry empties); songs from other machines stay verbatim. The
+ * per-song `cost` is zone-side authoring, not library metadata, so it always
+ * survives. Blank-file songs are dropped, and a jukebox with no surviving
+ * songs disappears.
  */
 export function enrichJukeboxSongs(
   world: WorldFile,
@@ -164,21 +177,28 @@ export function enrichJukeboxSongs(
       continue;
     }
     const songs: JukeboxSongFile[] = [];
-    for (const song of room.jukebox.songs ?? []) {
+    for (const song of room.jukebox) {
       if (!song.file || !song.file.trim()) continue;
       const track = meta.get(song.file);
       if (!track) {
         songs.push(song);
         continue;
       }
-      const enriched: JukeboxSongFile = { file: song.file, name: track.name };
+      const enriched: JukeboxSongFile = { title: track.name, file: song.file };
+      if (track.durationSeconds > 0) {
+        enriched.durationSeconds = track.durationSeconds;
+      } else if (typeof song.durationSeconds === "number" && song.durationSeconds > 0) {
+        enriched.durationSeconds = Math.round(song.durationSeconds);
+      }
+      if (typeof song.cost === "number" && song.cost >= 0) enriched.cost = song.cost;
+      if (track.artist) enriched.artist = track.artist;
       if (track.description) enriched.description = track.description;
-      if (track.lyrics) enriched.lyrics = track.lyrics;
-      if (track.durationSeconds > 0) enriched.durationSeconds = track.durationSeconds;
+      const lyrics = splitLyricsLines(track.lyrics);
+      if (lyrics.length > 0) enriched.lyrics = lyrics;
       songs.push(enriched);
     }
     rooms[roomId] = songs.length > 0
-      ? { ...room, jukebox: { songs } }
+      ? { ...room, jukebox: songs }
       : { ...room, jukebox: undefined };
     changed = true;
   }

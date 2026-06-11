@@ -1,0 +1,106 @@
+import type { MobVariantDefinition } from "@/types/config";
+
+/**
+ * Faithful mirror of the AmbonMUD server's built-in rare-variant palette
+ * (`MobVariantsConfig.DEFAULT_VARIANTS` in `AppConfig.kt`). The server uses this
+ * set whenever a world omits `mobVariants.variants`; supplying a non-empty map
+ * replaces it entirely. Surfaced in the Rare Variants config tab so authors can
+ * load the defaults as a starting point and extend them. Keep in sync with the
+ * server if its defaults change.
+ */
+export const BUILTIN_MOB_VARIANTS: Record<string, MobVariantDefinition> = {
+  albino: {
+    displayName: "Albino",
+    namePrefix: "Albino ",
+    tint: "#f5f0ff",
+    rarity: "uncommon",
+    weight: 3.0,
+    hpMultiplier: 1.2,
+    xpMultiplier: 1.3,
+    lootMultiplier: 1.2,
+    announce: "ZONE",
+  },
+  verdant: {
+    displayName: "Verdant",
+    namePrefix: "Verdant ",
+    tint: "#5fd17a",
+    rarity: "uncommon",
+    weight: 2.5,
+    hpMultiplier: 1.2,
+    xpMultiplier: 1.3,
+    lootMultiplier: 1.2,
+    announce: "ZONE",
+  },
+  shadow: {
+    displayName: "Shadow-touched",
+    namePrefix: "Shadow-touched ",
+    tint: "#6a4aa0",
+    overlay: "swirl",
+    rarity: "uncommon",
+    weight: 2.5,
+    hpMultiplier: 1.25,
+    xpMultiplier: 1.4,
+    lootMultiplier: 1.25,
+    announce: "ZONE",
+  },
+  ember: {
+    displayName: "Ember",
+    namePrefix: "Ember ",
+    tint: "#ff6a3c",
+    overlay: "embers",
+    rarity: "rare",
+    weight: 1.4,
+    hpMultiplier: 1.5,
+    xpMultiplier: 1.7,
+    lootMultiplier: 1.5,
+    announce: "ZONE",
+  },
+  glimmering: {
+    displayName: "Glimmering",
+    namePrefix: "Glimmering ",
+    tint: "#ffe8a3",
+    overlay: "sparkle",
+    rarity: "rare",
+    weight: 1.2,
+    hpMultiplier: 1.5,
+    xpMultiplier: 1.8,
+    lootMultiplier: 1.6,
+    announce: "ZONE",
+  },
+  frostbound: {
+    displayName: "Frostbound",
+    namePrefix: "Frostbound ",
+    tint: "#a3e4ff",
+    overlay: "frost",
+    rarity: "rare",
+    weight: 1.2,
+    hpMultiplier: 1.5,
+    xpMultiplier: 1.7,
+    lootMultiplier: 1.5,
+    announce: "ZONE",
+  },
+  spectral: {
+    displayName: "Spectral",
+    namePrefix: "Spectral ",
+    tint: "#bfeaff",
+    overlay: "mist",
+    rarity: "legendary",
+    weight: 0.4,
+    hpMultiplier: 2.0,
+    xpMultiplier: 2.5,
+    lootMultiplier: 2.0,
+    announce: "SERVER",
+  },
+  ancient: {
+    displayName: "Ancient",
+    namePrefix: "Ancient ",
+    tint: "#caa86a",
+    overlay: "swirl",
+    rarity: "legendary",
+    weight: 0.3,
+    hpMultiplier: 2.2,
+    xpMultiplier: 2.6,
+    lootMultiplier: 2.2,
+    announce: "SERVER",
+  },
+};

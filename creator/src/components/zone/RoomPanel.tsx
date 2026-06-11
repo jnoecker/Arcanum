@@ -22,7 +22,7 @@ import { EditableField, EditableTextArea, Section, IconButton, FieldRow, TextInp
 import { YamlPreview } from "@/components/ui/YamlPreview";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
-import { MusicGenerator } from "@/components/ui/MusicGenerator";
+import { AudioTrackPicker } from "@/components/ui/AudioTrackPicker";
 import { VideoGenerator } from "@/components/ui/VideoGenerator";
 import { roomPrompt, roomContext } from "@/lib/entityPrompts";
 import { getTrainerClasses } from "@/lib/trainers";
@@ -1231,88 +1231,20 @@ export function RoomPanel({
       {/* Audio */}
       <Section title="Audio">
         <div className="flex flex-col gap-3">
-          <MediaDisclosure label="Music" hasValue={!!room.music}>
-            <FieldRow label="Music">
-              <TextInput
-                value={room.music ?? ""}
-                onCommit={(v) => onWorldChange(updateRoom(world, roomId, { music: v || undefined }))}
-                placeholder="None"
-              />
-            </FieldRow>
-            <MediaPicker
-              value={room.music}
-              onChange={(v) => onWorldChange(updateRoom(world, roomId, { music: v }))}
-              mediaType="audio"
-              assetType="music"
-              context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
-              variantGroup={`room-media:${zoneId}:${roomId}:music`}
-              isActive
-            />
-            <MusicGenerator
-              roomTitle={room.title}
-              roomDescription={room.description}
-              vibe={vibe}
-              currentAudio={room.music}
-              trackType="music"
-              assetType="music"
-              context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
-              variantGroup={`room-media:${zoneId}:${roomId}:music`}
-              markActive
-              onAccept={(fileName) => {
-                onWorldChange(updateRoom(world, roomId, { music: fileName }));
-              }}
-            />
-          </MediaDisclosure>
-          <MediaDisclosure label="Ambient" hasValue={!!room.ambient}>
-            <FieldRow label="Ambient">
-              <TextInput
-                value={room.ambient ?? ""}
-                onCommit={(v) => onWorldChange(updateRoom(world, roomId, { ambient: v || undefined }))}
-                placeholder="None"
-              />
-            </FieldRow>
-            <MediaPicker
-              value={room.ambient}
-              onChange={(v) => onWorldChange(updateRoom(world, roomId, { ambient: v }))}
-              mediaType="audio"
-              assetType="ambient"
-              context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
-              variantGroup={`room-media:${zoneId}:${roomId}:ambient`}
-              isActive
-            />
-            <MusicGenerator
-              roomTitle={room.title}
-              roomDescription={room.description}
-              vibe={vibe}
-              currentAudio={room.ambient}
-              trackType="ambient"
-              assetType="ambient"
-              context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
-              variantGroup={`room-media:${zoneId}:${roomId}:ambient`}
-              markActive
-              onAccept={(fileName) => {
-                onWorldChange(updateRoom(world, roomId, { ambient: fileName }));
-              }}
-            />
-          </MediaDisclosure>
-          <MediaDisclosure label="Audio" hasValue={!!room.audio}>
-            <FieldRow label="Audio">
-              <TextInput
-                value={room.audio ?? ""}
-                onCommit={(v) => onWorldChange(updateRoom(world, roomId, { audio: v || undefined }))}
-                placeholder="None"
-              />
-            </FieldRow>
-            <MediaPicker
-              value={room.audio}
-              onChange={(v) => onWorldChange(updateRoom(world, roomId, { audio: v }))}
-              mediaType="audio"
-              assetType="audio"
-              context={{ zone: zoneId, entity_type: "room", entity_id: roomId }}
-              variantGroup={`room-media:${zoneId}:${roomId}:audio`}
-              isActive
-            />
-          </MediaDisclosure>
+          <AudioTrackPicker
+            kind="music"
+            label="Music"
+            value={room.music}
+            onChange={(v) => onWorldChange(updateRoom(world, roomId, { music: v }))}
+            hint="Overrides the zone's default score for this room."
+          />
+          <AudioTrackPicker
+            kind="ambient"
+            label="Ambient"
+            value={room.ambient}
+            onChange={(v) => onWorldChange(updateRoom(world, roomId, { ambient: v }))}
+            hint="Overrides the zone's default soundscape for this room."
+          />
         </div>
       </Section>
       </>

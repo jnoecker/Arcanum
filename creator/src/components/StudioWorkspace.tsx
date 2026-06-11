@@ -9,7 +9,7 @@ import { ZoneAssetWorkbench } from "@/components/zone/ZoneAssetWorkbench";
 import { CustomAssetStudio } from "@/components/CustomAssetStudio";
 import { PortraitStudio } from "@/components/PortraitStudio";
 import { AbilityStudio } from "@/components/AbilityStudio";
-import { MediaStudio } from "@/components/MediaStudio";
+import { AudioStudio } from "@/components/AudioStudio";
 import { loadArtSubTab, saveArtSubTab } from "@/lib/uiPersistence";
 
 type ArtSubTab = "direction" | "assets" | "custom";
@@ -264,18 +264,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
           </>
         )}
 
-        {panelId === "media" && (
-          <>
-            <div className="flex justify-end">{zoneSelector}</div>
-            <MediaStudio
-              zoneId={selectedZoneId}
-              world={selectedZone?.data ?? null}
-              onWorldChange={(world) => {
-                if (selectedZoneId) updateZone(selectedZoneId, world);
-              }}
-            />
-          </>
-        )}
+        {panelId === "media" && <AudioStudio />}
 
         {panelId === "portraits" && <PortraitStudio selectedZoneId={selectedZoneId} />}
 

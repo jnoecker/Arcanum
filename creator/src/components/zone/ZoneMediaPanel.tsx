@@ -1,11 +1,8 @@
 import { useCallback, useMemo, type ReactNode } from "react";
 import type { WorldFile, ZoneAudioDefaults } from "@/types/world";
-import { FieldRow, TextInput } from "@/components/ui/FormWidgets";
-import { MusicGenerator } from "@/components/ui/MusicGenerator";
+import { AudioTrackPicker } from "@/components/ui/AudioTrackPicker";
 import { VideoGenerator } from "@/components/ui/VideoGenerator";
-import { MediaPicker } from "@/components/ui/MediaPicker";
 import { VideoVisionFields } from "@/components/editors/EditorShared";
-import { useVibeStore } from "@/stores/vibeStore";
 import { useAssetStore } from "@/stores/assetStore";
 import sidebarBg from "@/assets/sidebar-bg.png";
 
@@ -42,10 +39,9 @@ const VideoIcon = () => (
 );
 
 export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelProps) {
-  const vibe = useVibeStore((s) => s.getVibe(zoneId));
   const assetsDir = useAssetStore((s) => s.assetsDir);
 
-  const { zoneImagePath, roomNames, zoneDesc, stats, totalRooms } = useMemo(() => {
+  const { zoneImagePath, roomNames, stats, totalRooms } = useMemo(() => {
     const rooms = world.rooms;
     const firstWithImage = Object.values(rooms).find((r) => r.image);
     const total = Object.keys(rooms).length;
@@ -59,11 +55,10 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
       roomNames: Object.entries(rooms)
         .map(([id, r]) => `- ${r.title} (${id})`)
         .join("\n"),
-      zoneDesc: `Zone: ${world.zone}. Rooms: ${Object.values(rooms).map((r) => r.title).join(", ")}`,
       stats: { music: musicCount, ambient: ambientCount, video: videoCount },
       totalRooms: total,
     };
-  }, [world.rooms, world.zone, assetsDir]);
+  }, [world.rooms, assetsDir]);
 
   const patchAudio = useCallback(
     (field: keyof ZoneAudioDefaults, value: string | undefined) => {
@@ -97,65 +92,21 @@ export function ZoneMediaPanel({ zoneId, world, onWorldChange }: ZoneMediaPanelP
 
           {/* Zone defaults grid */}
           <div className="mb-6 grid gap-4 lg:grid-cols-2">
-            <MediaCard icon={<MusicIcon />} title="Zone Music" description="Default background music. Rooms without their own track will use this.">
-              <FieldRow label="Track">
-                <TextInput
-                  value={world.audio?.music ?? ""}
-                  onCommit={(v) => patchAudio("music", v || undefined)}
-                  placeholder="None"
-                />
-              </FieldRow>
-              <MediaPicker
+            <MediaCard icon={<MusicIcon />} title="Zone Music" description="Default background music from the library. Rooms without their own track will use this.">
+              <AudioTrackPicker
+                kind="music"
+                label="Track"
                 value={world.audio?.music}
-                onChange={(v) => patchAudio("music", v ?? undefined)}
-                mediaType="audio"
-                assetType="music"
-                context={{ zone: zoneId, entity_type: "zone", entity_id: "defaults" }}
-                variantGroup={`zone-media:${zoneId}:music`}
-                isActive
-              />
-              <MusicGenerator
-                roomTitle={world.zone}
-                roomDescription={zoneDesc}
-                vibe={vibe}
-                currentAudio={world.audio?.music}
-                trackType="music"
-                assetType="music"
-                context={{ zone: zoneId, entity_type: "zone", entity_id: "defaults" }}
-                variantGroup={`zone-media:${zoneId}:music`}
-                markActive
-                onAccept={(fileName) => patchAudio("music", fileName)}
+                onChange={(v) => patchAudio("music", v)}
               />
             </MediaCard>
 
-            <MediaCard icon={<AmbientIcon />} title="Zone Ambient" description="Default ambient soundscape. Rooms without their own track will use this.">
-              <FieldRow label="Track">
-                <TextInput
-                  value={world.audio?.ambient ?? ""}
-                  onCommit={(v) => patchAudio("ambient", v || undefined)}
-                  placeholder="None"
-                />
-              </FieldRow>
-              <MediaPicker
+            <MediaCard icon={<AmbientIcon />} title="Zone Ambient" description="Default ambient soundscape from the library. Rooms without their own track will use this.">
+              <AudioTrackPicker
+                kind="ambient"
+                label="Track"
                 value={world.audio?.ambient}
-                onChange={(v) => patchAudio("ambient", v ?? undefined)}
-                mediaType="audio"
-                assetType="ambient"
-                context={{ zone: zoneId, entity_type: "zone", entity_id: "defaults" }}
-                variantGroup={`zone-media:${zoneId}:ambient`}
-                isActive
-              />
-              <MusicGenerator
-                roomTitle={world.zone}
-                roomDescription={zoneDesc}
-                vibe={vibe}
-                currentAudio={world.audio?.ambient}
-                trackType="ambient"
-                assetType="ambient"
-                context={{ zone: zoneId, entity_type: "zone", entity_id: "defaults" }}
-                variantGroup={`zone-media:${zoneId}:ambient`}
-                markActive
-                onAccept={(fileName) => patchAudio("ambient", fileName)}
+                onChange={(v) => patchAudio("ambient", v)}
               />
             </MediaCard>
           </div>

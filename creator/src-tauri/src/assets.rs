@@ -35,6 +35,8 @@ pub struct AssetEntry {
     pub variant_group: String,
     #[serde(default)]
     pub is_active: bool,
+    #[serde(default)]
+    pub display_name: String,
 }
 
 fn default_sync_status() -> String {
@@ -116,6 +118,7 @@ pub async fn accept_asset(
     height: u32,
     variant_group: Option<String>,
     is_active: Option<bool>,
+    display_name: Option<String>,
 ) -> Result<AssetEntry, String> {
     let vg = variant_group.unwrap_or_default();
     let active = is_active.unwrap_or(!vg.is_empty());
@@ -135,6 +138,7 @@ pub async fn accept_asset(
         sync_status: "local".to_string(),
         variant_group: vg.clone(),
         is_active: active,
+        display_name: display_name.unwrap_or_default(),
     };
 
     let _lock = MANIFEST_LOCK.lock().await;
@@ -395,6 +399,7 @@ pub async fn import_asset(
     context: Option<AssetContext>,
     variant_group: Option<String>,
     is_active: Option<bool>,
+    display_name: Option<String>,
 ) -> Result<AssetEntry, String> {
     let bytes = tokio::fs::read(&source_path)
         .await
@@ -457,6 +462,7 @@ pub async fn import_asset(
         sync_status: "local".to_string(),
         variant_group: vg.clone(),
         is_active: active,
+        display_name: display_name.unwrap_or_default(),
     };
 
     let _lock = MANIFEST_LOCK.lock().await;
@@ -474,6 +480,23 @@ pub async fn import_asset(
     save_manifest(&app, &manifest).await?;
 
     Ok(entry)
+}
+
+#[tauri::command]
+pub async fn rename_asset(
+    app: AppHandle,
+    asset_id: String,
+    display_name: String,
+) -> Result<(), String> {
+    let _lock = MANIFEST_LOCK.lock().await;
+    let mut manifest = load_manifest(&app).await?;
+    let entry = manifest
+        .assets
+        .iter_mut()
+        .find(|a| a.id == asset_id)
+        .ok_or_else(|| format!("Asset not found: {asset_id}"))?;
+    entry.display_name = display_name.trim().to_string();
+    save_manifest(&app, &manifest).await
 }
 
 #[tauri::command]
@@ -577,6 +600,7 @@ pub async fn save_bytes_as_asset(
         sync_status: "local".to_string(),
         variant_group: variant_group.unwrap_or_default(),
         is_active: false,
+        display_name: String::new(),
     };
 
     manifest.assets.retain(|a| a.hash != entry.hash);
@@ -861,6 +885,7 @@ pub async fn import_player_sprites(
             sync_status: "local".to_string(),
             variant_group,
             is_active: true,
+            display_name: String::new(),
         };
 
         manifest.assets.push(entry);
@@ -995,6 +1020,7 @@ pub async fn bulk_import_images(
             sync_status: "local".to_string(),
             variant_group: format!("{entity_type}:{stem}"),
             is_active: true,
+            display_name: String::new(),
         };
 
         manifest.assets.push(asset_entry);
@@ -1091,6 +1117,7 @@ pub async fn flip_image(app: AppHandle, image_ref: String) -> Result<String, Str
             sync_status: "local".to_string(),
             variant_group: source.map_or_else(String::new, |s| s.variant_group.clone()),
             is_active: true,
+            display_name: String::new(),
         };
 
         let vg = &entry.variant_group;

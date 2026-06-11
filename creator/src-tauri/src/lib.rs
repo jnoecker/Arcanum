@@ -87,6 +87,7 @@ macro_rules! base_handler {
             assets::resolve_media_path,
             assets::read_media_data_url,
             assets::import_asset,
+            assets::rename_asset,
             assets::set_active_variant,
             assets::list_variants,
             assets::save_bytes_as_asset,

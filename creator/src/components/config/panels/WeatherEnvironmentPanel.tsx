@@ -6,6 +6,7 @@ import type {
   MoteColor,
   SkyGradient,
   TimePeriod,
+  MobVariantDefinition,
 } from "@/types/config";
 import {
   Section,
@@ -38,6 +39,31 @@ const PARTICLE_OPTIONS = [
   { value: "fog", label: "Fog" },
   { value: "wind", label: "Wind" },
 ];
+
+const VARIANT_OVERLAY_OPTIONS = [
+  { value: "", label: "None" },
+  { value: "swirl", label: "Swirl" },
+  { value: "embers", label: "Embers" },
+  { value: "sparkle", label: "Sparkle" },
+  { value: "frost", label: "Frost" },
+  { value: "mist", label: "Mist" },
+];
+
+const VARIANT_RARITY_OPTIONS = [
+  { value: "", label: "Unset" },
+  { value: "uncommon", label: "Uncommon" },
+  { value: "rare", label: "Rare" },
+  { value: "legendary", label: "Legendary" },
+];
+
+const VARIANT_ANNOUNCE_OPTIONS = [
+  { value: "", label: "Default (by rarity)" },
+  { value: "ROOM", label: "Room" },
+  { value: "ZONE", label: "Zone" },
+  { value: "SERVER", label: "Server" },
+];
+
+const DEFAULT_VARIANT_TINT = "#c9a84c";
 
 const DEFAULT_MOTE: MoteColor = { core: "#c9a84c", glow: "#f5e6b8" };
 
@@ -337,37 +363,186 @@ function MobVariantsTab({
   mobVariants: AppConfig["mobVariants"];
   patch: (p: Partial<AppConfig["mobVariants"]>) => void;
 }) {
-  const variantIds = Object.keys(mv.variants);
+  const hasCustom = Object.keys(mv.variants).length > 0;
+
+  const patchVariants = useCallback(
+    (variants: Record<string, MobVariantDefinition>) => {
+      patch({ variants });
+    },
+    [patch],
+  );
+
+  const handleRename = useCallback(
+    (oldId: string, newId: string) => {
+      const variants: Record<string, MobVariantDefinition> = {};
+      for (const [k, v] of Object.entries(mv.variants)) {
+        variants[k === oldId ? newId : k] = v;
+      }
+      patchVariants(variants);
+    },
+    [mv.variants, patchVariants],
+  );
+
   return (
-    <Section
-      title="Rare Mob Variants"
-      description="The server may spawn any eligible combat mob as a rare cosmetic variant — a tint, overlay, name prefix, and modest stat bump — so explorers always find richer sightings. Authors opt individual mobs out in the mob editor."
-    >
-      <div className="flex flex-col gap-2">
-        <CheckboxInput
-          checked={mv.enabled}
-          onCommit={(v) => patch({ enabled: v })}
-          label="Spawn rare variants"
-        />
-        <FieldRow
-          label="Base Chance"
-          hint="Probability an eligible mob rolls as a rare variant on each dynamic spawn (zone reset, respawn, conditional spawn). 0–1; default 0.04."
-        >
-          <NumberInput
-            value={mv.chance}
-            onCommit={(v) => patch({ chance: v ?? 0.04 })}
-            min={0}
-            max={1}
-            step={0.01}
+    <>
+      <Section
+        title="Rare Mob Variants"
+        description="The server may spawn any eligible combat mob as a rare cosmetic variant — a tint, overlay, name prefix, and modest stat bump — so explorers always find richer sightings. Authors opt individual mobs out in the mob editor."
+      >
+        <div className="flex flex-col gap-2">
+          <CheckboxInput
+            checked={mv.enabled}
+            onCommit={(v) => patch({ enabled: v })}
+            label="Spawn rare variants"
           />
-        </FieldRow>
-        <p className="text-2xs text-text-muted">
-          {variantIds.length > 0
-            ? `${variantIds.length} custom variant archetype${variantIds.length === 1 ? "" : "s"} defined: ${variantIds.join(", ")}.`
-            : "Using the server's built-in archetype palette (albino, verdant, shadow-touched, ember, glimmering, frostbound, spectral, ancient). Custom palettes can be authored directly in the world YAML."}
-        </p>
-      </div>
-    </Section>
+          <FieldRow
+            label="Base Chance"
+            hint="Probability an eligible mob rolls as a rare variant on each dynamic spawn (zone reset, respawn, conditional spawn). 0–1; default 0.04."
+          >
+            <NumberInput
+              value={mv.chance}
+              onCommit={(v) => patch({ chance: v ?? 0.04 })}
+              min={0}
+              max={1}
+              step={0.01}
+            />
+          </FieldRow>
+          {!hasCustom && (
+            <p className="text-2xs text-text-muted">
+              No custom archetypes defined — the server's built-in palette
+              (albino, verdant, shadow-touched, ember, glimmering, frostbound,
+              spectral, ancient) is used. Add archetypes below to define your own
+              palette; once any exist, only your archetypes spawn.
+            </p>
+          )}
+        </div>
+      </Section>
+
+      <RegistryPanel<MobVariantDefinition>
+        title="Custom Variant Palette"
+        description="Define your own rare-variant archetypes. Each is chosen by relative weight when a mob rolls rare. Leaving this empty falls back to the server's built-in palette."
+        items={mv.variants}
+        onItemsChange={patchVariants}
+        onRenameId={handleRename}
+        placeholder="New variant (e.g. molten)"
+        idTransform={(raw) => raw.trim().toLowerCase().replace(/\s+/g, "_")}
+        getDisplayName={(v) => v.displayName ?? ""}
+        defaultItem={(raw) => ({ displayName: raw, weight: 1 })}
+        renderSummary={(_id, v) => {
+          const parts: string[] = [`w:${v.weight}`];
+          if (v.rarity) parts.push(v.rarity);
+          if (v.namePrefix) parts.push(`"${v.namePrefix.trim()}"`);
+          return parts.join(" | ");
+        }}
+        renderDetail={(_id, item, patchItem) => (
+          <MobVariantDetail item={item} patch={patchItem} />
+        )}
+      />
+    </>
+  );
+}
+
+function MobVariantDetail({
+  item,
+  patch,
+}: {
+  item: MobVariantDefinition;
+  patch: (p: Partial<MobVariantDefinition>) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <FieldRow label="Display Name" hint="Name shown for this archetype in tooling.">
+        <TextInput
+          value={item.displayName ?? ""}
+          onCommit={(v) => patch({ displayName: v || undefined })}
+          placeholder="Molten"
+        />
+      </FieldRow>
+      <FieldRow label="Name Prefix" hint='Prepended to the base mob name, e.g. "Molten ".'>
+        <TextInput
+          value={item.namePrefix ?? ""}
+          onCommit={(v) => patch({ namePrefix: v || undefined })}
+          placeholder="Molten "
+        />
+      </FieldRow>
+      <FieldRow label="Tint" hint="Hex color multiplied onto the client sprite. Leave unset for no tint.">
+        {item.tint ? (
+          <div className="flex items-center gap-2">
+            <ColorField
+              value={item.tint}
+              onChange={(tint) => patch({ tint })}
+              label="Variant sprite tint"
+            />
+            <IconButton onClick={() => patch({ tint: undefined })} title="Clear tint" danger>
+              x
+            </IconButton>
+          </div>
+        ) : (
+          <button
+            onClick={() => patch({ tint: DEFAULT_VARIANT_TINT })}
+            className="text-2xs text-accent hover:text-accent/80"
+          >
+            + Set tint
+          </button>
+        )}
+      </FieldRow>
+      <FieldRow label="Overlay" hint="Client particle/overlay effect.">
+        <SelectInput
+          value={item.overlay ?? ""}
+          onCommit={(v) => patch({ overlay: v || undefined })}
+          options={VARIANT_OVERLAY_OPTIONS}
+        />
+      </FieldRow>
+      <FieldRow label="Rarity" hint="Flavor tier and default announce loudness.">
+        <SelectInput
+          value={item.rarity ?? ""}
+          onCommit={(v) => patch({ rarity: v || undefined })}
+          options={VARIANT_RARITY_OPTIONS}
+        />
+      </FieldRow>
+      <FieldRow label="Weight" hint="Relative selection weight among variants. Higher = more common.">
+        <NumberInput
+          value={item.weight}
+          onCommit={(v) => patch({ weight: v ?? 1 })}
+          min={0}
+          step={0.1}
+        />
+      </FieldRow>
+      <FieldRow label="HP Multiplier" hint="Optional. Multiplies the base mob's HP.">
+        <NumberInput
+          value={item.hpMultiplier}
+          onCommit={(v) => patch({ hpMultiplier: v })}
+          min={0}
+          step={0.1}
+          placeholder="1.0"
+        />
+      </FieldRow>
+      <FieldRow label="XP Multiplier" hint="Optional. Multiplies XP awarded on kill.">
+        <NumberInput
+          value={item.xpMultiplier}
+          onCommit={(v) => patch({ xpMultiplier: v })}
+          min={0}
+          step={0.1}
+          placeholder="1.0"
+        />
+      </FieldRow>
+      <FieldRow label="Loot Multiplier" hint="Optional. Multiplies drop chances and gold.">
+        <NumberInput
+          value={item.lootMultiplier}
+          onCommit={(v) => patch({ lootMultiplier: v })}
+          min={0}
+          step={0.1}
+          placeholder="1.0"
+        />
+      </FieldRow>
+      <FieldRow label="Announce" hint="Broadcast scope when this variant appears.">
+        <SelectInput
+          value={item.announce ?? ""}
+          onCommit={(v) => patch({ announce: v || undefined })}
+          options={VARIANT_ANNOUNCE_OPTIONS}
+        />
+      </FieldRow>
+    </div>
   );
 }
 

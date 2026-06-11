@@ -192,6 +192,7 @@ pub fn run() {
                     elevenlabs::elevenlabs_list_voices,
                     elevenlabs::elevenlabs_voice_settings,
                     elevenlabs::elevenlabs_synthesize,
+                    elevenlabs::elevenlabs_generate_sound_effect,
                     elevenlabs::voice_clip_status,
                     elevenlabs::read_voice_clip,
                     sketch::analyze_sketch,

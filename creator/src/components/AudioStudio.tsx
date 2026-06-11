@@ -37,6 +37,12 @@ function nameFromPath(path: string): string {
   return stem.replace(/[-_]+/g, " ").trim();
 }
 
+const ELEVENLABS_MAX_SECONDS = 30;
+
+function defaultTrackName(roomTitle: string, kind: AudioTrackKind): string {
+  return `${roomTitle} ${kind === "music" ? "Theme" : "Ambience"}`;
+}
+
 export function AudioStudio() {
   const assets = useAssetStore((s) => s.assets);
   const importAsset = useAssetStore((s) => s.importAsset);
@@ -139,7 +145,7 @@ export function AudioStudio() {
         </section>
 
         {/* Generator */}
-        <GenerateTrackCard kind={lane} onCreated={(entry) => setSelectedId(entry.id)} />
+        <GenerateTrackCard key={lane} kind={lane} onCreated={(entry) => setSelectedId(entry.id)} />
       </div>
 
       {assignTrack && (
@@ -271,20 +277,15 @@ function TrackDetail({
   );
 }
 
+type AudioProvider = "runware" | "elevenlabs";
+
 function GenerateTrackCard({ kind, onCreated }: { kind: AudioTrackKind; onCreated: (entry: AssetEntry) => void }) {
   const settings = useAssetStore((s) => s.settings);
   const importAsset = useAssetStore((s) => s.importAsset);
-  const [name, setName] = useState("");
-  const [prompt, setPrompt] = useState("");
-  const [duration, setDuration] = useState(getDefaultDuration(kind));
-  const [generating, setGenerating] = useState(false);
-  const [enhancing, setEnhancing] = useState(false);
-  const [resultPath, setResultPath] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const resultSrc = useMediaSrc(resultPath ?? undefined);
+  const zones = useZoneStore((s) => s.zones);
 
   const hasRunwareKey = !!settings && settings.runware_api_key.length > 0;
+  const hasElevenKey = !!settings && settings.elevenlabs_api_key.length > 0;
   const hasLlmKey = !!settings && (
     settings.deepinfra_api_key.length > 0 ||
     settings.anthropic_api_key.length > 0 ||
@@ -292,22 +293,67 @@ function GenerateTrackCard({ kind, onCreated }: { kind: AudioTrackKind; onCreate
     (settings.use_hub_ai && settings.hub_api_key.length > 0)
   );
 
-  if (!AI_ENABLED || !hasRunwareKey) {
+  // ElevenLabs sound effects suit ambience, not music.
+  const providers: AudioProvider[] = kind === "ambient"
+    ? [...(hasElevenKey ? ["elevenlabs" as const] : []), ...(hasRunwareKey ? ["runware" as const] : [])]
+    : hasRunwareKey ? ["runware"] : [];
+
+  const [provider, setProvider] = useState<AudioProvider>(providers[0] ?? "runware");
+  const [name, setName] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [duration, setDuration] = useState(() =>
+    Math.min(getDefaultDuration(kind), providers[0] === "elevenlabs" ? ELEVENLABS_MAX_SECONDS : Infinity),
+  );
+  const [seamlessLoop, setSeamlessLoop] = useState(true);
+  const [ctxZoneId, setCtxZoneId] = useState("");
+  const [ctxRoomId, setCtxRoomId] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
+  const [resultPath, setResultPath] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const resultSrc = useMediaSrc(resultPath ?? undefined);
+
+  const sortedZones = useMemo(() => [...zones.entries()].sort(([a], [b]) => a.localeCompare(b)), [zones]);
+  const ctxZone = ctxZoneId ? zones.get(ctxZoneId) : undefined;
+  const roomEntries = useMemo(
+    () => Object.entries(ctxZone?.data.rooms ?? {}).sort(([, a], [, b]) => (a.title || "").localeCompare(b.title || "")),
+    [ctxZone],
+  );
+  const ctxRoom = ctxRoomId ? ctxZone?.data.rooms[ctxRoomId] : undefined;
+
+  if (!AI_ENABLED || providers.length === 0) {
     return (
       <section className="panel-surface rounded-3xl p-5">
         <p className="text-2xs uppercase tracking-wide-ui text-text-muted">Generator</p>
         <p className="mt-2 text-xs leading-6 text-text-muted">
-          Audio generation needs a Runware API key. Add one in Settings, or import tracks from disk instead.
+          {kind === "ambient"
+            ? "Audio generation needs a Runware or ElevenLabs API key. Add one in Settings, or import tracks from disk instead."
+            : "Audio generation needs a Runware API key. Add one in Settings, or import tracks from disk instead."}
         </p>
       </section>
     );
   }
 
+  const switchProvider = (next: AudioProvider) => {
+    setProvider(next);
+    if (next === "elevenlabs") setDuration((d) => Math.min(d, ELEVENLABS_MAX_SECONDS));
+  };
+
+  const maxDuration = provider === "elevenlabs" ? ELEVENLABS_MAX_SECONDS : 300;
+  const minDuration = provider === "elevenlabs" ? 1 : 10;
+
   const handleEnhance = async () => {
     setEnhancing(true);
     setError(null);
     try {
-      const context = [name && `Track name: "${name}"`, prompt && `Direction: ${prompt}`]
+      const context = [
+        name && `Track name: "${name}"`,
+        ctxZone && `Zone: ${ctxZone.data.zone || ctxZoneId}`,
+        ctxRoom && `Room: "${ctxRoom.title}"`,
+        ctxRoom?.description && `Room description: ${ctxRoom.description}`,
+        prompt && `Direction: ${prompt}`,
+      ]
         .filter(Boolean)
         .join("\n");
       const enhanced = await invoke<string>("llm_complete", {
@@ -322,15 +368,27 @@ function GenerateTrackCard({ kind, onCreated }: { kind: AudioTrackKind; onCreate
     }
   };
 
+  const handleInsertRoomText = () => {
+    if (!ctxRoom) return;
+    setPrompt(ctxRoom.description?.trim() || ctxRoom.title);
+    if (!name.trim()) setName(defaultTrackName(ctxRoom.title, kind));
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setGenerating(true);
     setError(null);
     try {
-      const filePath = await invoke<string>("runware_generate_audio", {
-        prompt: prompt.trim(),
-        durationSeconds: duration,
-      });
+      const filePath = provider === "elevenlabs"
+        ? await invoke<string>("elevenlabs_generate_sound_effect", {
+            text: prompt.trim(),
+            durationSeconds: duration,
+            seamlessLoop,
+          })
+        : await invoke<string>("runware_generate_audio", {
+            prompt: prompt.trim(),
+            durationSeconds: duration,
+          });
       setResultPath(filePath);
     } catch (e) {
       setError(String(e));
@@ -348,7 +406,8 @@ function GenerateTrackCard({ kind, onCreated }: { kind: AudioTrackKind; onCreate
         libraryContext(kind),
         undefined,
         false,
-        name.trim() || prompt.trim().slice(0, 48),
+        name.trim()
+          || (ctxRoom ? defaultTrackName(ctxRoom.title, kind) : prompt.trim().slice(0, 48)),
       );
       onCreated(entry);
       setResultPath(null);
@@ -359,11 +418,67 @@ function GenerateTrackCard({ kind, onCreated }: { kind: AudioTrackKind; onCreate
     }
   };
 
+  const selectClass = "min-w-0 flex-1 rounded border border-border-default bg-bg-secondary px-2 py-1 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active [&>option]:bg-bg-secondary";
+
   return (
     <section className="panel-surface flex flex-col gap-2.5 self-start rounded-3xl p-5">
-      <p className="text-2xs uppercase tracking-wide-ui text-text-muted">
-        {kind === "music" ? "Compose a track" : "Design a soundscape"}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-2xs uppercase tracking-wide-ui text-text-muted">
+          {kind === "music" ? "Compose a track" : "Design a soundscape"}
+        </p>
+        {providers.length > 1 && (
+          <div className="flex gap-1" role="group" aria-label="Audio provider">
+            {providers.map((p) => (
+              <button
+                key={p}
+                onClick={() => switchProvider(p)}
+                className={`focus-ring rounded-full px-2.5 py-0.5 text-2xs transition ${
+                  provider === p
+                    ? "bg-accent/20 font-medium text-accent"
+                    : "text-text-muted hover:text-text-secondary"
+                }`}
+              >
+                {p === "elevenlabs" ? "ElevenLabs SFX" : "Runware"}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Room context — feeds Auto-Prompt and "Use room text" */}
+      <div className="flex items-center gap-1.5">
+        <select
+          value={ctxZoneId}
+          onChange={(e) => { setCtxZoneId(e.target.value); setCtxRoomId(""); }}
+          aria-label="Context zone"
+          className={selectClass}
+        >
+          <option value="">No zone context</option>
+          {sortedZones.map(([zoneId, z]) => (
+            <option key={zoneId} value={zoneId}>{z.data.zone || zoneId}</option>
+          ))}
+        </select>
+        <select
+          value={ctxRoomId}
+          onChange={(e) => setCtxRoomId(e.target.value)}
+          disabled={!ctxZoneId}
+          aria-label="Context room"
+          className={`${selectClass} disabled:opacity-50`}
+        >
+          <option value="">{ctxZoneId ? "Whole zone" : "Room…"}</option>
+          {roomEntries.map(([roomId, room]) => (
+            <option key={roomId} value={roomId}>{room.title}</option>
+          ))}
+        </select>
+      </div>
+      {ctxRoom && (
+        <button
+          onClick={handleInsertRoomText}
+          className="focus-ring self-start rounded px-1.5 py-0.5 text-2xs text-accent transition-colors hover:bg-accent/10"
+        >
+          Use room text as prompt
+        </button>
+      )}
 
       <input
         value={name}
@@ -381,18 +496,29 @@ function GenerateTrackCard({ kind, onCreated }: { kind: AudioTrackKind; onCreate
         className="w-full resize-y rounded border border-border-default bg-bg-secondary px-2 py-1 font-mono text-2xs leading-relaxed text-text-secondary placeholder:text-text-muted outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
       />
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <label className="text-2xs text-text-muted" htmlFor="audio-studio-duration">Duration</label>
         <input
           id="audio-studio-duration"
           type="number"
-          min={10}
-          max={300}
+          min={minDuration}
+          max={maxDuration}
           value={duration}
           onChange={(e) => setDuration(Number(e.target.value))}
           className="w-16 rounded border border-border-default bg-bg-secondary px-1.5 py-0.5 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active"
         />
-        <span className="text-2xs text-text-muted">sec</span>
+        <span className="text-2xs text-text-muted">sec{provider === "elevenlabs" ? ` (max ${ELEVENLABS_MAX_SECONDS})` : ""}</span>
+        {provider === "elevenlabs" && (
+          <label className="flex cursor-pointer items-center gap-1 text-2xs text-text-muted">
+            <input
+              type="checkbox"
+              checked={seamlessLoop}
+              onChange={(e) => setSeamlessLoop(e.target.checked)}
+              className="accent-[rgb(var(--accent-rgb))]"
+            />
+            Seamless loop
+          </label>
+        )}
         <div className="ml-auto flex gap-1">
           {hasLlmKey && (
             <button

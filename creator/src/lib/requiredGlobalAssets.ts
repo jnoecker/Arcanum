@@ -876,6 +876,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "jukebox_bg_portrait",
+    defaultFilename: "jukebox_bg_portrait.png",
+    label: "Jukebox Panel Background (Portrait)",
+    description:
+      "Portrait variant of the jukebox panel backdrop served to mobile / narrow viewports. The playlist rows overlay the blank parchment scrolls and the now-playing countdown overlays the lower parchment strip. Falls back to the landscape art when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A tall ornate fantasy music-box jukebox cabinet facade filling the frame edge to edge — dark carved wood with brass fittings, filigree, and clockwork details, a blank ornate title plaque centered at the top, a stack of five wide blank parchment scroll rollers as horizontal rows in the center where song titles overlay, a long blank parchment strip along the bottom where the now-playing bar overlays, slender side columns with a small clock face, a brass bell, winding keys, and tiny carved musician automaton figurines in lantern-lit alcoves, a twilight starfield behind the cabinet, warm magical lantern glow, portrait composition, no living figures, no readable text, suitable as a backdrop behind a song-picker panel on a narrow screen.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
     key: "friends_bg",
     defaultFilename: "friends_bg.png",
     label: "Friends Panel Background",
@@ -1223,6 +1236,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "lottery_bg_portrait",
+    defaultFilename: "lottery_bg_portrait.png",
+    label: "Lottery Panel Background (Portrait)",
+    description:
+      "Portrait variant of the lottery panel backdrop served to mobile / narrow viewports; the ticket kiosk UI overlays it. Falls back to the landscape art when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A tall festive fortune-and-fate backdrop filling the frame edge to edge — a great ornate spinning fortune wheel with golden spokes near the top, warm amber and gold tones, soft bokeh festival lights and drifting sparkles, draped banners along the upper edges, an open uncluttered lower region where the lottery ticket panel overlays, warm celebratory glow, portrait composition, no figures, no readable text, suitable as a backdrop behind a lottery panel on a narrow screen.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
     key: "auction_bg",
     defaultFilename: "auction_bg.png",
     label: "Auction House Background",
@@ -1472,6 +1498,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A cozy gambling dice-table backdrop filling the frame edge to edge — a rich green felt surface with a carved wooden rim, a few ornate tumbling dice and stacked coins off to one side, warm tavern lamplight and soft shadows, an open uncluttered center where the dice game panel overlays, inviting warm glow, no figures, no readable text, suitable as a backdrop behind a dice gambling panel.",
     transparent: false,
     aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "dice_bg_portrait",
+    defaultFilename: "dice_bg_portrait.png",
+    label: "Dice Table Background (Portrait)",
+    description:
+      "Portrait variant of the dice-gambling panel backdrop served to mobile / narrow viewports; the dice game UI overlays it. Falls back to the landscape art when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A tall cozy gambling dice-table backdrop filling the frame edge to edge — a rich green felt surface with a carved wooden rim, a few ornate tumbling dice and stacked coins along the top edge, warm tavern lamplight and soft shadows, an open uncluttered center where the dice game panel overlays, inviting warm glow, portrait composition, no figures, no readable text, suitable as a backdrop behind a dice gambling panel on a narrow screen.",
+    transparent: false,
+    aspect: "portrait",
     optional: true,
   },
   // The Children of Aineroira — the dice for the dice game. Each die has a

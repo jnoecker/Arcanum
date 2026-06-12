@@ -863,6 +863,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "jukebox_bg",
+    defaultFilename: "jukebox_bg.png",
+    label: "Jukebox Panel Background",
+    description:
+      "Fully painted backdrop for the jukebox song-picker panel — an ornate music-box cabinet. The playlist rows overlay the blank parchment scrolls and the now-playing countdown overlays the lower parchment strip. Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "An ornate fantasy music-box jukebox cabinet facade filling the frame edge to edge — dark carved wood with brass fittings, filigree, and clockwork details, a blank ornate title plaque centered at the top, a stack of five wide blank parchment scroll rollers as horizontal rows in the center where song titles overlay, a long blank parchment strip along the bottom where the now-playing bar overlays, flanking towers with a small clock face, a brass bell, winding keys, and tiny carved musician automaton figurines in lantern-lit alcoves, a twilight starfield behind the cabinet, warm magical lantern glow, no living figures, no readable text, suitable as a backdrop behind a song-picker panel.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
     key: "friends_bg",
     defaultFilename: "friends_bg.png",
     label: "Friends Panel Background",

@@ -1002,3 +1002,59 @@ describe("sanitizeZone — room jukebox", () => {
     expect(result.rooms["room_a"]!.jukebox).toBeUndefined();
   });
 });
+
+describe("sanitizeZone — room music box", () => {
+  it("rebuilds the box in contract key order with empty optionals omitted and no cost", () => {
+    const world = makeWorld({
+      rooms: {
+        room_a: {
+          title: "A",
+          description: "A",
+          musicBox: {
+            durationSeconds: 60.6,
+            lyrics: ["  Down where the lantern-light is low  ", "", "the scuttlefish sings soft and slow"],
+            description: "A soft tune.",
+            artist: "Scuttlefish",
+            // A stray cost must not survive — the music box is always free.
+            cost: 5,
+            file: "lullaby.mp3",
+            title: "Scuttlefish's Lullaby",
+          } as never,
+        },
+      },
+    });
+
+    const result = sanitizeZone(world);
+    const box = result.rooms["room_a"]!.musicBox!;
+    expect(Object.keys(box)).toEqual([
+      "title", "file", "durationSeconds", "artist", "description", "lyrics",
+    ]);
+    expect(box).toEqual({
+      title: "Scuttlefish's Lullaby",
+      file: "lullaby.mp3",
+      durationSeconds: 61,
+      artist: "Scuttlefish",
+      description: "A soft tune.",
+      lyrics: ["Down where the lantern-light is low", "the scuttlefish sings soft and slow"],
+    });
+  });
+
+  it("drops a blank-file music box entirely", () => {
+    const world = makeWorld({
+      rooms: {
+        room_a: { title: "A", description: "A", musicBox: { file: "   ", title: "Ghost" } },
+        room_b: { title: "B", description: "B", musicBox: { file: "keeper.mp3" } },
+      },
+    });
+
+    const result = sanitizeZone(world);
+    expect(result.rooms["room_a"]!.musicBox).toBeUndefined();
+    expect(result.rooms["room_b"]!.musicBox).toEqual({ file: "keeper.mp3" });
+  });
+
+  it("leaves rooms without a music box alone", () => {
+    const world = makeWorld();
+    const result = sanitizeZone(world);
+    expect(result.rooms["room_a"]!.musicBox).toBeUndefined();
+  });
+});

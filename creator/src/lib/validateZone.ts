@@ -575,6 +575,44 @@ export function validateZone(
         }
       }
     }
+
+    if (room.musicBox) {
+      const box = room.musicBox;
+      const where = "Music box";
+      if (!box.file?.trim()) {
+        addIssue(issues, "error", entity, `${where} has no audio file`);
+      }
+      if (box.lyrics) {
+        if (box.lyrics.some((line) => typeof line !== "string" || !line.trim())) {
+          addIssue(issues, "error", entity, `${where} has a blank lyric line`);
+        }
+        const duration = box.durationSeconds;
+        if (typeof duration === "number" && duration > 0) {
+          const maxLines = Math.floor(duration / 3);
+          if (box.lyrics.length > maxLines) {
+            addIssue(
+              issues,
+              "error",
+              entity,
+              `${where} has ${box.lyrics.length} lyric lines but durationSeconds=${duration} allows at most ${maxLines} — at most one lyric line per 3 seconds`,
+            );
+          }
+        }
+      }
+      if (opts?.jukeboxOutput) {
+        if (!box.title?.trim()) {
+          addIssue(issues, "error", entity, `${where} has no title — name the track in the Audio Studio`);
+        }
+        if (typeof box.durationSeconds !== "number" || box.durationSeconds <= 0) {
+          addIssue(
+            issues,
+            "error",
+            entity,
+            `${where} has no playable duration — set the track's duration in the Audio Studio`,
+          );
+        }
+      }
+    }
   }
 
   for (const [mobId, mob] of Object.entries(world.mobs ?? {})) {

@@ -1,5 +1,5 @@
 import type { AppConfig } from "@/types/config";
-import type { JukeboxSongFile, WorldFile } from "@/types/world";
+import type { JukeboxSongFile, MusicBoxFile, WorldFile } from "@/types/world";
 
 const REMOTE_URL_RE = /^(?:https?:)?\/\//i;
 const ENGINE_MEDIA_PATH_RE = /^\/(?:images?|videos?|audio)\//i;
@@ -98,6 +98,7 @@ export function normalizeWorldAssetRefs(world: WorldFile): WorldFile {
         ambient: normalizeAssetRef(room.ambient),
         audio: normalizeAssetRef(room.audio),
         jukebox: normalizeJukeboxRefs(room.jukebox),
+        musicBox: normalizeMusicBoxRef(room.musicBox),
         features: room.features
           ? mapEntries(room.features, (feature) =>
               feature.plateImage || feature.handleImage || feature.backgroundImage
@@ -167,6 +168,12 @@ function normalizeJukeboxRefs(jukebox: JukeboxSongFile[] | undefined): JukeboxSo
     return file ? [{ ...song, file }] : [];
   });
   return songs.length > 0 ? songs : undefined;
+}
+
+function normalizeMusicBoxRef(musicBox: MusicBoxFile | undefined): MusicBoxFile | undefined {
+  if (!musicBox) return undefined;
+  const file = normalizeAssetRef(musicBox.file);
+  return file ? { ...musicBox, file } : undefined;
 }
 
 function mapEntries<T>(

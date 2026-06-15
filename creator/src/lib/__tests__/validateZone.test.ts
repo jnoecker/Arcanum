@@ -187,6 +187,51 @@ describe("validateZone", () => {
     expect(validateZone(world, ...JUKEBOX_OUTPUT)).toHaveLength(0);
   });
 
+  // ─── Room music box ──────────────────────────────────────────
+  it("errors on a music box with a blank file", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.musicBox = { file: "   " };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.entity === "room:room1" && i.message.includes("Music box has no audio file"))).toBe(true);
+  });
+
+  it("accepts a populated music box without issues", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.musicBox = {
+      title: "Lullaby",
+      file: "box.mp3",
+      durationSeconds: 30,
+      lyrics: ["soft", "and", "slow"],
+    };
+    expect(validateZone(world)).toHaveLength(0);
+  });
+
+  it("errors on a music box blank lyric line", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.musicBox = { file: "box.mp3", lyrics: ["fine", "   "] };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.includes("Music box has a blank lyric line"))).toBe(true);
+  });
+
+  it("errors when music box lyrics exceed one line per 3 seconds", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.musicBox = { file: "box.mp3", durationSeconds: 9, lyrics: ["a", "b", "c", "d"] };
+    const issues = errors(validateZone(world));
+    expect(issues.some((i) => i.message.includes("Music box") && i.message.includes("at most 3"))).toBe(true);
+  });
+
+  it("requires music box title and duration only when validating enriched output", () => {
+    const world = makeValidWorld();
+    world.rooms.room1.musicBox = { file: "box.mp3" };
+
+    expect(validateZone(world)).toHaveLength(0);
+
+    const issues = errors(validateZone(world, ...JUKEBOX_OUTPUT));
+    expect(issues).toHaveLength(2);
+    expect(issues.some((i) => i.message.includes("Music box has no title"))).toBe(true);
+    expect(issues.some((i) => i.message.includes("Music box has no playable duration"))).toBe(true);
+  });
+
   it("warns on door key that is not a known item", () => {
     const world = makeValidWorld();
     world.rooms.room1.exits = {

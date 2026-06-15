@@ -1247,6 +1247,7 @@ export function RoomPanel({
             hint="Overrides the zone's default soundscape for this room."
           />
           <JukeboxEditor world={world} roomId={roomId} onWorldChange={onWorldChange} />
+          <MusicBoxEditor world={world} roomId={roomId} onWorldChange={onWorldChange} />
         </div>
       </Section>
       </>
@@ -1447,6 +1448,99 @@ function JukeboxEditor({ world, roomId, onWorldChange }: JukeboxEditorProps) {
           <p className="text-2xs text-text-muted">
             Players use <code className="font-mono">jukebox play &lt;n&gt;</code> — titles, artists, and
             lyrics come from the Audio Studio library. A blank cost charges the server's default price.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A room's one-song music box — a free, player-scoped miniature of the jukebox.
+ *  The song is a bare file ref; its title, artist, lyrics, and duration are
+ *  denormalized from the audio library at save time, exactly like a jukebox song,
+ *  minus the cost (the music box is always free). */
+function MusicBoxEditor({ world, roomId, onWorldChange }: JukeboxEditorProps) {
+  const assets = useAssetStore((s) => s.assets);
+  const metaIndex = useMemo(() => buildAudioMetaIndex(assets), [assets]);
+  const musicTracks = useMemo(() => listAudioTracks(assets, "music"), [assets]);
+
+  const room = world.rooms[roomId];
+  if (!room) return null;
+  const box = room.musicBox;
+  const meta = box ? metaIndex.get(box.file) : undefined;
+  const boxDuration =
+    box && typeof box.durationSeconds === "number" && box.durationSeconds > 0
+      ? Math.round(box.durationSeconds)
+      : 0;
+  const duration = meta && meta.durationSeconds > 0 ? meta.durationSeconds : boxDuration;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="flex cursor-pointer items-center gap-1.5 text-xs text-text-secondary">
+        <input
+          type="checkbox"
+          checked={!!room.musicBox}
+          onChange={(e) =>
+            onWorldChange(
+              updateRoom(world, roomId, { musicBox: e.target.checked ? { file: "" } : undefined }),
+            )
+          }
+          className="accent-[rgb(var(--accent-rgb))]"
+        />
+        Music box in this room
+      </label>
+      {room.musicBox && (
+        <div className="flex flex-col gap-1 pl-5">
+          {box?.file ? (
+            <div className="flex items-center gap-1 text-2xs">
+              <span className="min-w-0 flex-1 truncate text-text-secondary" title={box.file}>
+                {meta?.name ?? box.title ?? box.file}
+              </span>
+              {duration > 0 && (
+                <span className="shrink-0 text-3xs text-text-muted">{formatSongDuration(duration)}</span>
+              )}
+              {!meta && (
+                <span className="shrink-0 rounded bg-status-warning/15 px-1 py-0.5 text-3xs text-status-warning">
+                  unknown track
+                </span>
+              )}
+              {meta && duration <= 0 && (
+                <span
+                  title="Saving is blocked until this song has a play length — set the track's duration in the Audio Studio."
+                  className="shrink-0 rounded bg-status-warning/15 px-1 py-0.5 text-3xs text-status-warning"
+                >
+                  no duration
+                </span>
+              )}
+              {meta && !meta.lyrics && (
+                <span className="shrink-0 rounded bg-bg-secondary px-1 py-0.5 text-3xs text-text-muted">
+                  no lyrics
+                </span>
+              )}
+            </div>
+          ) : null}
+          <select
+            value={box?.file ?? ""}
+            onChange={(e) =>
+              onWorldChange(
+                updateRoom(world, roomId, {
+                  musicBox: e.target.value ? { file: e.target.value } : { file: "" },
+                }),
+              )
+            }
+            aria-label="Music box song"
+            className="w-full rounded border border-border-default bg-bg-secondary px-2 py-1 text-2xs text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-active [&>option]:bg-bg-secondary"
+          >
+            <option value="">Choose song…</option>
+            {musicTracks.map((t) => (
+              <option key={t.id} value={t.file_name}>
+                {trackLabel(t)}
+              </option>
+            ))}
+          </select>
+          <p className="text-2xs text-text-muted">
+            Players use <code className="font-mono">musicbox play</code> — it's free and personal, and the
+            song follows them out of the room. Title, artist, and lyrics come from the Audio Studio library.
           </p>
         </div>
       )}

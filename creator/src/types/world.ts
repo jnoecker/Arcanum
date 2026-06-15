@@ -139,6 +139,9 @@ export interface RoomFile {
   ambient?: string;
   /** Bare song list — non-empty means the room has a jukebox. */
   jukebox?: JukeboxSongFile[];
+  /** A single song — present means the room has a music box (a free, player-scoped
+   *  one-song miniature of the jukebox). */
+  musicBox?: MusicBoxFile;
   /** Legacy Arcanum-only alias; stripped on output. */
   audio?: string;
 }
@@ -151,6 +154,18 @@ export interface JukeboxSongFile {
   file: string;
   durationSeconds?: number;
   cost?: number;
+  artist?: string;
+  description?: string;
+  lyrics?: string[];
+}
+
+/** Server contract (AmbonMUD #1336). A room's one-song music box — like a
+ *  {@link JukeboxSongFile} but always free (no `cost`). `title`/`durationSeconds`
+ *  are required by the server loader but optional here until save-time enrichment. */
+export interface MusicBoxFile {
+  title?: string;
+  file: string;
+  durationSeconds?: number;
   artist?: string;
   description?: string;
   lyrics?: string[];

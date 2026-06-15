@@ -349,6 +349,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "music_box_widget",
+    defaultFilename: "music_box_widget.png",
+    label: "Music Box",
+    description: "Badge shown on rooms with a music box (and while a song follows the player); opens the music-box device.",
+    assetType: "ability_icon",
+    defaultPrompt: "A single small ornate fantasy wind-up music box, walnut and brass with a winding crank, glowing with warm light, centered.",
+    transparent: true,
+    optional: true,
+  },
+  {
     key: "duel_arena_widget",
     defaultFilename: "duel_arena_widget.png",
     label: "Duel Arena",
@@ -884,6 +894,32 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     assetType: "background",
     defaultPrompt:
       "A tall ornate fantasy music-box jukebox cabinet facade filling the frame edge to edge — dark carved wood with brass fittings, filigree, and clockwork details, a blank ornate title plaque centered at the top, a stack of five wide blank parchment scroll rollers as horizontal rows in the center where song titles overlay, a long blank parchment strip along the bottom where the now-playing bar overlays, slender side columns with a small clock face, a brass bell, winding keys, and tiny carved musician automaton figurines in lantern-lit alcoves, a twilight starfield behind the cabinet, warm magical lantern glow, portrait composition, no living figures, no readable text, suitable as a backdrop behind a song-picker panel on a narrow screen.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
+    key: "musicbox_bg",
+    defaultFilename: "musicbox_bg.png",
+    label: "Music Box Device Background",
+    description:
+      "Fully painted device frame for the music-box panel — a small wind-up music box. The title overlays the blank parchment plaque at the top, the scrolling lyrics overlay the large blank central parchment, and the play/stop crank controls overlay the base plaque. Falls back to the procedural panel when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A small ornate fantasy wind-up music box facade filling a tall portrait frame edge to edge — dark carved walnut with brass fittings, filigree, and clockwork details, a blank ornate title plaque centered near the top, a pinned brass cylinder drum below it, one large blank central parchment panel where scrolling lyrics overlay, flanked by tiny carved musician automaton figurines (cello, harp, singer) in lantern-lit alcoves, a small clock face in the upper corner and a brass winding crank on the side, a blank decorative base plaque along the bottom where the play controls overlay, warm magical lantern glow, no living figures, no readable text, suitable as a device frame behind a music-box panel.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
+    key: "musicbox_bg_portrait",
+    defaultFilename: "musicbox_bg_portrait.png",
+    label: "Music Box Device Background (Portrait)",
+    description:
+      "Portrait variant of the music-box device frame served to mobile / narrow viewports. The title overlays the top plaque, the lyrics overlay the central parchment, and the crank controls overlay the base plaque. Falls back to the main device art when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A small ornate fantasy wind-up music box facade filling a tall portrait frame edge to edge — dark carved walnut with brass fittings, filigree, and clockwork details, a blank ornate title plaque centered near the top, a pinned brass cylinder drum below it, one large blank central parchment panel where scrolling lyrics overlay, flanked by tiny carved musician automaton figurines in lantern-lit alcoves, a small clock face in the upper corner and a brass winding crank on the side, a blank decorative base plaque along the bottom where the play controls overlay, warm magical lantern glow, portrait composition, no living figures, no readable text, suitable as a device frame behind a music-box panel on a narrow screen.",
     transparent: false,
     aspect: "portrait",
     optional: true,

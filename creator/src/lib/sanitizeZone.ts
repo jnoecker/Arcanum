@@ -14,6 +14,7 @@ import type {
   DoorFile,
   DungeonLootTable,
   JukeboxSongFile,
+  MusicBoxFile,
 } from "@/types/world";
 import { resolveDoorKeyId } from "./doorHelpers";
 import { getTrainerClasses } from "./trainers";
@@ -181,8 +182,36 @@ function normalizeJukebox(jukebox?: JukeboxSongFile[]): JukeboxSongFile[] | unde
   return songs.length > 0 ? songs : undefined;
 }
 
+/** Rebuild the music box in the server contract's key order (title, file,
+ *  durationSeconds, artist, description, lyrics — no cost; it's always free),
+ *  omitting empty optional fields. A box with no audio file is dropped entirely. */
+function normalizeMusicBox(box?: MusicBoxFile): MusicBoxFile | undefined {
+  if (!box || !box.file || !box.file.trim()) return undefined;
+  const out: MusicBoxFile =
+    typeof box.title === "string" && box.title.trim()
+      ? { title: box.title, file: box.file }
+      : { file: box.file };
+  if (typeof box.durationSeconds === "number" && box.durationSeconds > 0) {
+    out.durationSeconds = Math.round(box.durationSeconds);
+  }
+  if (typeof box.artist === "string" && box.artist.trim()) out.artist = box.artist;
+  if (typeof box.description === "string" && box.description.trim()) out.description = box.description;
+  if (Array.isArray(box.lyrics)) {
+    const lines = box.lyrics
+      .map((line) => (typeof line === "string" ? line.trim() : ""))
+      .filter((line) => line.length > 0);
+    if (lines.length > 0) out.lyrics = lines;
+  }
+  return out;
+}
+
 function normalizeRoomOutput(room: RoomFile): RoomFile {
-  let next: RoomFile = { ...room, audio: undefined, jukebox: normalizeJukebox(room.jukebox) };
+  let next: RoomFile = {
+    ...room,
+    audio: undefined,
+    jukebox: normalizeJukebox(room.jukebox),
+    musicBox: normalizeMusicBox(room.musicBox),
+  };
   if (room.exits) {
     const exits: Record<string, string | ExitValue> = {};
     for (const [dir, exit] of Object.entries(room.exits)) {

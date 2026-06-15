@@ -411,6 +411,40 @@ describe("enrichJukeboxSongs", () => {
     });
     expect(enrichJukeboxSongs(noJukebox, meta)).toBe(noJukebox);
   });
+
+  it("enriches a room's music box from the library and never gives it a cost", () => {
+    const world = makeWorld({
+      rooms: {
+        parlor: {
+          title: "Parlor",
+          description: "",
+          // A stray cost on the box must be stripped — the music box is always free.
+          musicBox: { file: "song.mp3", title: "Stale", cost: 9 },
+        },
+      } as WorldFile["rooms"],
+    });
+    const next = enrichJukeboxSongs(world, meta);
+    const box = next.rooms.parlor?.musicBox;
+    expect(box).toEqual({
+      title: "The Borrowed Song",
+      file: "song.mp3",
+      durationSeconds: 96,
+      artist: "The Wandering Bards",
+      description: "A waltz that remembers being hummed.",
+      lyrics: ["When the lanterns lean in low,", "the teacups start to sway."],
+    });
+    expect(Object.keys(box!)).not.toContain("cost");
+  });
+
+  it("drops a blank-file music box during enrichment", () => {
+    const world = makeWorld({
+      rooms: {
+        parlor: { title: "Parlor", description: "", musicBox: { file: "   " } },
+      } as WorldFile["rooms"],
+    });
+    const next = enrichJukeboxSongs(world, meta);
+    expect(next.rooms.parlor?.musicBox).toBeUndefined();
+  });
 });
 
 describe("jukebox YAML round-trip", () => {

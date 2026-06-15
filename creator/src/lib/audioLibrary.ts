@@ -1,5 +1,5 @@
 import type { AssetEntry } from "@/types/assets";
-import type { JukeboxSongFile, RoomFile, WorldFile } from "@/types/world";
+import type { JukeboxSongFile, MusicBoxFile, RoomFile, WorldFile } from "@/types/world";
 
 export type AudioTrackKind = "music" | "ambient";
 
@@ -157,13 +157,36 @@ export function splitLyricsLines(lyrics: string): string[] {
 }
 
 /**
- * Denormalize library metadata into jukebox song entries at save time.
- * Songs whose file is in the index are rebuilt from it in the server
+ * Denormalize library metadata into a single jukebox song from its file's
+ * library entry, rebuilt in the server contract's key order. Returns null for a
+ * blank file. A track not in the index stays verbatim.
+ */
+function enrichSong(song: JukeboxSongFile, meta: Map<string, AudioTrackMeta>): JukeboxSongFile | null {
+  if (!song.file || !song.file.trim()) return null;
+  const track = meta.get(song.file);
+  if (!track) return song;
+  const enriched: JukeboxSongFile = { title: track.name, file: song.file };
+  if (track.durationSeconds > 0) {
+    enriched.durationSeconds = track.durationSeconds;
+  } else if (typeof song.durationSeconds === "number" && song.durationSeconds > 0) {
+    enriched.durationSeconds = Math.round(song.durationSeconds);
+  }
+  if (typeof song.cost === "number" && song.cost >= 0) enriched.cost = song.cost;
+  if (track.artist) enriched.artist = track.artist;
+  if (track.description) enriched.description = track.description;
+  const lyrics = splitLyricsLines(track.lyrics);
+  if (lyrics.length > 0) enriched.lyrics = lyrics;
+  return enriched;
+}
+
+/**
+ * Denormalize library metadata into jukebox + music-box entries at save time.
+ * Entries whose file is in the index are rebuilt from it in the server
  * contract's key order (so stale titles, descriptions, and lyrics clear when
- * the library entry empties); songs from other machines stay verbatim. The
- * per-song `cost` is zone-side authoring, not library metadata, so it always
- * survives. Blank-file songs are dropped, and a jukebox with no surviving
- * songs disappears.
+ * the library entry empties); entries from other machines stay verbatim. A
+ * jukebox song's `cost` is zone-side authoring and always survives; the music
+ * box is always free, so it carries none. Blank-file entries are dropped, and a
+ * jukebox / music box with nothing left disappears.
  */
 export function enrichJukeboxSongs(
   world: WorldFile,
@@ -172,35 +195,30 @@ export function enrichJukeboxSongs(
   let changed = false;
   const rooms: Record<string, RoomFile> = {};
   for (const [roomId, room] of Object.entries(world.rooms)) {
-    if (!room.jukebox) {
-      rooms[roomId] = room;
-      continue;
-    }
-    const songs: JukeboxSongFile[] = [];
-    for (const song of room.jukebox) {
-      if (!song.file || !song.file.trim()) continue;
-      const track = meta.get(song.file);
-      if (!track) {
-        songs.push(song);
-        continue;
+    let nextRoom = room;
+    if (room.jukebox) {
+      const songs: JukeboxSongFile[] = [];
+      for (const song of room.jukebox) {
+        const enriched = enrichSong(song, meta);
+        if (enriched) songs.push(enriched);
       }
-      const enriched: JukeboxSongFile = { title: track.name, file: song.file };
-      if (track.durationSeconds > 0) {
-        enriched.durationSeconds = track.durationSeconds;
-      } else if (typeof song.durationSeconds === "number" && song.durationSeconds > 0) {
-        enriched.durationSeconds = Math.round(song.durationSeconds);
-      }
-      if (typeof song.cost === "number" && song.cost >= 0) enriched.cost = song.cost;
-      if (track.artist) enriched.artist = track.artist;
-      if (track.description) enriched.description = track.description;
-      const lyrics = splitLyricsLines(track.lyrics);
-      if (lyrics.length > 0) enriched.lyrics = lyrics;
-      songs.push(enriched);
+      nextRoom = songs.length > 0
+        ? { ...nextRoom, jukebox: songs }
+        : { ...nextRoom, jukebox: undefined };
+      changed = true;
     }
-    rooms[roomId] = songs.length > 0
-      ? { ...room, jukebox: songs }
-      : { ...room, jukebox: undefined };
-    changed = true;
+    if (room.musicBox) {
+      const enriched = enrichSong(room.musicBox, meta);
+      // The music box never carries a cost — it's free; drop any stray one.
+      const box: MusicBoxFile | undefined = enriched
+        ? (({ cost: _cost, ...rest }) => rest)(enriched)
+        : undefined;
+      nextRoom = box
+        ? { ...nextRoom, musicBox: box }
+        : { ...nextRoom, musicBox: undefined };
+      changed = true;
+    }
+    rooms[roomId] = nextRoom;
   }
   return changed ? { ...world, rooms } : world;
 }

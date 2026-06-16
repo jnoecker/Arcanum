@@ -6,6 +6,7 @@ import { sanitizeZone } from "@/lib/sanitizeZone";
 import { validateZone } from "@/lib/validateZone";
 import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
+import { useReferenceStore } from "@/stores/referenceStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { YAML_OPTS } from "@/lib/yamlOpts";
 
@@ -16,8 +17,11 @@ import { YAML_OPTS } from "@/lib/yamlOpts";
 export function serializeZone(zoneId: string): string {
   const zone = useZoneStore.getState().zones.get(zoneId);
   if (!zone) throw new Error(`Zone "${zoneId}" not found`);
+  // Strip `@reference` sigils so the game text the server reads stays clean;
+  // the tokenized form is preserved out-of-band via captureAnnotations on save.
+  const cleaned = useReferenceStore.getState().stripWorld(zone.data);
   const sanitized = enrichJukeboxSongs(
-    normalizeWorldAssetRefs(sanitizeZone(zone.data)),
+    normalizeWorldAssetRefs(sanitizeZone(cleaned)),
     buildAudioMetaIndex(useAssetStore.getState().assets),
   );
   const config = useConfigStore.getState().config;
@@ -65,6 +69,9 @@ export async function saveZone(zoneId: string): Promise<void> {
 
   const yaml = serializeZone(zoneId);
   await writeTextFile(zone.filePath, yaml);
+  // Remember where the author placed `@reference` tokens so they survive the
+  // round-trip even though the YAML on disk now holds clean text.
+  await useReferenceStore.getState().captureAnnotations(zoneId, zone.data).catch(() => {});
   state.markClean(zoneId);
 }
 

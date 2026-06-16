@@ -12,6 +12,10 @@ import type { ArtStyleSurface } from "@/lib/loreGeneration";
 import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, resolveImageModel, modelNativelyTransparent } from "@/types/assets";
 import type { AssetContext, AssetEntry, GeneratedImage } from "@/types/assets";
 import { generateAssetImageWithRetry } from "@/lib/imageGen";
+import { useReferenceStore } from "@/stores/referenceStore";
+import { ReferenceMentionField } from "@/components/ui/ReferenceMentionField";
+import { applyReferences, buildReferenceBlock, buildResolver, expandReferences } from "@/lib/referenceTokens";
+import type { ReferenceSubject } from "@/types/reference";
 import { AssetPickerModal } from "./AssetPickerModal";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import { InlineError } from "./FormWidgets";
@@ -121,6 +125,7 @@ export function EntityArtGenerator({
   const activeArtStyleId = useLoreStore((s) => s.lore?.activeArtStyleId);
   const setActiveArtStyle = useLoreStore((s) => s.setActiveArtStyle);
   const project = useProjectStore((s) => s.project);
+  const refSubjects = useReferenceStore((s) => s.subjects);
   const mudDir = project?.mudDir;
   const projectName = project?.name;
   const [stage, setStage] = useState<Stage>("idle");
@@ -190,6 +195,16 @@ export function EntityArtGenerator({
   );
   const basePrompt = getPrompt(artStyle);
   const activePrompt = editedPrompt ?? basePrompt;
+
+  // Surface which `@reference` tokens the current prompt/entity resolve to.
+  const refStatus = useMemo(() => {
+    if (refSubjects.length === 0) return { used: [] as string[], unknown: [] as string[] };
+    const resolver = buildResolver(refSubjects);
+    const a = expandReferences(`${entityContext ?? ""}\n${activePrompt}`, resolver);
+    const used = Array.from(new Set(a.used.map((s) => s.name)));
+    const unknown = Array.from(new Set(a.unknown));
+    return { used, unknown };
+  }, [refSubjects, entityContext, activePrompt]);
   const variantGroup = variantGroupOverride ?? computeVariantGroup(context);
   variantGroupRef.current = variantGroup;
 
@@ -250,15 +265,28 @@ export function EntityArtGenerator({
     fh: string | undefined,
   ): Promise<string> => {
     const systemPrompt = getEnhanceSystemPrompt(artStyle, assetType, surface, nativeTransparency);
+    const resolver = useReferenceStore.getState().resolver();
+    const used: ReferenceSubject[] = [];
+    const collect = (subs: ReferenceSubject[]) => {
+      for (const s of subs) if (!used.some((u) => u.id === s.id)) used.push(s);
+    };
     const parts: string[] = [];
 
     if (ec) {
-      parts.push(`Generate an image prompt for this entity:\n${ec}`);
-      const reference = fh ?? prompt;
-      parts.push(`\nReference framing (format and composition guidance — the entity above defines the subject):\n${reference}`);
+      const ecExpanded = expandReferences(ec, resolver);
+      collect(ecExpanded.used);
+      parts.push(`Generate an image prompt for this entity:\n${ecExpanded.text}`);
+      const reference = expandReferences(fh ?? prompt, resolver);
+      collect(reference.used);
+      parts.push(`\nReference framing (format and composition guidance — the entity above defines the subject):\n${reference.text}`);
     } else {
-      parts.push(prompt);
+      const expanded = expandReferences(prompt, resolver);
+      collect(expanded.used);
+      parts.push(expanded.text);
     }
+
+    const block = buildReferenceBlock(used);
+    if (block) parts.push(`\n${block}`);
 
     const userPrompt = parts.join("\n");
     return invoke<string>("llm_complete", { systemPrompt, userPrompt });
@@ -291,16 +319,25 @@ export function EntityArtGenerator({
         throw new Error(`No models available for provider: ${imageProvider}`);
       }
 
+      // Expand any `@reference` tokens (strip the sigil, append the canonical
+      // appearance block) so generation stays consistent across appearances.
+      const expandLocal = (text: string) =>
+        applyReferences(text, useReferenceStore.getState().resolver()).prompt;
+
       let finalPrompt = promptToUse;
       if (enhanced) {
-        setLastEnhancedPrompt(promptToUse);
+        finalPrompt = expandLocal(promptToUse);
+        setLastEnhancedPrompt(finalPrompt);
       } else if (hasLlmKey) {
         try {
           finalPrompt = await enhancePromptWith(promptToUse, ec, fh);
           setLastEnhancedPrompt(finalPrompt);
         } catch {
-          // Fall back to base prompt if LLM fails
+          // Fall back to the (reference-expanded) base prompt if the LLM fails.
+          finalPrompt = expandLocal(promptToUse);
         }
+      } else {
+        finalPrompt = expandLocal(promptToUse);
       }
 
       const styleSuffix = getStyleSuffix(surface);
@@ -510,16 +547,26 @@ export function EntityArtGenerator({
                 </button>
               </div>
               <div className="art-prompter">
-                <textarea
+                <ReferenceMentionField
+                  multiline
+                  unstyled
                   className="art-prompter__field"
                   value={activePrompt}
-                  onChange={(e) => setEditedPrompt(e.target.value)}
+                  onChange={(v) => setEditedPrompt(v)}
                   onKeyDown={promptKeyHandler}
                   rows={4}
-                  placeholder="Describe the form you wish to summon…"
+                  placeholder="Describe the form you wish to summon… Type @ to reference a canonical subject."
                 />
                 <div className="art-prompter__footer">
-                  {entityContext && !enhanced && hasLlmKey ? (
+                  {refStatus.used.length > 0 ? (
+                    <span className="art-prompter__hint" title="Canonical appearance injected on generate">
+                      ✦ {refStatus.used.join(", ")}
+                    </span>
+                  ) : refStatus.unknown.length > 0 ? (
+                    <span className="art-prompter__hint" title="No reference subject matches these tokens">
+                      ⚠ unknown: @{refStatus.unknown.join(", @")}
+                    </span>
+                  ) : entityContext && !enhanced && hasLlmKey ? (
                     <span className="art-prompter__hint">Entity auto-injected on generate</span>
                   ) : <span />}
                   <span className="art-prompter__count">{activePrompt.length} chars</span>

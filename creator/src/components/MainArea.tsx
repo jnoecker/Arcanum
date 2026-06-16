@@ -41,6 +41,7 @@ const AppearancePanel = lazy(() => import("./AppearancePanel").then(m => ({ defa
 const PlaytestPanel = lazy(() => import("./playtest/PlaytestPanel").then(m => ({ default: m.PlaytestPanel })));
 const VoiceOverPanel = lazy(() => import("./VoiceOverPanel"));
 const BackupPanel = lazy(() => import("./BackupPanel").then(m => ({ default: m.BackupPanel })));
+const ReferencesPanel = lazy(() => import("./ReferencesPanel").then(m => ({ default: m.ReferencesPanel })));
 
 function IslandBackPill({ island }: { island: Island }) {
   const openIsland = useProjectStore((s) => s.openIsland);
@@ -123,6 +124,7 @@ export function MainArea() {
           case "playtest": content = <PlaytestPanel />; break;
           case "voices": content = <VoiceOverPanel />; break;
           case "backup": content = <BackupPanel />; break;
+          case "references": content = <ReferencesPanel />; break;
           default: content = null;
         }
       } else {

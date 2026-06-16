@@ -18,7 +18,8 @@ import {
 } from "@/lib/zoneEdits";
 import { ExitDoorEditor } from "./ExitDoorEditor";
 import { RoomFeaturesEditor } from "./RoomFeaturesEditor";
-import { EditableField, EditableTextArea, Section, IconButton, FieldRow, TextInput, SelectInput, TabBar } from "@/components/ui/FormWidgets";
+import { EditableField, Section, IconButton, FieldRow, TextInput, SelectInput, TabBar } from "@/components/ui/FormWidgets";
+import { ReferenceMentionField } from "@/components/ui/ReferenceMentionField";
 import { YamlPreview } from "@/components/ui/YamlPreview";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
@@ -574,10 +575,12 @@ export function RoomPanel({
           />
         }
       >
-        <EditableTextArea
+        <ReferenceMentionField
+          multiline
           value={room.description}
           onCommit={(v) => handleFieldChange("description", v)}
-          label="room description"
+          ariaLabel="room description"
+          placeholder="Describe this room. Type @ to reference a canonical subject."
         />
       </Section>
 

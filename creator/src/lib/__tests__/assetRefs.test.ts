@@ -90,6 +90,37 @@ describe("normalizeWorldAssetRefs", () => {
     expect(world.puzzles?.sphinx?.reward.type).toBe("give_gold");
   });
 
+  it("normalizes a music box's audio file and keepsake image refs", () => {
+    const world = normalizeWorldAssetRefs({
+      zone: "tutorial_glade",
+      startRoom: "entrance",
+      rooms: {
+        parlor: {
+          title: "Parlor",
+          description: "",
+          musicBox: {
+            file: "C:/assets/audio/lullaby.mp3",
+            title: "Lullaby",
+            image: "C:\\assets\\images\\lyric-sheet.png",
+          },
+        },
+        bare: {
+          title: "Bare",
+          description: "",
+          musicBox: { file: "/audio/keeper.mp3" },
+        },
+      },
+    });
+
+    const box = world.rooms.parlor?.musicBox;
+    expect(box?.file).toBe("lullaby.mp3");
+    expect(box?.image).toBe("lyric-sheet.png");
+    // Untouched metadata survives the pass-through.
+    expect(box?.title).toBe("Lullaby");
+    // A box without an image never grows an undefined image key.
+    expect(world.rooms.bare?.musicBox).not.toHaveProperty("image");
+  });
+
   it("normalizes an exit door's frame/leaf refs", () => {
     const world = normalizeWorldAssetRefs({
       zone: "tutorial_glade",

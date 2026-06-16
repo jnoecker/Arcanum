@@ -168,6 +168,10 @@ export interface MusicBoxFile {
   durationSeconds?: number;
   artist?: string;
   description?: string;
+  /** Optional art for the lyric-sheet keepsake minted on the first play
+   *  (AmbonMUD #1341). An image filename resolved against the zone images base
+   *  (like room/item art); omit to fall back to the client's generic item default. */
+  image?: string;
   lyrics?: string[];
 }
 

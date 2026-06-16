@@ -476,6 +476,44 @@ Still life of ${typeHint} called "${item.displayName}"${slotDesc}.${desc} ${tail
   return withZoneVibe(inner, zoneVibe);
 }
 
+/** Build a context description for a music box's lyric-sheet keepsake. */
+export function musicBoxKeepsakeContext(title: string, artist?: string): string {
+  const named = title.trim() ? `"${title.trim()}"` : "an untitled tune";
+  const by = artist && artist.trim() ? ` by ${artist.trim()}` : "";
+  return [
+    `Lyric-sheet keepsake — a collectible souvenir of the song ${named}${by}, minted when a player winds the room's music box.`,
+    "A single printed sheet bearing the song's title and lyrics, kept as a memento.",
+    "Composition: centered, suitable for an inventory icon",
+  ].join("\n");
+}
+
+/** Build a full prompt for a music box's lyric-sheet keepsake image. */
+export function musicBoxKeepsakePrompt(
+  title: string,
+  artist?: string,
+  style: ArtStyle = "gentle_magic",
+  zoneVibe?: string | null,
+): string {
+  const opts = paletteOpts(zoneVibe);
+  const preamble = getPreamble(style, "worldbuilding", opts);
+  const named = title.trim() ? `"${title.trim()}"` : "an old tune";
+  const by = artist && artist.trim() ? ` by ${artist.trim()}` : "";
+  const subject = `a single lyric sheet — a worn sheet of paper printed with the title and lyrics of the song ${named}${by}, the keepsake a player keeps after winding a music box`;
+
+  const tail =
+    style === "gentle_magic"
+      ? `Rendered as a gently luminous object resting on a soft surface, ambient lavender and pale blue light diffusing around it, subtle floating motes of warm gold, dreamlike quality, painterly, centered composition suitable for an inventory icon`
+      : `Rendered as a glowing object floating in deep cosmic indigo void, aurum-gold light emanating from its edges, blue-violet ambient fill, ornate and detailed, painterly, centered composition suitable for an inventory icon`;
+
+  const inner = `${FORMAT_BY_TYPE.item}. ${preamble}
+
+Still life of ${subject}. ${tail}
+
+${getStyleSuffix("worldbuilding", opts)}`;
+
+  return withZoneVibe(inner, zoneVibe);
+}
+
 /** Build a full prompt for a shop image. */
 export function shopPrompt(_shopId: string, shop: ShopFile, style: ArtStyle = "gentle_magic"): string {
   const preamble = getPreamble(style, "worldbuilding");

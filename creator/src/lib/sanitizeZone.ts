@@ -183,8 +183,9 @@ function normalizeJukebox(jukebox?: JukeboxSongFile[]): JukeboxSongFile[] | unde
 }
 
 /** Rebuild the music box in the server contract's key order (title, file,
- *  durationSeconds, artist, description, lyrics — no cost; it's always free),
- *  omitting empty optional fields. A box with no audio file is dropped entirely. */
+ *  durationSeconds, artist, description, image, lyrics — no cost; it's always
+ *  free), omitting empty optional fields. A box with no audio file is dropped
+ *  entirely. */
 function normalizeMusicBox(box?: MusicBoxFile): MusicBoxFile | undefined {
   if (!box || !box.file || !box.file.trim()) return undefined;
   const out: MusicBoxFile =
@@ -196,6 +197,7 @@ function normalizeMusicBox(box?: MusicBoxFile): MusicBoxFile | undefined {
   }
   if (typeof box.artist === "string" && box.artist.trim()) out.artist = box.artist;
   if (typeof box.description === "string" && box.description.trim()) out.description = box.description;
+  if (typeof box.image === "string" && box.image.trim()) out.image = box.image;
   if (Array.isArray(box.lyrics)) {
     const lines = box.lyrics
       .map((line) => (typeof line === "string" ? line.trim() : ""))

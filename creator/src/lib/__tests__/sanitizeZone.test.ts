@@ -1040,6 +1040,38 @@ describe("sanitizeZone — room music box", () => {
     });
   });
 
+  it("serializes the keepsake image between description and lyrics, omitting a blank one", () => {
+    const world = makeWorld({
+      rooms: {
+        room_a: {
+          title: "A",
+          description: "A",
+          musicBox: {
+            file: "lullaby.mp3",
+            title: "Scuttlefish's Lullaby",
+            description: "A soft tune.",
+            image: "items/lyric-sheet-lullaby.png",
+            lyrics: ["the scuttlefish sings soft and slow"],
+          },
+        },
+        room_b: {
+          title: "B",
+          description: "B",
+          musicBox: { file: "keeper.mp3", image: "   " },
+        },
+      },
+    });
+
+    const result = sanitizeZone(world);
+    const boxA = result.rooms["room_a"]!.musicBox!;
+    expect(Object.keys(boxA)).toEqual([
+      "title", "file", "description", "image", "lyrics",
+    ]);
+    expect(boxA.image).toBe("items/lyric-sheet-lullaby.png");
+    // A blank image is dropped, never serialized as an empty key.
+    expect(result.rooms["room_b"]!.musicBox).toEqual({ file: "keeper.mp3" });
+  });
+
   it("drops a blank-file music box entirely", () => {
     const world = makeWorld({
       rooms: {

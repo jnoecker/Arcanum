@@ -436,6 +436,26 @@ describe("enrichJukeboxSongs", () => {
     expect(Object.keys(box!)).not.toContain("cost");
   });
 
+  it("preserves the authored keepsake image through enrichment, before lyrics", () => {
+    const world = makeWorld({
+      rooms: {
+        parlor: {
+          title: "Parlor",
+          description: "",
+          // The image is zone-side authoring, not library metadata — it must
+          // survive the library rebuild and sit before lyrics in key order.
+          musicBox: { file: "song.mp3", title: "Stale", image: "items/lyric-sheet.png" },
+        },
+      } as WorldFile["rooms"],
+    });
+    const next = enrichJukeboxSongs(world, meta);
+    const box = next.rooms.parlor?.musicBox;
+    expect(box?.image).toBe("items/lyric-sheet.png");
+    expect(Object.keys(box!)).toEqual([
+      "title", "file", "durationSeconds", "artist", "description", "image", "lyrics",
+    ]);
+  });
+
   it("drops a blank-file music box during enrichment", () => {
     const world = makeWorld({
       rooms: {

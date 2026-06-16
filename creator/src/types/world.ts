@@ -485,15 +485,15 @@ export interface BtNodeFile {
  * these automatically — e.g. a lyric sheet on the first play of a music-box
  * song — but they can also be authored by hand here.
  */
-export type ItemType = "equipment" | "consumable" | "quest" | "treasure" | "misc" | "keepsake";
+export type ItemType = "equipment" | "consumable" | "quest" | "treasure" | "keepsake" | "misc";
 
 export const ITEM_TYPES: readonly ItemType[] = [
   "equipment",
   "consumable",
   "quest",
   "treasure",
-  "misc",
   "keepsake",
+  "misc",
 ] as const;
 
 export interface ItemFile {

@@ -1061,14 +1061,15 @@ describe("sanitizeZone — room music box", () => {
 });
 
 describe("sanitizeZone — keepsake items", () => {
-  it("round-trips a keepsake item through YAML with its type and soulbound flag", () => {
+  // Keepsakes bind via itemType alone server-side (Item.isBound = questItem ||
+  // itemType == KEEPSAKE), so a real keepsake carries no questItem flag.
+  it("round-trips a keepsake item through YAML with its type and multi-line lyrics", () => {
     const world = makeWorld({
       items: {
         lyric_sheet: {
           displayName: "a lyric sheet for \"The Word of Ambon\"",
-          description: "When the lanterns lean in low,\nthe teacups start to sway.",
+          description: "\"The Word of Ambon\"\n\nWhen the lanterns lean in low,\nthe teacups start to sway.",
           itemType: "keepsake",
-          questItem: true,
           basePrice: 0,
         },
       },
@@ -1079,7 +1080,6 @@ describe("sanitizeZone — keepsake items", () => {
     const item = reparsed.items!["lyric_sheet"] as ItemFile;
 
     expect(item.itemType).toBe("keepsake");
-    expect(item.questItem).toBe(true);
     expect(item.description).toContain("\n");
   });
 });

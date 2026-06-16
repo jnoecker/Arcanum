@@ -9,11 +9,16 @@ const ProjectWizard = lazy(() => import("@/components/wizard/ProjectWizard").the
 export function App() {
   const project = useProjectStore((s) => s.project);
   const loadSettings = useAssetStore((s) => s.loadSettings);
+  const loadAssets = useAssetStore((s) => s.loadAssets);
   const [showWizard, setShowWizard] = useState(false);
 
   useEffect(() => {
     loadSettings();
-  }, [project, loadSettings]);
+    // Seed the asset manifest once a project is open so surfaces that read
+    // `assets` without loading it themselves (e.g. the zone editor's music
+    // box / jukebox track dropdowns) aren't empty until a studio is visited.
+    if (project) loadAssets().catch(() => {});
+  }, [project, loadSettings, loadAssets]);
 
   return (
     <>

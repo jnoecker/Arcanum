@@ -4,6 +4,7 @@ import {
   buildReferenceBlock,
   buildResolver,
   collectDescriptions,
+  detectMention,
   expandReferences,
   extractTokens,
   hasTokens,
@@ -123,6 +124,38 @@ describe("buildReferenceBlock / applyReferences", () => {
   it("leaves token-free prompts untouched", () => {
     const { prompt } = applyReferences("just a plain prompt", resolver);
     expect(prompt).toBe("just a plain prompt");
+  });
+});
+
+describe("detectMention (autocomplete)", () => {
+  it("detects a bare token in progress at the caret", () => {
+    const text = "A stern @arc warrior";
+    const caret = "A stern @arc".length;
+    expect(detectMention(text, caret)).toEqual({ start: 8, query: "arc" });
+  });
+
+  it("detects an empty query right after @", () => {
+    expect(detectMention("meet @", 6)).toEqual({ start: 5, query: "" });
+  });
+
+  it("detects the bracket form with spaces", () => {
+    const text = "banners of the @[Crimson";
+    expect(detectMention(text, text.length)).toEqual({ start: 15, query: "Crimson" });
+  });
+
+  it("ignores @ that is not word-initial (e.g. emails)", () => {
+    const text = "email me@arc now";
+    expect(detectMention(text, "email me@arc".length)).toBeNull();
+  });
+
+  it("returns null once the token is closed by a space", () => {
+    const text = "@archae stands";
+    expect(detectMention(text, text.length)).toBeNull();
+  });
+
+  it("only matches the run ending at the caret, not earlier tokens", () => {
+    const text = "@aineroia and @arc";
+    expect(detectMention(text, text.length)).toEqual({ start: 14, query: "arc" });
   });
 });
 

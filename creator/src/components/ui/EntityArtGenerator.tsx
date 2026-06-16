@@ -13,6 +13,7 @@ import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, resolveImageModel, 
 import type { AssetContext, AssetEntry, GeneratedImage } from "@/types/assets";
 import { generateAssetImageWithRetry } from "@/lib/imageGen";
 import { useReferenceStore } from "@/stores/referenceStore";
+import { ReferenceMentionField } from "@/components/ui/ReferenceMentionField";
 import { applyReferences, buildReferenceBlock, buildResolver, expandReferences } from "@/lib/referenceTokens";
 import type { ReferenceSubject } from "@/types/reference";
 import { AssetPickerModal } from "./AssetPickerModal";
@@ -546,13 +547,15 @@ export function EntityArtGenerator({
                 </button>
               </div>
               <div className="art-prompter">
-                <textarea
+                <ReferenceMentionField
+                  multiline
+                  unstyled
                   className="art-prompter__field"
                   value={activePrompt}
-                  onChange={(e) => setEditedPrompt(e.target.value)}
+                  onChange={(v) => setEditedPrompt(v)}
                   onKeyDown={promptKeyHandler}
                   rows={4}
-                  placeholder="Describe the form you wish to summon…"
+                  placeholder="Describe the form you wish to summon… Type @ to reference a canonical subject."
                 />
                 <div className="art-prompter__footer">
                   {refStatus.used.length > 0 ? (

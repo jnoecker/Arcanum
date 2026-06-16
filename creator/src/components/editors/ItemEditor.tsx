@@ -16,6 +16,7 @@ import {
   CompactField,
   TabBar,
 } from "@/components/ui/FormWidgets";
+import { ReferenceMentionField } from "@/components/ui/ReferenceMentionField";
 import { DeleteEntityButton, EnhanceDescriptionButton, EntityActionsFooter, MediaSection } from "./EditorShared";
 import { itemPrompt, itemContext } from "@/lib/entityPrompts";
 import { keywordFromId } from "@/lib/sanitizeZone";
@@ -214,10 +215,10 @@ export function ItemEditor({
         <FieldRow label="Description">
           <div className="flex items-center gap-1">
             <div className="min-w-0 flex-1">
-              <TextInput
+              <ReferenceMentionField
                 value={item.description ?? ""}
                 onCommit={(v) => patch({ description: v || undefined })}
-                placeholder="None"
+                placeholder="None — type @ to reference a canonical subject"
               />
             </div>
             <EnhanceDescriptionButton

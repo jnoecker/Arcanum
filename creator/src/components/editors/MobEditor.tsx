@@ -26,6 +26,7 @@ import {
   ArrayRow,
   TabBar,
 } from "@/components/ui/FormWidgets";
+import { ReferenceMentionField } from "@/components/ui/ReferenceMentionField";
 import { DialogueEditor } from "./DialogueEditor";
 import { DeleteEntityButton, EnhanceDescriptionButton, EntityActionsFooter, MediaSection } from "./EditorShared";
 import { mobPrompt, mobContext } from "@/lib/entityPrompts";
@@ -425,10 +426,10 @@ export function MobEditor({
         <TextInput value={mob.name} onCommit={(v) => patch({ name: v })} />
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
-            <TextInput
+            <ReferenceMentionField
               value={mob.description ?? ""}
               onCommit={(v) => patch({ description: v || undefined })}
-              placeholder="Visual description for art generation"
+              placeholder="Visual description for art generation. Type @ to reference a canonical subject."
             />
           </div>
           <EnhanceDescriptionButton

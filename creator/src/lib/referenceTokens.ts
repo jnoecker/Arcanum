@@ -43,6 +43,30 @@ export function extractTokens(text: string | undefined | null): TokenMatch[] {
   return out;
 }
 
+export interface MentionQuery {
+  /** Index of the leading `@` in the text. */
+  start: number;
+  /** The partial text typed after the `@` (sigil/bracket removed). */
+  query: string;
+}
+
+/**
+ * Locate an in-progress `@mention` ending exactly at `caret`, for autocomplete.
+ * Returns null when the caret isn't inside a fresh `@token` / `@[name` run.
+ */
+export function detectMention(text: string, caret: number): MentionQuery | null {
+  const before = text.slice(0, caret);
+  const bracket = before.match(/@\[([^\]\n]*)$/u);
+  const bare = bracket ? null : before.match(/@([\p{L}\p{N}_-]*)$/u);
+  const m = bracket ?? bare;
+  if (!m) return null;
+  const start = caret - m[0].length;
+  // The `@` must begin a word — never mid-token or right after another `@`.
+  const prev = start > 0 ? text[start - 1]! : "";
+  if (prev && /[\p{L}\p{N}@]/u.test(prev)) return null;
+  return { start, query: (m[1] ?? "").trim() };
+}
+
 /** Does the text contain at least one `@token`? */
 export function hasTokens(text: string | undefined | null): boolean {
   if (!text) return false;

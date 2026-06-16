@@ -173,7 +173,12 @@ function normalizeJukeboxRefs(jukebox: JukeboxSongFile[] | undefined): JukeboxSo
 function normalizeMusicBoxRef(musicBox: MusicBoxFile | undefined): MusicBoxFile | undefined {
   if (!musicBox) return undefined;
   const file = normalizeAssetRef(musicBox.file);
-  return file ? { ...musicBox, file } : undefined;
+  if (!file) return undefined;
+  const image = normalizeAssetRef(musicBox.image);
+  const next = { ...musicBox, file };
+  if (image) next.image = image;
+  else delete next.image;
+  return next;
 }
 
 function mapEntries<T>(

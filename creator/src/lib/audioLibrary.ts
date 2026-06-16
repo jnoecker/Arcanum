@@ -209,10 +209,18 @@ export function enrichJukeboxSongs(
     }
     if (room.musicBox) {
       const enriched = enrichSong(room.musicBox, meta);
-      // The music box never carries a cost — it's free; drop any stray one.
-      const box: MusicBoxFile | undefined = enriched
-        ? (({ cost: _cost, ...rest }) => rest)(enriched)
-        : undefined;
+      let box: MusicBoxFile | undefined;
+      if (enriched) {
+        // The music box never carries a cost — it's free; drop any stray one.
+        const { cost: _cost, lyrics, ...rest } = enriched;
+        box = rest;
+        // The keepsake image is zone-side authoring (not library metadata), so
+        // it survives enrichment like a jukebox song's cost — re-inserted before
+        // lyrics to match the server's authored key order.
+        const image = room.musicBox.image;
+        if (typeof image === "string" && image.trim()) box.image = image;
+        if (lyrics) box.lyrics = lyrics;
+      }
       nextRoom = box
         ? { ...nextRoom, musicBox: box }
         : { ...nextRoom, musicBox: undefined };

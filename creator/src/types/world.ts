@@ -168,6 +168,10 @@ export interface MusicBoxFile {
   durationSeconds?: number;
   artist?: string;
   description?: string;
+  /** Optional art for the lyric-sheet keepsake minted on the first play
+   *  (AmbonMUD #1341). An image filename resolved against the zone images base
+   *  (like room/item art); omit to fall back to the client's generic item default. */
+  image?: string;
   lyrics?: string[];
 }
 
@@ -478,14 +482,21 @@ export interface BtNodeFile {
  * Broad server-assigned item category. When omitted, the server infers it from
  * slot / consumable / basePrice. `questItem: true` always resolves to "quest"
  * regardless of this field.
+ *
+ * `keepsake` is a souvenir category: soulbound like a quest item (cannot be
+ * dropped, sold, traded, banked, or mailed) but shelved under its own
+ * "Keepsakes" heading in the inventory rather than "Quest". The server mints
+ * these automatically — e.g. a lyric sheet on the first play of a music-box
+ * song — but they can also be authored by hand here.
  */
-export type ItemType = "equipment" | "consumable" | "quest" | "treasure" | "misc";
+export type ItemType = "equipment" | "consumable" | "quest" | "treasure" | "keepsake" | "misc";
 
 export const ITEM_TYPES: readonly ItemType[] = [
   "equipment",
   "consumable",
   "quest",
   "treasure",
+  "keepsake",
   "misc",
 ] as const;
 

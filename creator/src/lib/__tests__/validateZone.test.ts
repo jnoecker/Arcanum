@@ -844,4 +844,21 @@ describe("validateZone", () => {
       expect(issues).toHaveLength(0);
     });
   });
+
+  describe("item types", () => {
+    it("accepts the keepsake item type", () => {
+      const world = makeValidWorld();
+      world.items!.charm = { displayName: "Lyric Sheet", itemType: "keepsake", basePrice: 0 };
+      const issues = errors(validateZone(world));
+      expect(issues).toHaveLength(0);
+    });
+
+    it("errors on an unknown item type", () => {
+      const world = makeValidWorld();
+      // Cast through unknown: the union forbids this value, but authored YAML can.
+      world.items!.charm = { displayName: "Junk", itemType: "trinket" as unknown as never };
+      const issues = errors(validateZone(world));
+      expect(issues.some((i) => i.message.includes("is not a known type"))).toBe(true);
+    });
+  });
 });

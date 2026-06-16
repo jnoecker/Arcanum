@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
+import { parseDocument, stringify } from "yaml";
 import { sanitizeZone, sanitizeId, buildIdRemap } from "../sanitizeZone";
-import type { ExitValue, WorldFile } from "@/types/world";
+import type { ExitValue, ItemFile, WorldFile } from "@/types/world";
 
 // ─── sanitizeId ───────────────────────────────────────────────────
 
@@ -1039,6 +1040,38 @@ describe("sanitizeZone — room music box", () => {
     });
   });
 
+  it("serializes the keepsake image between description and lyrics, omitting a blank one", () => {
+    const world = makeWorld({
+      rooms: {
+        room_a: {
+          title: "A",
+          description: "A",
+          musicBox: {
+            file: "lullaby.mp3",
+            title: "Scuttlefish's Lullaby",
+            description: "A soft tune.",
+            image: "items/lyric-sheet-lullaby.png",
+            lyrics: ["the scuttlefish sings soft and slow"],
+          },
+        },
+        room_b: {
+          title: "B",
+          description: "B",
+          musicBox: { file: "keeper.mp3", image: "   " },
+        },
+      },
+    });
+
+    const result = sanitizeZone(world);
+    const boxA = result.rooms["room_a"]!.musicBox!;
+    expect(Object.keys(boxA)).toEqual([
+      "title", "file", "description", "image", "lyrics",
+    ]);
+    expect(boxA.image).toBe("items/lyric-sheet-lullaby.png");
+    // A blank image is dropped, never serialized as an empty key.
+    expect(result.rooms["room_b"]!.musicBox).toEqual({ file: "keeper.mp3" });
+  });
+
   it("drops a blank-file music box entirely", () => {
     const world = makeWorld({
       rooms: {
@@ -1056,5 +1089,29 @@ describe("sanitizeZone — room music box", () => {
     const world = makeWorld();
     const result = sanitizeZone(world);
     expect(result.rooms["room_a"]!.musicBox).toBeUndefined();
+  });
+});
+
+describe("sanitizeZone — keepsake items", () => {
+  // Keepsakes bind via itemType alone server-side (Item.isBound = questItem ||
+  // itemType == KEEPSAKE), so a real keepsake carries no questItem flag.
+  it("round-trips a keepsake item through YAML with its type and multi-line lyrics", () => {
+    const world = makeWorld({
+      items: {
+        lyric_sheet: {
+          displayName: "a lyric sheet for \"The Word of Ambon\"",
+          description: "\"The Word of Ambon\"\n\nWhen the lanterns lean in low,\nthe teacups start to sway.",
+          itemType: "keepsake",
+          basePrice: 0,
+        },
+      },
+    });
+
+    const sanitized = sanitizeZone(world);
+    const reparsed = parseDocument(stringify(sanitized)).toJS() as WorldFile;
+    const item = reparsed.items!["lyric_sheet"] as ItemFile;
+
+    expect(item.itemType).toBe("keepsake");
+    expect(item.description).toContain("\n");
   });
 });

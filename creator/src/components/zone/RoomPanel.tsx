@@ -25,7 +25,7 @@ import { MediaPicker } from "@/components/ui/MediaPicker";
 import { AudioTrackPicker } from "@/components/ui/AudioTrackPicker";
 import { buildAudioMetaIndex, listAudioTracks, trackLabel } from "@/lib/audioLibrary";
 import { VideoGenerator } from "@/components/ui/VideoGenerator";
-import { roomPrompt, roomContext } from "@/lib/entityPrompts";
+import { roomPrompt, roomContext, musicBoxKeepsakePrompt, musicBoxKeepsakeContext } from "@/lib/entityPrompts";
 import { getTrainerClasses } from "@/lib/trainers";
 import { EnhanceDescriptionButton, MediaDisclosure, VideoVisionFields } from "@/components/editors/EditorShared";
 import { useVibeStore } from "@/stores/vibeStore";
@@ -1247,7 +1247,7 @@ export function RoomPanel({
             hint="Overrides the zone's default soundscape for this room."
           />
           <JukeboxEditor world={world} roomId={roomId} onWorldChange={onWorldChange} />
-          <MusicBoxEditor world={world} roomId={roomId} onWorldChange={onWorldChange} />
+          <MusicBoxEditor world={world} roomId={roomId} zoneId={zoneId} onWorldChange={onWorldChange} />
         </div>
       </Section>
       </>
@@ -1459,7 +1459,7 @@ function JukeboxEditor({ world, roomId, onWorldChange }: JukeboxEditorProps) {
  *  The song is a bare file ref; its title, artist, lyrics, and duration are
  *  denormalized from the audio library at save time, exactly like a jukebox song,
  *  minus the cost (the music box is always free). */
-function MusicBoxEditor({ world, roomId, onWorldChange }: JukeboxEditorProps) {
+function MusicBoxEditor({ world, roomId, zoneId, onWorldChange }: JukeboxEditorProps & { zoneId: string }) {
   const assets = useAssetStore((s) => s.assets);
   const metaIndex = useMemo(() => buildAudioMetaIndex(assets), [assets]);
   const musicTracks = useMemo(() => listAudioTracks(assets, "music"), [assets]);
@@ -1542,6 +1542,38 @@ function MusicBoxEditor({ world, roomId, onWorldChange }: JukeboxEditorProps) {
             Players use <code className="font-mono">musicbox play</code> — it's free and personal, and the
             song follows them out of the room. Title, artist, and lyrics come from the Audio Studio library.
           </p>
+          {box?.file && (
+            <div className="mt-1 flex flex-col gap-1.5 border-t border-border-default/60 pt-2">
+              <div className="flex items-center gap-1 text-2xs">
+                <span className="w-16 shrink-0 text-text-muted">Keepsake</span>
+                <span className="truncate text-text-secondary" title={box.image || undefined}>
+                  {box.image || "generic default"}
+                </span>
+              </div>
+              <EntityArtGenerator
+                getPrompt={(style) =>
+                  musicBoxKeepsakePrompt(
+                    meta?.name ?? box.title ?? "",
+                    meta?.artist ?? box.artist,
+                    style,
+                    useVibeStore.getState().getVibe(zoneId),
+                  )
+                }
+                entityContext={musicBoxKeepsakeContext(meta?.name ?? box.title ?? "", meta?.artist ?? box.artist)}
+                currentImage={box.image}
+                onAccept={(filePath) =>
+                  onWorldChange(updateRoom(world, roomId, { musicBox: { ...box, image: filePath } }))
+                }
+                assetType="item"
+                context={{ zone: zoneId, entity_type: "item", entity_id: `musicbox:${roomId}` }}
+                surface="worldbuilding"
+              />
+              <p className="text-3xs text-text-muted">
+                Art for the lyric-sheet keepsake minted on a player's first play. Optional — without it the
+                souvenir shows the client's generic item icon.
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -10,6 +10,7 @@ import { loadLore } from "@/lib/lorePersistence";
 import { migrateLegacyTemplates } from "@/lib/loreMigrate";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import { useStoryStore } from "@/stores/storyStore";
+import { useReferenceStore } from "@/stores/referenceStore";
 import { loadAllStoryIds } from "@/lib/storyPersistence";
 import { loadUIState, addRecentProject } from "@/lib/uiPersistence";
 import { PANEL_MAP } from "@/lib/panelRegistry";
@@ -51,6 +52,7 @@ export function useOpenProject() {
     clearConfig();
     useLoreStore.getState().clearLore();
     useStoryStore.getState().clearStories();
+    useReferenceStore.getState().clear();
 
     // Create project
     const project: Project = {
@@ -61,11 +63,16 @@ export function useOpenProject() {
       openZones: [],
     };
 
+    // Load the reference canon + annotation overlay before zones so tokenized
+    // descriptions are re-applied as each zone enters the store.
+    const refStore = useReferenceStore.getState();
+    await refStore.loadForProject(project).catch(() => {});
+
     // Load zones
     const zones = await loadProjectZones(project);
     const zoneIds = new Set<string>();
     for (const [zoneId, { filePath, data }] of Object.entries(zones)) {
-      loadZone(zoneId, filePath, data);
+      loadZone(zoneId, filePath, refStore.applyAnnotations(zoneId, data));
       zoneIds.add(zoneId);
     }
 

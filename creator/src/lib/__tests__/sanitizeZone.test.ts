@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
+import { parseDocument, stringify } from "yaml";
 import { sanitizeZone, sanitizeId, buildIdRemap } from "../sanitizeZone";
-import type { ExitValue, WorldFile } from "@/types/world";
+import type { ExitValue, ItemFile, WorldFile } from "@/types/world";
 
 // ─── sanitizeId ───────────────────────────────────────────────────
 
@@ -1056,5 +1057,29 @@ describe("sanitizeZone — room music box", () => {
     const world = makeWorld();
     const result = sanitizeZone(world);
     expect(result.rooms["room_a"]!.musicBox).toBeUndefined();
+  });
+});
+
+describe("sanitizeZone — keepsake items", () => {
+  it("round-trips a keepsake item through YAML with its type and soulbound flag", () => {
+    const world = makeWorld({
+      items: {
+        lyric_sheet: {
+          displayName: "a lyric sheet for \"The Word of Ambon\"",
+          description: "When the lanterns lean in low,\nthe teacups start to sway.",
+          itemType: "keepsake",
+          questItem: true,
+          basePrice: 0,
+        },
+      },
+    });
+
+    const sanitized = sanitizeZone(world);
+    const reparsed = parseDocument(stringify(sanitized)).toJS() as WorldFile;
+    const item = reparsed.items!["lyric_sheet"] as ItemFile;
+
+    expect(item.itemType).toBe("keepsake");
+    expect(item.questItem).toBe(true);
+    expect(item.description).toContain("\n");
   });
 });

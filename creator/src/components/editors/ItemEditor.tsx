@@ -418,7 +418,14 @@ export function ItemEditor({
                   min={0}
                 />
               </FieldRow>
-              <FieldRow label="Item Type">
+              <FieldRow
+                label="Item Type"
+                hint={
+                  item.itemType === "keepsake"
+                    ? "Keepsakes are soulbound souvenirs — locked like a quest item, but shelved under their own Keepsakes heading in the inventory."
+                    : undefined
+                }
+              >
                 <SelectInput
                   value={item.itemType ?? ""}
                   options={itemTypeOptions}

@@ -110,7 +110,7 @@ export function AssetGenerator() {
     setPrompt(composePrompt(assetType, artStyle, value || undefined));
   };
 
-  const handleEnhance = async () => {
+  const runEnhance = async (): Promise<string | null> => {
     setEnhancing(true);
     setError(null);
     try {
@@ -122,19 +122,23 @@ export function AssetGenerator() {
       });
       setEnhancedPrompt(response);
       setUseEnhanced(true);
+      return response;
     } catch (invokeError) {
       setError(String(invokeError));
+      return null;
     } finally {
       setEnhancing(false);
     }
   };
 
-  const handleGenerate = async () => {
+  const handleEnhance = () => {
+    void runEnhance();
+  };
+
+  const runGeneration = async (finalPrompt: string, autoEnhance: boolean) => {
     setStage("generating");
     setError(null);
     try {
-      const preamble = getPreamble(artStyle, "worldbuilding");
-      const finalPrompt = useEnhanced && enhancedPrompt ? enhancedPrompt : `${preamble}\n\n${prompt}`;
       const model = IMAGE_MODELS.find((entry) => entry.id === modelId);
       const guidance =
         model && "defaultGuidance" in model ? (model as { defaultGuidance: number }).defaultGuidance : null;
@@ -148,7 +152,7 @@ export function AssetGenerator() {
         assetType,
         steps: model?.defaultSteps ?? null,
         guidance,
-        autoEnhance: !(useEnhanced && enhancedPrompt),
+        autoEnhance,
       });
       setResult(image);
       setStage("preview");
@@ -156,6 +160,19 @@ export function AssetGenerator() {
       setError(String(invokeError));
       setStage("compose");
     }
+  };
+
+  const handleGenerate = () => {
+    const preamble = getPreamble(artStyle, "worldbuilding");
+    const usingEnhanced = useEnhanced && !!enhancedPrompt;
+    const finalPrompt = usingEnhanced ? enhancedPrompt : `${preamble}\n\n${prompt}`;
+    void runGeneration(finalPrompt, !usingEnhanced);
+  };
+
+  const handleEnhanceAndGenerate = async () => {
+    const enhanced = await runEnhance();
+    if (enhanced === null) return;
+    await runGeneration(enhanced, false);
   };
 
   const handleAccept = async () => {
@@ -228,8 +245,12 @@ export function AssetGenerator() {
               <ActionButton onClick={closeGenerator} variant="ghost">
                 Close
               </ActionButton>
-              <ActionButton onClick={handleGenerate} variant="primary">
+              <ActionButton onClick={handleGenerate} disabled={enhancing} variant="secondary">
                 Render Artwork
+              </ActionButton>
+              <ActionButton onClick={handleEnhanceAndGenerate} disabled={enhancing} variant="primary">
+                {enhancing && <Spinner />}
+                {enhancing ? "Enhancing..." : "Enhance & Render"}
               </ActionButton>
             </>
           )}

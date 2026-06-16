@@ -23,7 +23,7 @@ import { YamlPreview } from "@/components/ui/YamlPreview";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { MediaPicker } from "@/components/ui/MediaPicker";
 import { AudioTrackPicker } from "@/components/ui/AudioTrackPicker";
-import { buildAudioMetaIndex, listAudioTracks, trackLabel } from "@/lib/audioLibrary";
+import { buildAudioMetaIndex, listAudioTracks, splitLyricsLines, trackLabel } from "@/lib/audioLibrary";
 import { VideoGenerator } from "@/components/ui/VideoGenerator";
 import { roomPrompt, roomContext, musicBoxKeepsakePrompt, musicBoxKeepsakeContext } from "@/lib/entityPrompts";
 import { getTrainerClasses } from "@/lib/trainers";
@@ -1559,7 +1559,11 @@ function MusicBoxEditor({ world, roomId, zoneId, onWorldChange }: JukeboxEditorP
                     useVibeStore.getState().getVibe(zoneId),
                   )
                 }
-                entityContext={musicBoxKeepsakeContext(meta?.name ?? box.title ?? "", meta?.artist ?? box.artist)}
+                entityContext={musicBoxKeepsakeContext(
+                  meta?.name ?? box.title ?? "",
+                  meta?.artist ?? box.artist,
+                  meta?.lyrics ? splitLyricsLines(meta.lyrics) : box.lyrics,
+                )}
                 currentImage={box.image}
                 onAccept={(filePath) =>
                   onWorldChange(updateRoom(world, roomId, { musicBox: { ...box, image: filePath } }))

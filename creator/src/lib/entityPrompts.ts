@@ -477,14 +477,21 @@ Still life of ${typeHint} called "${item.displayName}"${slotDesc}.${desc} ${tail
 }
 
 /** Build a context description for a music box's lyric-sheet keepsake. */
-export function musicBoxKeepsakeContext(title: string, artist?: string): string {
+export function musicBoxKeepsakeContext(title: string, artist?: string, lyrics?: string[]): string {
   const named = title.trim() ? `"${title.trim()}"` : "an untitled tune";
   const by = artist && artist.trim() ? ` by ${artist.trim()}` : "";
-  return [
+  const parts = [
     `Lyric-sheet keepsake — a collectible souvenir of the song ${named}${by}, minted when a player winds the room's music box.`,
     "A single printed sheet bearing the song's title and lyrics, kept as a memento.",
-    "Composition: centered, suitable for an inventory icon",
-  ].join("\n");
+  ];
+  const lines = (lyrics ?? []).map((l) => l.trim()).filter(Boolean);
+  if (lines.length > 0) {
+    parts.push(
+      `The song's lyrics — let their mood, imagery, and themes shape the sheet's palette, ornamentation, and marginalia (do not render them as legible body text):\n${lines.join("\n")}`,
+    );
+  }
+  parts.push("Composition: centered, suitable for an inventory icon");
+  return parts.join("\n");
 }
 
 /** Build a full prompt for a music box's lyric-sheet keepsake image. */

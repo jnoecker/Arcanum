@@ -9,7 +9,10 @@ import {
   dungeonContext,
   dungeonRoomTemplatePrompt,
   dungeonRoomTemplateContext,
+  musicBoxKeepsakePrompt,
+  musicBoxKeepsakeContext,
 } from "@/lib/entityPrompts";
+import type { AudioTrackMeta } from "@/lib/audioLibrary";
 import {
   getNegativePrompt,
   getEnhanceSystemPrompt,
@@ -30,6 +33,7 @@ export function assetTypeForKind(kind: string): string {
   if (kind === "shop") return "background";
   if (kind === "dungeon") return "background";
   if (kind === "dungeonRoom") return "background";
+  if (kind === "musicBoxKeepsake") return "item";
   return "background";
 }
 
@@ -42,9 +46,16 @@ export interface BatchTarget {
   status: "pending" | "generating" | "done" | "error";
   result?: GeneratedImage;
   error?: string;
+  /** For `musicBoxKeepsake` targets: the song the lyric-sheet commemorates,
+   *  resolved from the audio library at collect time (the prompt needs it, and
+   *  an in-editor music box is a bare `{ file }` until save-time enrichment). */
+  song?: { title: string; artist?: string };
 }
 
-export function collectTargets(world: WorldFile): BatchTarget[] {
+export function collectTargets(
+  world: WorldFile,
+  audioMeta?: Map<string, AudioTrackMeta>,
+): BatchTarget[] {
   const targets: BatchTarget[] = [];
 
   for (const [id, room] of Object.entries(world.rooms)) {
@@ -56,6 +67,24 @@ export function collectTargets(world: WorldFile): BatchTarget[] {
       checked: !hasImage,
       hasExisting: hasImage,
       status: "pending",
+    });
+  }
+
+  for (const [id, room] of Object.entries(world.rooms)) {
+    const box = room.musicBox;
+    if (!box?.file?.trim()) continue;
+    const meta = audioMeta?.get(box.file);
+    const title = meta?.name ?? box.title ?? "";
+    const songLabel = title.trim() || box.file;
+    const hasImage = !!box.image;
+    targets.push({
+      kind: "musicBoxKeepsake",
+      id,
+      label: `Keepsake: ${songLabel}`,
+      checked: !hasImage,
+      hasExisting: hasImage,
+      status: "pending",
+      song: { title, artist: meta?.artist ?? box.artist },
     });
   }
 
@@ -158,6 +187,9 @@ export function getTargetPrompt(
   if (kind === "room") {
     return roomPrompt(id, world.rooms[id]!, style, zoneVibe);
   }
+  if (kind === "musicBoxKeepsake") {
+    return musicBoxKeepsakePrompt(target.song?.title ?? "", target.song?.artist, style, zoneVibe);
+  }
   if (kind === "dungeon" && world.dungeon) {
     return dungeonPrompt(world.dungeon, style);
   }
@@ -180,6 +212,9 @@ export function getTargetContext(
   const { kind, id } = target;
   if (kind === "room") {
     return roomContext(id, world.rooms[id]!);
+  }
+  if (kind === "musicBoxKeepsake") {
+    return musicBoxKeepsakeContext(target.song?.title ?? "", target.song?.artist);
   }
   if (kind === "dungeon" && world.dungeon) {
     return dungeonContext(world.dungeon, world.zone);
@@ -294,12 +329,14 @@ export async function runBatchArtGeneration(
 
         callbacks.onTargetUpdate(idx, { status: "done", result: image });
 
-        const variantGroup = `${target.kind}:${zoneId}:${target.id}`;
-        const batchContext = {
-          zone: zoneId,
-          entity_type: target.kind,
-          entity_id: target.id,
-        };
+        // Keepsakes share the per-room music-box editor's manifest identity
+        // (entity_type "item", entity_id "musicbox:<roomId>") so variants from
+        // either authoring path land in the same group.
+        const batchContext =
+          target.kind === "musicBoxKeepsake"
+            ? { zone: zoneId, entity_type: "item", entity_id: `musicbox:${target.id}` }
+            : { zone: zoneId, entity_type: target.kind, entity_id: target.id };
+        const variantGroup = `${batchContext.entity_type}:${zoneId}:${batchContext.entity_id}`;
         await callbacks
           .acceptAsset(
             image,
@@ -333,6 +370,18 @@ export async function runBatchArtGeneration(
               [id]: { ...cur.rooms[id]!, image: fileName },
             },
           };
+        } else if (kind === "musicBoxKeepsake") {
+          const room = cur.rooms[id];
+          if (room?.musicBox) {
+            const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
+            worldRef.current = {
+              ...cur,
+              rooms: {
+                ...cur.rooms,
+                [id]: { ...room, musicBox: { ...room.musicBox, image: fileName } },
+              },
+            };
+          }
         } else if (kind === "dungeon" && cur.dungeon) {
           const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
           worldRef.current = {
@@ -400,19 +449,32 @@ export async function runBatchArtGeneration(
       const entry = await promise;
       if (entry) {
         const cur = worldRef.current;
-        const collection =
-          kind === "mob" ? "mobs" : kind === "item" ? "items" : kind === "shop" ? "shops" : null;
-        if (collection) {
-          const entities = (cur as Record<string, unknown>)[collection] as
-            Record<string, Record<string, unknown>> | undefined;
-          if (entities?.[id]) {
+        if (kind === "musicBoxKeepsake") {
+          const room = cur.rooms[id];
+          if (room?.musicBox) {
             worldRef.current = {
               ...cur,
-              [collection]: {
-                ...entities,
-                [id]: { ...entities[id], image: entry.file_name },
+              rooms: {
+                ...cur.rooms,
+                [id]: { ...room, musicBox: { ...room.musicBox, image: entry.file_name } },
               },
             };
+          }
+        } else {
+          const collection =
+            kind === "mob" ? "mobs" : kind === "item" ? "items" : kind === "shop" ? "shops" : null;
+          if (collection) {
+            const entities = (cur as Record<string, unknown>)[collection] as
+              Record<string, Record<string, unknown>> | undefined;
+            if (entities?.[id]) {
+              worldRef.current = {
+                ...cur,
+                [collection]: {
+                  ...entities,
+                  [id]: { ...entities[id], image: entry.file_name },
+                },
+              };
+            }
           }
         }
       }

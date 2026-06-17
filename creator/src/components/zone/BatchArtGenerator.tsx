@@ -1,9 +1,10 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import type { WorldFile } from "@/types/world";
 import { ART_STYLE_LABELS } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
 import { useVibeStore } from "@/stores/vibeStore";
+import { buildAudioMetaIndex } from "@/lib/audioLibrary";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { ActionButton } from "@/components/ui/FormWidgets";
 import {
@@ -26,8 +27,10 @@ export function BatchArtGenerator({
 }: BatchArtGeneratorProps) {
   const artStyle = useAssetStore((s) => s.artStyle);
   const settings = useAssetStore((s) => s.settings);
+  const assets = useAssetStore((s) => s.assets);
   const vibe = useVibeStore((s) => s.vibes.get(zoneId) ?? "");
-  const [targets, setTargets] = useState(() => collectTargets(world));
+  const audioMeta = useMemo(() => buildAudioMetaIndex(assets), [assets]);
+  const [targets, setTargets] = useState(() => collectTargets(world, audioMeta));
   const [running, setRunning] = useState(false);
   const [bgRemoval, setBgRemoval] = useState<{ done: number; total: number } | null>(null);
   const [concurrency, setConcurrency] = useState(settings?.batch_concurrency ?? 5);

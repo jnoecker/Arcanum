@@ -298,6 +298,7 @@ export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; 
   mob: { width: 1024, height: 1024, label: "1024×1024 (Portrait)" },
   pet: { width: 1024, height: 1024, label: "1024×1024 (Portrait)" },
   item: { width: 1024, height: 1024, label: "1024×1024 (Icon)" },
+  musicBoxKeepsake: { width: 1024, height: 1024, label: "1024×1024 (Icon)" },
   gathering_node: { width: 1024, height: 1024, label: "1024×1024 (Sprite)" },
   lever_plate: { width: 1024, height: 1024, label: "1024×1024 (Sprite)" },
   lever_handle: { width: 1024, height: 1024, label: "1024×1024 (Sprite)" },

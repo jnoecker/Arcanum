@@ -296,7 +296,7 @@ export function EntityArtGenerator({
    *  before we read context props. */
   const flushPendingCommits = () => new Promise<void>((r) => setTimeout(r, 0));
 
-  const handleGenerate = async () => {
+  const runConjure = async (presetPrompt: string | null, presetEnhanced: boolean) => {
     setStage("generating");
     setError(null);
     try {
@@ -306,7 +306,7 @@ export function EntityArtGenerator({
       const ec = entityContextRef.current;
       const fh = framingHintRef.current;
       const freshBase = getPromptRef.current(artStyle);
-      const promptToUse = editedPrompt ?? freshBase;
+      const promptToUse = presetPrompt ?? editedPrompt ?? freshBase;
 
       const selectedModel = modelOverride === "__custom__"
         ? customModel.trim()
@@ -325,7 +325,7 @@ export function EntityArtGenerator({
         applyReferences(text, useReferenceStore.getState().resolver()).prompt;
 
       let finalPrompt = promptToUse;
-      if (enhanced) {
+      if (presetEnhanced || enhanced) {
         finalPrompt = expandLocal(promptToUse);
         setLastEnhancedPrompt(finalPrompt);
       } else if (hasLlmKey) {
@@ -370,7 +370,11 @@ export function EntityArtGenerator({
     }
   };
 
-  const handleEnhance = async () => {
+  const handleGenerate = () => {
+    void runConjure(null, false);
+  };
+
+  const runEnhance = async (): Promise<string | null> => {
     setEnhancing(true);
     setError(null);
     try {
@@ -382,11 +386,23 @@ export function EntityArtGenerator({
       const enhancedText = await enhancePromptWith(promptToEnhance, ec, fh);
       setEditedPrompt(enhancedText);
       setEnhanced(true);
+      return enhancedText;
     } catch (e) {
       setError(String(e));
+      return null;
     } finally {
       setEnhancing(false);
     }
+  };
+
+  const handleEnhance = () => {
+    void runEnhance();
+  };
+
+  const handleEnhanceAndConjure = async () => {
+    const enhancedText = await runEnhance();
+    if (enhancedText === null) return;
+    await runConjure(enhancedText, true);
   };
 
   const handlePickImage = async () => {
@@ -700,11 +716,23 @@ export function EntityArtGenerator({
               <button
                 className="art-btn art-btn--ember art-btn--big"
                 onClick={handleGenerate}
-                disabled={removingBg}
+                disabled={removingBg || enhancing}
               >
                 <span className="art-btn__rune">⚒</span>
                 <span>Conjure</span>
                 <span className="art-btn__sub">⌘↵</span>
+              </button>
+            )}
+
+            {AI_ENABLED && hasApiKey && hasLlmKey && stage === "idle" && (
+              <button
+                className="art-btn art-btn--ghost art-btn--big"
+                onClick={handleEnhanceAndConjure}
+                disabled={removingBg || enhancing}
+                title="Refine the prompt with AI, then conjure in one step"
+              >
+                <span className="art-btn__rune">✶</span>
+                <span>{enhancing ? "Enhancing…" : "Enhance & Conjure"}</span>
               </button>
             )}
 

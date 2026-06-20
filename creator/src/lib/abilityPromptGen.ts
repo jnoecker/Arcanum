@@ -178,6 +178,7 @@ ${effectList}`;
   const response = await invoke<string>("llm_complete", {
     systemPrompt,
     userPrompt,
+    maxTokens: 4096,
   });
 
   const parsed = parseLlmJson<{

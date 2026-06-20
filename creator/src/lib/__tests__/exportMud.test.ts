@@ -557,3 +557,46 @@ ambonmud:
     expect(parseAppConfigYaml(stringify({ ambonmud: runtime })).akathavae.renounceCostGold).toBe(5000);
   });
 });
+
+describe("racial ability round-trip", () => {
+  it("serializes a race's racialAbility and re-parses it intact", () => {
+    const config: AppConfig = {
+      ...BASE_CONFIG,
+      races: {
+        MYCORAE: {
+          displayName: "Mycorae",
+          racialAbility: {
+            kind: "MYCORAE_SPORES",
+            displayName: "Spore Burst",
+            cooldownMs: 120000,
+            triggerHealthPct: 25,
+            petTemplateKey: "spore_mushroom",
+            petCountMin: 1,
+            petCountMax: 3,
+            petDurationMs: 12000,
+            selfMessage: "You burst, scattering spores!",
+            roomMessage: "{player} bursts in a cloud of spores!",
+          },
+        },
+      },
+    };
+
+    const runtime = buildMonolithicConfigObject(config) as any;
+    const ability = runtime.engine.races.definitions.MYCORAE.racialAbility;
+    expect(ability.kind).toBe("MYCORAE_SPORES");
+    expect(ability.petTemplateKey).toBe("spore_mushroom");
+    expect(ability.petCountMax).toBe(3);
+
+    const reparsed = parseAppConfigYaml(stringify({ ambonmud: runtime }));
+    expect(reparsed.races.MYCORAE.racialAbility).toEqual(config.races.MYCORAE.racialAbility);
+  });
+
+  it("omits racialAbility for races without one", () => {
+    const config: AppConfig = {
+      ...BASE_CONFIG,
+      races: { HUMAN: { displayName: "Human" } },
+    };
+    const runtime = buildMonolithicConfigObject(config) as any;
+    expect("racialAbility" in runtime.engine.races.definitions.HUMAN).toBe(false);
+  });
+});

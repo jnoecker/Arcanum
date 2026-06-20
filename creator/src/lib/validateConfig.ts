@@ -1,4 +1,5 @@
-import type { AppConfig } from "@/types/config";
+import type { AppConfig, RacialAbilityKind } from "@/types/config";
+import { RACIAL_ABILITY_KINDS, RACIAL_ABILITY_TRIGGERS } from "@/types/config";
 import { missingRequiredGlobalAssets } from "./requiredGlobalAssets";
 import type { ValidationIssue } from "./validateZone";
 import { flattenEffect, incompatibleChildEffects } from "./abilityEffects";
@@ -448,6 +449,77 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
             entity: `race:${id}`,
             message: `Stat modifier references unknown stat "${statId}"`,
           });
+        }
+      }
+    }
+
+    // ─── Racial passive ability ─── (mirrors server validateEngineRaces)
+    const ability = race.racialAbility;
+    if (ability) {
+      const entity = `race:${id}`;
+      const push = (message: string, severity: ValidationIssue["severity"] = "error") =>
+        issues.push({ severity, entity, message });
+
+      if (!RACIAL_ABILITY_KINDS.includes(ability.kind)) {
+        push(`Racial ability kind "${ability.kind}" is not a known mechanic`);
+      } else {
+        const trigger = RACIAL_ABILITY_TRIGGERS[ability.kind as RacialAbilityKind];
+        // Server applies defaults for omitted fields; mirror them so blank-but-valid passes.
+        const cooldownMs = ability.cooldownMs ?? 120000;
+        const triggerHealthPct = ability.triggerHealthPct ?? 0;
+        const damageMultiplier = ability.damageMultiplier ?? 1;
+        const aoe = ability.aoeDamagePctOfMaxHp ?? 0;
+        const regen = ability.regenPctOfMaxHp ?? 0;
+        const petCountMin = ability.petCountMin ?? 1;
+        const petCountMax = ability.petCountMax ?? 1;
+        const phaseTicks = ability.phaseTicks ?? 2;
+
+        if (cooldownMs < 0) push("Racial ability cooldown must be >= 0");
+        if (triggerHealthPct < 0 || triggerHealthPct > 100)
+          push("Racial ability trigger HP % must be between 0 and 100");
+        if (damageMultiplier < 0) push("Racial ability damage multiplier must be >= 0");
+        if (aoe < 0) push("Racial ability AoE damage must be >= 0");
+        if (regen < 0) push("Racial ability regen must be >= 0");
+        if (petCountMin < 1) push("Racial ability pet count (min) must be >= 1");
+        if (petCountMax < petCountMin)
+          push("Racial ability pet count (max) must be >= pet count (min)");
+        if (phaseTicks < 1) push("Racial ability phase rounds must be >= 1");
+
+        if (trigger === "LOW_HEALTH" && !(triggerHealthPct >= 1 && triggerHealthPct <= 100)) {
+          push(`Low-health ability "${ability.kind}" needs a trigger HP % between 1 and 100`);
+        }
+
+        if (ability.kind === "AURELIA_DAZZLE" && !ability.stunStatusId?.trim()) {
+          push(`"${ability.kind}" requires a stun status effect`);
+        }
+        if (
+          (ability.kind === "MYCORAE_SPORES" || ability.kind === "ARCHAE_DRENGARIAE") &&
+          !ability.petTemplateKey?.trim()
+        ) {
+          push(`"${ability.kind}" requires a pet template`);
+        }
+
+        // Cross-reference checks (warnings — referenced entities may live in an overlay).
+        if (
+          ability.stunStatusId?.trim() &&
+          statusEffectIds.size > 0 &&
+          !statusEffectIds.has(ability.stunStatusId)
+        ) {
+          push(`Stun status effect "${ability.stunStatusId}" is not defined`, "warning");
+        }
+        if (
+          ability.stoneStatusId?.trim() &&
+          statusEffectIds.size > 0 &&
+          !statusEffectIds.has(ability.stoneStatusId)
+        ) {
+          push(`Stone-form status effect "${ability.stoneStatusId}" is not defined`, "warning");
+        }
+        if (
+          ability.petTemplateKey?.trim() &&
+          petIds.size > 0 &&
+          !petIds.has(ability.petTemplateKey)
+        ) {
+          push(`Pet template "${ability.petTemplateKey}" is not defined`, "warning");
         }
       }
     }

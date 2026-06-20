@@ -530,6 +530,77 @@ describe("validateConfig", () => {
     );
   });
 
+  // ─── Racial abilities ──────────────────────────────────────────
+  it("errors on an unknown racial ability kind", () => {
+    const cfg = {
+      ...BASE_CONFIG,
+      races: { elf: { displayName: "Elf", racialAbility: { kind: "NOPE_KIND" as never } } },
+    };
+    const issues = validateConfig(cfg);
+    expect(issues).toContainEqual(
+      expect.objectContaining({ entity: "race:elf", severity: "error" }),
+    );
+  });
+
+  it("errors on a low-health ability with no trigger threshold", () => {
+    const cfg = {
+      ...BASE_CONFIG,
+      races: {
+        pyrae: {
+          displayName: "Pyrae",
+          racialAbility: { kind: "PYRAE_IMMOLATE" as const, triggerHealthPct: 0 },
+        },
+      },
+    };
+    const issues = validateConfig(cfg);
+    expect(issues).toContainEqual(
+      expect.objectContaining({
+        entity: "race:pyrae",
+        severity: "error",
+        message: expect.stringContaining("trigger HP"),
+      }),
+    );
+  });
+
+  it("errors when a dazzle ability has no stun status effect", () => {
+    const cfg = {
+      ...BASE_CONFIG,
+      races: {
+        aurelia: {
+          displayName: "Aurelia",
+          racialAbility: { kind: "AURELIA_DAZZLE" as const, triggerHealthPct: 15 },
+        },
+      },
+    };
+    const issues = validateConfig(cfg);
+    expect(issues).toContainEqual(
+      expect.objectContaining({
+        entity: "race:aurelia",
+        severity: "error",
+        message: expect.stringContaining("stun status effect"),
+      }),
+    );
+  });
+
+  it("accepts a fully configured low-health ability", () => {
+    const cfg = {
+      ...BASE_CONFIG,
+      races: {
+        ophirae: {
+          displayName: "Ophirae",
+          racialAbility: {
+            kind: "OPHIRAE_WRATH" as const,
+            triggerHealthPct: 20,
+            damageMultiplier: 1.5,
+            buffDurationMs: 6000,
+          },
+        },
+      },
+    };
+    const issues = validateConfig(cfg);
+    expect(issues.filter((i) => i.entity === "race:ophirae" && i.severity === "error")).toEqual([]);
+  });
+
   // ─── Stat bindings (melee combat formula) ──────────────────────
   it("errors when meleeStatMultiplier is negative", () => {
     const cfg = {

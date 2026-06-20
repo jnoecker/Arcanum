@@ -1001,6 +1001,86 @@ export interface RaceDefinitionConfig {
   /** Whether this race appears in character creation. Defaults to true when
    *  omitted. Mirrors the same field on `ClassDefinitionConfig`. */
   selectable?: boolean;
+  /** Optional race-specific passive ability (low-health / lethal-blow trigger). */
+  racialAbility?: RacialAbilityConfig;
+}
+
+/**
+ * The distinct race-specific passive ability mechanics. Each `kind` selects one bespoke
+ * behaviour resolved by the server's `RacialAbilitySystem`; the remaining fields on
+ * `RacialAbilityConfig` are read only by the kinds that use them. Mirrors the server's
+ * `RacialAbilityKind` enum — keep in sync.
+ */
+export const RACIAL_ABILITY_KINDS = [
+  "PYRAE_IMMOLATE",
+  "LUSTRIAE_TIMESLIP",
+  "AURELIA_DAZZLE",
+  "LITHAE_STONEFORM",
+  "MYCORAE_SPORES",
+  "KITSARAE_REVERSAL",
+  "ARCHAE_DRENGARIAE",
+  "OPHIRAE_WRATH",
+  "AETHERAE_PHASE",
+] as const;
+
+export type RacialAbilityKind = (typeof RACIAL_ABILITY_KINDS)[number];
+
+/** Which combat hook fires a racial ability. */
+export type RacialTrigger = "LOW_HEALTH" | "LETHAL_BLOW";
+
+/** Maps each ability kind to the combat hook that fires it. Mirrors the server enum. */
+export const RACIAL_ABILITY_TRIGGERS: Record<RacialAbilityKind, RacialTrigger> = {
+  PYRAE_IMMOLATE: "LOW_HEALTH",
+  LUSTRIAE_TIMESLIP: "LETHAL_BLOW",
+  AURELIA_DAZZLE: "LOW_HEALTH",
+  LITHAE_STONEFORM: "LETHAL_BLOW",
+  MYCORAE_SPORES: "LOW_HEALTH",
+  KITSARAE_REVERSAL: "LETHAL_BLOW",
+  ARCHAE_DRENGARIAE: "LOW_HEALTH",
+  OPHIRAE_WRATH: "LOW_HEALTH",
+  AETHERAE_PHASE: "LETHAL_BLOW",
+};
+
+/**
+ * Tunable knobs for a race's passive ability. `kind` selects the mechanic; the remaining
+ * fields are read only by the kinds that use them and keep harmless defaults otherwise.
+ * Mirrors the server's `RacialAbilityConfig`.
+ */
+export interface RacialAbilityConfig {
+  kind: RacialAbilityKind;
+  displayName?: string;
+  /** Cooldown before the ability can fire again, in milliseconds. */
+  cooldownMs?: number;
+  /** LOW_HEALTH only: fires once the player's HP is at or below this percent (1..100) of max. */
+  triggerHealthPct?: number;
+  /** Pyrae: AoE damage dealt to each enemy, as a fraction of the player's max HP. */
+  aoeDamagePctOfMaxHp?: number;
+  /** Ophirae: outgoing-damage multiplier while the wrath buff is active. */
+  damageMultiplier?: number;
+  /** Ophirae: how long the wrath buff lasts, in milliseconds. */
+  buffDurationMs?: number;
+  /** Aurelia: status-effect id (of effectType "stun") applied to enemies. */
+  stunStatusId?: string;
+  /** Mycorae/Archae: pet template key to summon. */
+  petTemplateKey?: string;
+  /** Mycorae: inclusive lower bound on the number of pets spawned. */
+  petCountMin?: number;
+  /** Mycorae: inclusive upper bound on the number of pets spawned. */
+  petCountMax?: number;
+  /** Mycorae/Archae: how long the summoned pets live before despawning, in milliseconds. */
+  petDurationMs?: number;
+  /** Lithae: HP restored on entering stone form, as a fraction of max HP. */
+  regenPctOfMaxHp?: number;
+  /** Lithae: status-effect id (of effectType "root") applied to self so the player can't move. */
+  stoneStatusId?: string;
+  /** Lithae: how long the player stays untargetable in stone form, in milliseconds. */
+  stoneDurationMs?: number;
+  /** Aetherae: number of combat rounds the player stays phased/untargetable after the blow. */
+  phaseTicks?: number;
+  /** Message shown to the triggering player. */
+  selfMessage?: string;
+  /** Message broadcast to others in the room ({player} is substituted). */
+  roomMessage?: string;
 }
 
 // ─── Images ─────────────────────────────────────────────────────────

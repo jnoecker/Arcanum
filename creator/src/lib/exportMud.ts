@@ -905,6 +905,30 @@ export function housingToPlain(h: AppConfig["housing"]): Record<string, unknown>
   };
 }
 
+export function racialAbilityToPlain(
+  ability: NonNullable<AppConfig["races"][string]["racialAbility"]>,
+): Record<string, unknown> {
+  const obj: Record<string, unknown> = { kind: ability.kind };
+  if (ability.displayName) obj.displayName = ability.displayName;
+  if (ability.cooldownMs != null) obj.cooldownMs = ability.cooldownMs;
+  if (ability.triggerHealthPct != null) obj.triggerHealthPct = ability.triggerHealthPct;
+  if (ability.aoeDamagePctOfMaxHp != null) obj.aoeDamagePctOfMaxHp = ability.aoeDamagePctOfMaxHp;
+  if (ability.damageMultiplier != null) obj.damageMultiplier = ability.damageMultiplier;
+  if (ability.buffDurationMs != null) obj.buffDurationMs = ability.buffDurationMs;
+  if (ability.stunStatusId) obj.stunStatusId = ability.stunStatusId;
+  if (ability.petTemplateKey) obj.petTemplateKey = ability.petTemplateKey;
+  if (ability.petCountMin != null) obj.petCountMin = ability.petCountMin;
+  if (ability.petCountMax != null) obj.petCountMax = ability.petCountMax;
+  if (ability.petDurationMs != null) obj.petDurationMs = ability.petDurationMs;
+  if (ability.regenPctOfMaxHp != null) obj.regenPctOfMaxHp = ability.regenPctOfMaxHp;
+  if (ability.stoneStatusId) obj.stoneStatusId = ability.stoneStatusId;
+  if (ability.stoneDurationMs != null) obj.stoneDurationMs = ability.stoneDurationMs;
+  if (ability.phaseTicks != null) obj.phaseTicks = ability.phaseTicks;
+  if (ability.selfMessage) obj.selfMessage = ability.selfMessage;
+  if (ability.roomMessage) obj.roomMessage = ability.roomMessage;
+  return obj;
+}
+
 export function raceToPlain(race: AppConfig["races"][string]): Record<string, unknown> {
   const obj: Record<string, unknown> = { displayName: race.displayName };
   if (race.description) obj.description = race.description;
@@ -916,6 +940,7 @@ export function raceToPlain(race: AppConfig["races"][string]): Record<string, un
   if (race.bodyDescription) obj.bodyDescription = race.bodyDescription;
   if (race.imagePromptDirective) obj.imagePromptDirective = race.imagePromptDirective;
   if (race.staffPrompt) obj.staffPrompt = race.staffPrompt;
+  if (race.racialAbility) obj.racialAbility = racialAbilityToPlain(race.racialAbility);
   return obj;
 }
 

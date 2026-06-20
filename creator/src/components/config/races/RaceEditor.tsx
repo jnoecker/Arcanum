@@ -1,12 +1,20 @@
 ﻿import { useState } from "react";
-import type { RaceDefinitionConfig } from "@/types/config";
+import type { RaceDefinitionConfig, RacialAbilityConfig, RacialAbilityKind } from "@/types/config";
+import { RACIAL_ABILITY_KINDS, RACIAL_ABILITY_TRIGGERS } from "@/types/config";
 import type { StatMap } from "@/types/world";
-import { TextInput, CommitTextarea, cx } from "@/components/ui/FormWidgets";
+import {
+  TextInput,
+  CommitTextarea,
+  NumberInput,
+  SelectInput,
+  cx,
+} from "@/components/ui/FormWidgets";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
 import { EnhanceDescriptionButton } from "@/components/editors/EditorShared";
 import { getBackstoryEnhancePrompt } from "@/lib/lorePrompts";
 import { composePrompt, type ArtStyle } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
+import { useConfigStore } from "@/stores/configStore";
 import { useImageSrc } from "@/lib/useImageSrc";
 import { useStatMods } from "@/lib/useStatMods";
 import { SectionCard } from "@/components/ui/SectionCard";
@@ -97,10 +105,337 @@ export function RaceEditor({
         </div>
       </div>
 
+      <RacialAbilityCard
+        ability={race.racialAbility}
+        onChange={(racialAbility) => patch({ racialAbility })}
+      />
+
       <SectionCard title="Concept Art">
         <ConceptArt id={id} race={race} patch={patch} buildContext={buildContext} />
       </SectionCard>
     </div>
+  );
+}
+
+// ─── Racial Passive Ability ────────────────────────────────────────
+
+const ABILITY_KIND_LABELS: Record<RacialAbilityKind, string> = {
+  PYRAE_IMMOLATE: "Pyrae · Immolation — AoE flame on low HP",
+  AURELIA_DAZZLE: "Aurelia · Dazzling Burst — stun enemies on low HP",
+  MYCORAE_SPORES: "Mycorae · Spore Burst — summon tank mushrooms on low HP",
+  ARCHAE_DRENGARIAE: "Archae · Call the Drengariae — summon a DPS soldier on low HP",
+  OPHIRAE_WRATH: "Ophirae · Draconic Wrath — damage buff on low HP",
+  KITSARAE_REVERSAL: "Kitsarae · Reversal — nullify a lethal blow and heal",
+  LUSTRIAE_TIMESLIP: "Lustriae · Timeslip — extra attack on a lethal blow",
+  LITHAE_STONEFORM: "Lithae · Stone Form — petrify on a lethal blow",
+  AETHERAE_PHASE: "Aetherae · Phase Shift — phase out of a lethal blow",
+};
+
+interface KindFields {
+  triggerHealthPct?: boolean;
+  aoeDamagePctOfMaxHp?: boolean;
+  damageMultiplier?: boolean;
+  buffDurationMs?: boolean;
+  stunStatusId?: boolean;
+  petTemplateKey?: boolean;
+  petCounts?: boolean;
+  petDurationMs?: boolean;
+  regenPctOfMaxHp?: boolean;
+  stoneStatusId?: boolean;
+  stoneDurationMs?: boolean;
+  phaseTicks?: boolean;
+}
+
+const KIND_FIELDS: Record<RacialAbilityKind, KindFields> = {
+  PYRAE_IMMOLATE: { triggerHealthPct: true, aoeDamagePctOfMaxHp: true },
+  AURELIA_DAZZLE: { triggerHealthPct: true, stunStatusId: true },
+  MYCORAE_SPORES: { triggerHealthPct: true, petTemplateKey: true, petCounts: true, petDurationMs: true },
+  ARCHAE_DRENGARIAE: { triggerHealthPct: true, petTemplateKey: true, petDurationMs: true },
+  OPHIRAE_WRATH: { triggerHealthPct: true, damageMultiplier: true, buffDurationMs: true },
+  KITSARAE_REVERSAL: {},
+  LUSTRIAE_TIMESLIP: {},
+  LITHAE_STONEFORM: { regenPctOfMaxHp: true, stoneStatusId: true, stoneDurationMs: true },
+  AETHERAE_PHASE: { phaseTicks: true },
+};
+
+function RacialAbilityCard({
+  ability,
+  onChange,
+}: {
+  ability: RacialAbilityConfig | undefined;
+  onChange: (ability: RacialAbilityConfig | undefined) => void;
+}) {
+  const config = useConfigStore((s) => s.config);
+  const statusEffects = config?.statusEffects ?? {};
+  const pets = config?.pets ?? {};
+
+  const stunOptions = Object.entries(statusEffects)
+    .filter(([, def]) => def.effectType === "stun")
+    .map(([key]) => ({ value: key, label: key }));
+  const rootOptions = Object.entries(statusEffects)
+    .filter(([, def]) => def.effectType === "root")
+    .map(([key]) => ({ value: key, label: key }));
+  const petOptions = Object.entries(pets).map(([key, def]) => ({
+    value: key,
+    label: def.name ? `${key} (${def.name})` : key,
+  }));
+
+  if (!ability) {
+    return (
+      <SectionCard title="Racial Passive Ability">
+        <div className="flex flex-col items-start gap-2">
+          <p className="text-2xs italic text-text-muted/80">
+            No passive ability. Racial passives fire from combat hooks (a low-health threshold or a
+            would-be-lethal blow) on a long, persisted cooldown.
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              onChange({ kind: "PYRAE_IMMOLATE", cooldownMs: 120000, triggerHealthPct: 10 })
+            }
+            className="focus-ring inline-flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-2xs font-medium text-accent transition hover:bg-accent/20"
+          >
+            <PlusIcon />
+            Add racial ability
+          </button>
+        </div>
+      </SectionCard>
+    );
+  }
+
+  const fields = KIND_FIELDS[ability.kind] ?? {};
+  const trigger = RACIAL_ABILITY_TRIGGERS[ability.kind];
+  const patchAbility = (p: Partial<RacialAbilityConfig>) => onChange({ ...ability, ...p });
+
+  return (
+    <SectionCard
+      title="Racial Passive Ability"
+      actions={
+        <div className="flex items-center gap-2">
+          <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] px-2.5 py-1 font-display text-[0.6rem] uppercase tracking-[0.18em] text-text-muted">
+            {trigger === "LOW_HEALTH" ? "Low-health trigger" : "Lethal-blow trigger"}
+          </span>
+          <button
+            type="button"
+            onClick={() => onChange(undefined)}
+            className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--chrome-stroke)] px-2.5 py-1 text-2xs text-text-muted transition hover:border-status-error/40 hover:text-status-error"
+          >
+            <TrashIcon className="h-3 w-3" />
+            Remove
+          </button>
+        </div>
+      }
+    >
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <FieldLabel label="Mechanic" required>
+          <SelectInput
+            value={ability.kind}
+            onCommit={(v) => patchAbility({ kind: v as RacialAbilityKind })}
+            options={RACIAL_ABILITY_KINDS.map((k) => ({ value: k, label: ABILITY_KIND_LABELS[k] }))}
+            dense
+          />
+        </FieldLabel>
+        <FieldLabel label="Display Name">
+          <TextInput
+            value={ability.displayName ?? ""}
+            onCommit={(v) => patchAbility({ displayName: v || undefined })}
+            placeholder="Immolation"
+            dense
+          />
+        </FieldLabel>
+        <FieldLabel label="Cooldown (ms)">
+          <NumberInput
+            value={ability.cooldownMs}
+            onCommit={(v) => patchAbility({ cooldownMs: v })}
+            min={0}
+            step={1000}
+            placeholder="120000"
+            dense
+          />
+        </FieldLabel>
+
+        {fields.triggerHealthPct && (
+          <FieldLabel label="Trigger HP %">
+            <NumberInput
+              value={ability.triggerHealthPct}
+              onCommit={(v) => patchAbility({ triggerHealthPct: v })}
+              min={1}
+              max={100}
+              placeholder="10"
+              dense
+            />
+          </FieldLabel>
+        )}
+        {fields.aoeDamagePctOfMaxHp && (
+          <FieldLabel label="AoE damage (× max HP)">
+            <NumberInput
+              value={ability.aoeDamagePctOfMaxHp}
+              onCommit={(v) => patchAbility({ aoeDamagePctOfMaxHp: v })}
+              min={0}
+              step={0.05}
+              placeholder="0.6"
+              dense
+            />
+          </FieldLabel>
+        )}
+        {fields.damageMultiplier && (
+          <FieldLabel label="Damage multiplier">
+            <NumberInput
+              value={ability.damageMultiplier}
+              onCommit={(v) => patchAbility({ damageMultiplier: v })}
+              min={0}
+              step={0.1}
+              placeholder="1.5"
+              dense
+            />
+          </FieldLabel>
+        )}
+        {fields.buffDurationMs && (
+          <FieldLabel label="Buff duration (ms)">
+            <NumberInput
+              value={ability.buffDurationMs}
+              onCommit={(v) => patchAbility({ buffDurationMs: v })}
+              min={0}
+              step={500}
+              placeholder="6000"
+              dense
+            />
+          </FieldLabel>
+        )}
+        {fields.stunStatusId && (
+          <FieldLabel label="Stun status effect" required>
+            <SelectInput
+              value={ability.stunStatusId ?? ""}
+              onCommit={(v) => patchAbility({ stunStatusId: v || undefined })}
+              options={stunOptions}
+              placeholder="— pick a stun effect —"
+              allowEmpty
+              dense
+            />
+          </FieldLabel>
+        )}
+        {fields.petTemplateKey && (
+          <FieldLabel label="Pet template" required>
+            <SelectInput
+              value={ability.petTemplateKey ?? ""}
+              onCommit={(v) => patchAbility({ petTemplateKey: v || undefined })}
+              options={petOptions}
+              placeholder="— pick a pet —"
+              allowEmpty
+              dense
+            />
+          </FieldLabel>
+        )}
+        {fields.petCounts && (
+          <>
+            <FieldLabel label="Pet count (min)">
+              <NumberInput
+                value={ability.petCountMin}
+                onCommit={(v) => patchAbility({ petCountMin: v })}
+                min={1}
+                placeholder="1"
+                dense
+              />
+            </FieldLabel>
+            <FieldLabel label="Pet count (max)">
+              <NumberInput
+                value={ability.petCountMax}
+                onCommit={(v) => patchAbility({ petCountMax: v })}
+                min={1}
+                placeholder="3"
+                dense
+              />
+            </FieldLabel>
+          </>
+        )}
+        {fields.petDurationMs && (
+          <FieldLabel label="Pet duration (ms)">
+            <NumberInput
+              value={ability.petDurationMs}
+              onCommit={(v) => patchAbility({ petDurationMs: v })}
+              min={0}
+              step={500}
+              placeholder="12000"
+              dense
+            />
+          </FieldLabel>
+        )}
+        {fields.regenPctOfMaxHp && (
+          <FieldLabel label="Regen (× max HP)">
+            <NumberInput
+              value={ability.regenPctOfMaxHp}
+              onCommit={(v) => patchAbility({ regenPctOfMaxHp: v })}
+              min={0}
+              step={0.05}
+              placeholder="0.2"
+              dense
+            />
+          </FieldLabel>
+        )}
+        {fields.stoneStatusId && (
+          <FieldLabel label="Stone-form root effect">
+            <SelectInput
+              value={ability.stoneStatusId ?? ""}
+              onCommit={(v) => patchAbility({ stoneStatusId: v || undefined })}
+              options={rootOptions}
+              placeholder="— pick a root effect —"
+              allowEmpty
+              dense
+            />
+          </FieldLabel>
+        )}
+        {fields.stoneDurationMs && (
+          <FieldLabel label="Stone-form duration (ms)">
+            <NumberInput
+              value={ability.stoneDurationMs}
+              onCommit={(v) => patchAbility({ stoneDurationMs: v })}
+              min={0}
+              step={500}
+              placeholder="4000"
+              dense
+            />
+          </FieldLabel>
+        )}
+        {fields.phaseTicks && (
+          <FieldLabel label="Phase rounds">
+            <NumberInput
+              value={ability.phaseTicks}
+              onCommit={(v) => patchAbility({ phaseTicks: v })}
+              min={1}
+              placeholder="2"
+              dense
+            />
+          </FieldLabel>
+        )}
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <div className="flex flex-col gap-1">
+          <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+            Self message
+          </span>
+          <CommitTextarea
+            label=""
+            value={ability.selfMessage ?? ""}
+            onCommit={(v) => patchAbility({ selfMessage: v || undefined })}
+            placeholder="Shown to the triggering player, e.g. 'Your blood boils over — you erupt in flame!'"
+            rows={2}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+            Room message
+          </span>
+          <CommitTextarea
+            label=""
+            value={ability.roomMessage ?? ""}
+            onCommit={(v) => patchAbility({ roomMessage: v || undefined })}
+            placeholder="Broadcast to others in the room. Use {player} for the name."
+            rows={2}
+          />
+        </div>
+      </div>
+    </SectionCard>
   );
 }
 

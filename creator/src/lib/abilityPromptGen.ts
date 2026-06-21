@@ -6,7 +6,7 @@ import { AI_ENABLED } from "@/lib/featureFlags";
 import { primaryEffectType } from "@/lib/abilityEffects";
 
 const FORMAT_SPEC =
-  "1:1 square ability icon centered in frame, symbolic/iconic representation, solid pale lavender (#d8d0e8) background";
+  "1:1 square ability icon, bold symbolic/iconic representation filling the frame edge to edge, solid pale lavender (#d8d0e8) background showing only through the negative space of the design (no wide empty margins)";
 
 // ─── Class color palettes ────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ function getAbilitySystemPrompt(): string {
   return `You are an expert image prompt engineer for AI image generators. You create prompts for fantasy RPG ability/spell/status-effect icons in the Surreal Gentle Magic design system.${toneBlock}
 
 Your task: given a game ability or status effect definition, create an image generation prompt for a symbolic icon. The icon should:
-- Be a single centered symbolic/iconic illustration (NOT a scene, NOT a character portrait)
+- Be a single bold symbolic/iconic illustration that FILLS the square edge to edge (NOT a scene, NOT a character portrait); the design extends to all four edges with the pale lavender background showing only through the negative space — never a small motif floating in an empty lavender field
 - Visually represent the ability's effect and flavor through symbolic imagery
 - Use color cues matching the ability's class. Each class has a distinct color identity:
   - BULWARK: warm golds (#bea873), amber, burnished bronze — stalwart shields, fortified barriers, golden radiance
@@ -157,7 +157,7 @@ export async function generateAbilityTemplate(
 
 Your task: produce a JSON object with these fields:
 
-1. "template" — a single image generation prompt template using these exact placeholders: {ability_name}, {ability_description}, {class_style}, {effect_visual}. The template should produce a symbolic ability icon. Icons should be single centered symbolic illustrations, NOT scenes, NOT character portraits. They must read clearly at 256x256.
+1. "template" — a single image generation prompt template using these exact placeholders: {ability_name}, {ability_description}, {class_style}, {effect_visual}. The template should produce a symbolic ability icon. Icons should be single bold symbolic illustrations that FILL the square edge to edge (the pale lavender background shows only through the negative space of the design — never a small motif floating in empty lavender), NOT scenes, NOT character portraits. They must read clearly at 256x256.
 
 2. "classIconStyles" — an object mapping each class key to a prompt-fragment describing that class's visual color palette and iconographic motifs for ability icons. Include a "general" key for classless abilities.
 
@@ -262,7 +262,8 @@ Rules:
 - Tighten wording: remove redundancy, merge overlapping phrases, sharpen visual language
 - Ensure the icon is SYMBOLIC — no characters, no hands, no faces
 - Keep the icon readable at small sizes (256x256)
-- Keep the solid pale lavender (#d8d0e8) background specification${toneRule}
+- The symbolic design must FILL the square edge to edge — it is NOT background-removed, so it must not be a small motif floating in empty space. Drop any "centered in frame" or wide-margin language in favor of a composition that extends to all four edges
+- Keep the solid pale lavender (#d8d0e8) background, but it should show only through the negative space of the design, never as a wide empty border${toneRule}
 - Do NOT add the style suffix — it will be appended automatically
 - Output ONLY the refined prompt text — no quotes, no explanation, no preamble`;
 

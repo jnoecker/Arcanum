@@ -568,6 +568,8 @@ describe("racial ability round-trip", () => {
           racialAbility: {
             kind: "MYCORAE_SPORES",
             displayName: "Spore Burst",
+            description: "When you drop to 25% health, you erupt in spores that congeal into tank mushrooms to guard you.",
+            image: "abc123.png",
             cooldownMs: 120000,
             triggerHealthPct: 25,
             petTemplateKey: "spore_mushroom",
@@ -586,6 +588,8 @@ describe("racial ability round-trip", () => {
     expect(ability.kind).toBe("MYCORAE_SPORES");
     expect(ability.petTemplateKey).toBe("spore_mushroom");
     expect(ability.petCountMax).toBe(3);
+    expect(ability.description).toContain("25% health");
+    expect(ability.image).toBe("abc123.png");
 
     const reparsed = parseAppConfigYaml(stringify({ ambonmud: runtime }));
     expect(reparsed.races.MYCORAE.racialAbility).toEqual(config.races.MYCORAE.racialAbility);

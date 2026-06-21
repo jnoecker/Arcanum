@@ -910,6 +910,8 @@ export function racialAbilityToPlain(
 ): Record<string, unknown> {
   const obj: Record<string, unknown> = { kind: ability.kind };
   if (ability.displayName) obj.displayName = ability.displayName;
+  if (ability.description) obj.description = ability.description;
+  if (ability.image) obj.image = normalizeAssetRef(ability.image);
   if (ability.cooldownMs != null) obj.cooldownMs = ability.cooldownMs;
   if (ability.triggerHealthPct != null) obj.triggerHealthPct = ability.triggerHealthPct;
   if (ability.aoeDamagePctOfMaxHp != null) obj.aoeDamagePctOfMaxHp = ability.aoeDamagePctOfMaxHp;

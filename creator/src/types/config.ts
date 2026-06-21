@@ -1049,6 +1049,10 @@ export const RACIAL_ABILITY_TRIGGERS: Record<RacialAbilityKind, RacialTrigger> =
 export interface RacialAbilityConfig {
   kind: RacialAbilityKind;
   displayName?: string;
+  /** Player-facing explanation of what the ability does, surfaced in the spellbook. */
+  description?: string;
+  /** Spellbook icon: a raw image filename resolved against the images base URL when emitted. */
+  image?: string;
   /** Cooldown before the ability can fire again, in milliseconds. */
   cooldownMs?: number;
   /** LOW_HEALTH only: fires once the player's HP is at or below this percent (1..100) of max. */

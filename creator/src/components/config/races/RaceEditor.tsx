@@ -33,6 +33,16 @@ Rules:
 - Do NOT include clothing, armor, or weapons — the class system handles those
 - Output ONLY the description text — no quotes, no explanation`;
 
+const RACIAL_ABILITY_DESC_SYSTEM_PROMPT = `You are writing player-facing spellbook copy for a fantasy MUD's racial passive ability.
+
+Given a race, the ability's name, and its mechanics (trigger condition, cooldown, and effect values), write a concise description a player reads in their spellbook.
+
+Rules:
+- 1-2 sentences, present tense, addressed to the player ("you" / "your").
+- State plainly WHEN it triggers (e.g. when you drop to low health, or when a blow would kill you) and WHAT it does, weaving in the concrete numbers you are given (percentages, counts, durations).
+- Evocative but clear — this is a tooltip, not lore. No title, no quotes, no markdown.
+- Output ONLY the description text.`;
+
 
 interface RaceEditorProps {
   id: string;
@@ -106,6 +116,8 @@ export function RaceEditor({
       </div>
 
       <RacialAbilityCard
+        raceId={id}
+        raceName={race.displayName}
         ability={race.racialAbility}
         onChange={(racialAbility) => patch({ racialAbility })}
       />
@@ -159,13 +171,18 @@ const KIND_FIELDS: Record<RacialAbilityKind, KindFields> = {
 };
 
 function RacialAbilityCard({
+  raceId,
+  raceName,
   ability,
   onChange,
 }: {
+  raceId: string;
+  raceName: string;
   ability: RacialAbilityConfig | undefined;
   onChange: (ability: RacialAbilityConfig | undefined) => void;
 }) {
   const config = useConfigStore((s) => s.config);
+  const assetsDir = useAssetStore((s) => s.assetsDir);
   const statusEffects = config?.statusEffects ?? {};
   const pets = config?.pets ?? {};
 
@@ -206,6 +223,30 @@ function RacialAbilityCard({
   const fields = KIND_FIELDS[ability.kind] ?? {};
   const trigger = RACIAL_ABILITY_TRIGGERS[ability.kind];
   const patchAbility = (p: Partial<RacialAbilityConfig>) => onChange({ ...ability, ...p });
+
+  const abilityName = ability.displayName || ABILITY_KIND_LABELS[ability.kind];
+  const iconImagePath =
+    ability.image && assetsDir ? `${assetsDir}\\images\\${ability.image}` : undefined;
+
+  const buildAbilityContext = () => {
+    const parts = [
+      `Race: ${raceName}`,
+      `Racial passive ability: ${abilityName}`,
+      `Trigger: ${trigger === "LOW_HEALTH" ? "when the player drops to low health" : "when a blow would be lethal"}`,
+    ];
+    if (ability.cooldownMs != null) parts.push(`Cooldown: ${Math.round(ability.cooldownMs / 1000)}s`);
+    if (ability.triggerHealthPct != null) parts.push(`Triggers at ${ability.triggerHealthPct}% max HP`);
+    if (ability.aoeDamagePctOfMaxHp != null) parts.push(`AoE damage: ${Math.round(ability.aoeDamagePctOfMaxHp * 100)}% of max HP to each enemy`);
+    if (ability.damageMultiplier != null) parts.push(`Damage multiplier: ${ability.damageMultiplier}x`);
+    if (ability.buffDurationMs != null) parts.push(`Buff lasts ${Math.round(ability.buffDurationMs / 1000)}s`);
+    if (ability.petTemplateKey) parts.push(`Summons: ${ability.petTemplateKey}`);
+    if (ability.petCountMin != null || ability.petCountMax != null) parts.push(`Pets spawned: ${ability.petCountMin ?? 1}-${ability.petCountMax ?? ability.petCountMin ?? 1}`);
+    if (ability.petDurationMs != null) parts.push(`Pets last ${Math.round(ability.petDurationMs / 1000)}s`);
+    if (ability.regenPctOfMaxHp != null) parts.push(`Heals ${Math.round(ability.regenPctOfMaxHp * 100)}% of max HP`);
+    if (ability.stoneDurationMs != null) parts.push(`Untargetable for ${Math.round(ability.stoneDurationMs / 1000)}s`);
+    if (ability.phaseTicks != null) parts.push(`Phases out for ${ability.phaseTicks} combat rounds`);
+    return parts.join("\n");
+  };
 
   return (
     <SectionCard
@@ -407,6 +448,50 @@ function RacialAbilityCard({
             />
           </FieldLabel>
         )}
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+            Spellbook Description
+          </span>
+          <CommitTextarea
+            label=""
+            value={ability.description ?? ""}
+            onCommit={(v) => patchAbility({ description: v || undefined })}
+            placeholder="Player-facing explanation shown in the spellbook — when it fires and what it does."
+            rows={4}
+          />
+          <div className="mt-1.5 flex justify-end">
+            <EnhanceDescriptionButton
+              entitySummary={buildAbilityContext()}
+              currentDescription={ability.description}
+              onAccept={(v) => patchAbility({ description: v })}
+              systemPrompt={RACIAL_ABILITY_DESC_SYSTEM_PROMPT}
+              label="AI generate"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+            Spellbook Icon
+          </span>
+          <EntityArtGenerator
+            getPrompt={(style: ArtStyle) =>
+              composePrompt("racial_ability_icon", style, `Racial ability: ${abilityName} (${raceName})`)
+            }
+            entityContext={buildAbilityContext()}
+            currentImage={iconImagePath}
+            onAccept={(filePath) => {
+              const fileName = filePath.split(/[\\/]/).pop() ?? "";
+              patchAbility({ image: fileName });
+            }}
+            assetType="racial_ability_icon"
+            context={{ zone: "", entity_type: "racial_ability", entity_id: raceId }}
+            surface="worldbuilding"
+          />
+        </div>
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">

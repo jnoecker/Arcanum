@@ -48,6 +48,7 @@ export type AssetType =
   | "ability_sprite"
   | "ability_icon"
   | "status_effect_icon"
+  | "racial_ability_icon"
   | "zone_map"
   | "splash_hero"
   | "loading_vignette"
@@ -309,6 +310,7 @@ export const ENTITY_DIMENSIONS: Record<string, { width: number; height: number; 
   lever_bg: { width: 1024, height: 1536, label: "1024×1536 (Portrait)" },
   puzzle_bg: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   ability: { width: 1024, height: 1024, label: "1024×1024 (Icon)" },
+  racial_ability: { width: 1024, height: 1024, label: "1024×1024 (Icon)" },
   shop: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   dungeon: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },
   dungeonRoom: { width: 1536, height: 1024, label: "1536×1024 (Landscape)" },

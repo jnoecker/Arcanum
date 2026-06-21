@@ -143,6 +143,7 @@ export const FORMAT_BY_ASSET_TYPE: Partial<Record<AssetType, string>> = {
   ability_sprite: FORMAT_BY_TYPE.ability_icon,
   ability_icon: FORMAT_BY_TYPE.ability_icon,
   status_effect_icon: FORMAT_BY_TYPE.status_effect_icon,
+  racial_ability_icon: FORMAT_BY_TYPE.ability_icon,
   zone_map: "16:9 illustrated fantasy map or cartographic overview, top-down or elevated perspective, no readable labels",
   showcase_banner: "21:9 ultra-wide cinematic hero banner, sweeping establishing vista, strong negative space in upper and lower thirds for title text overlay, no readable text",
   showcase_favicon: "1:1 square world logo icon, bold centered emblem filling most of the frame, high-contrast silhouette that reads at tiny sizes, no text, no fine detail",
@@ -497,6 +498,13 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
     templates: {
       arcanum: `A single iconic status effect symbol rendered as flowing energy against deep cosmic indigo void, baroque scrollwork frame dissolving at edges, the central icon glows with concentrated light — shields in steel-blue, buffs in warm gold, debuffs in sickly green, DoTs in smoldering ember-red — soft bloom, centered square composition like a game status icon, painterly, luminous, extremely detailed, no text, no figures`,
       gentle_magic: `A single iconic status effect symbol as a softly glowing natural form against deep mist-blue background, the icon rendered as living magic — shields as crystalline domes, buffs as gentle auras, debuffs as wilting tendrils, DoTs as slow-burning embers — radiating pale lavender and contextual color light with diffused bloom, framed by a subtle circle of floating light motes, centered square composition like a game status icon, organic shapes, no harsh edges, painterly, luminous, dreamlike, no text, no figures`,
+    },
+  },
+  racial_ability_icon: {
+    label: "Racial Ability Icon",
+    templates: {
+      arcanum: `A single iconic emblem for an innate racial passive power rendered as flowing ancestral energy against deep cosmic indigo void, baroque scrollwork frame dissolving at edges, the central symbol glows with concentrated aurum-gold light and soft bloom evoking the bloodline's signature force — flame, time, light, stone, spore, reversal, beast-call, draconic wrath, or aetheric phase — blue-violet atmospheric fill behind, centered square composition like a game ability icon, painterly, luminous, extremely detailed, no text, no figures`,
+      gentle_magic: `A single iconic emblem for an innate racial passive power as a softly glowing natural form against deep mist-blue background, the icon rendered as living ancestral magic that captures the bloodline's signature force — a gentle flame, a swirl of luminous time, drifting motes of light, weathered stone, blooming spores, or a curling phase-shimmer — radiating pale lavender and warm gold light with diffused bloom, framed by a subtle circle of floating light motes, centered square composition like a game ability icon, organic shapes, no harsh edges, painterly, luminous, dreamlike, no text, no figures`,
     },
   },
   music: {

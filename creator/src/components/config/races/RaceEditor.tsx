@@ -450,33 +450,33 @@ function RacialAbilityCard({
         )}
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
-        <div className="flex min-w-0 flex-col gap-1">
-          <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
-            Spellbook Description
-          </span>
-          <CommitTextarea
-            label=""
-            value={ability.description ?? ""}
-            onCommit={(v) => patchAbility({ description: v || undefined })}
-            placeholder="Player-facing explanation shown in the spellbook — when it fires and what it does."
-            rows={4}
+      <div className="mt-4 flex flex-col gap-1">
+        <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+          Spellbook Description
+        </span>
+        <CommitTextarea
+          label=""
+          value={ability.description ?? ""}
+          onCommit={(v) => patchAbility({ description: v || undefined })}
+          placeholder="Player-facing explanation shown in the spellbook — when it fires and what it does."
+          rows={4}
+        />
+        <div className="mt-1.5 flex justify-end">
+          <EnhanceDescriptionButton
+            entitySummary={buildAbilityContext()}
+            currentDescription={ability.description}
+            onAccept={(v) => patchAbility({ description: v })}
+            systemPrompt={RACIAL_ABILITY_DESC_SYSTEM_PROMPT}
+            label="AI generate"
           />
-          <div className="mt-1.5 flex justify-end">
-            <EnhanceDescriptionButton
-              entitySummary={buildAbilityContext()}
-              currentDescription={ability.description}
-              onAccept={(v) => patchAbility({ description: v })}
-              systemPrompt={RACIAL_ABILITY_DESC_SYSTEM_PROMPT}
-              label="AI generate"
-            />
-          </div>
         </div>
+      </div>
 
-        <div className="flex flex-col gap-1">
-          <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
-            Spellbook Icon
-          </span>
+      <div className="mt-3 flex flex-col gap-1">
+        <span className="font-display text-2xs uppercase tracking-wider text-text-muted">
+          Spellbook Icon
+        </span>
+        <div className="rounded-2xl border border-[var(--chrome-stroke)] bg-gradient-panel-light p-3">
           <EntityArtGenerator
             getPrompt={(style: ArtStyle) =>
               composePrompt("racial_ability_icon", style, `Racial ability: ${abilityName} (${raceName})`)

@@ -6,6 +6,10 @@ const {
   applyHandTopology,
   extractJson,
   parseGeneratedContent,
+  parseRooms,
+  parseEntities,
+  chunk,
+  mapWithConcurrency,
   renameRoomsByTitle,
   slugifyTitle,
 } = __test__;
@@ -352,5 +356,89 @@ describe("parseGeneratedContent", () => {
   it("throws on empty rooms array", () => {
     const raw = JSON.stringify({ rooms: [] });
     expect(() => parseGeneratedContent(raw)).toThrow();
+  });
+});
+
+// ─── chunk ──────────────────────────────────────────────────────────
+
+describe("chunk", () => {
+  it("splits into batches of the given size", () => {
+    expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+  });
+
+  it("returns a single batch when size exceeds length", () => {
+    expect(chunk([1, 2, 3], 10)).toEqual([[1, 2, 3]]);
+  });
+
+  it("returns an empty array for no items", () => {
+    expect(chunk([], 4)).toEqual([]);
+  });
+});
+
+// ─── mapWithConcurrency ─────────────────────────────────────────────
+
+describe("mapWithConcurrency", () => {
+  it("preserves input order regardless of completion order", async () => {
+    const items = [30, 10, 20, 5];
+    const out = await mapWithConcurrency(items, 2, async (n: number) => {
+      await new Promise((r) => setTimeout(r, n));
+      return n * 2;
+    });
+    expect(out).toEqual([60, 20, 40, 10]);
+  });
+
+  it("never exceeds the concurrency limit", async () => {
+    let active = 0;
+    let peak = 0;
+    const items = Array.from({ length: 10 }, (_, i) => i);
+    await mapWithConcurrency(items, 3, async (n: number) => {
+      active++;
+      peak = Math.max(peak, active);
+      await new Promise((r) => setTimeout(r, 2));
+      active--;
+      return n;
+    });
+    expect(peak).toBeLessThanOrEqual(3);
+  });
+
+  it("runs every item exactly once", async () => {
+    const seen: number[] = [];
+    const items = Array.from({ length: 7 }, (_, i) => i);
+    await mapWithConcurrency(items, 4, async (n: number) => {
+      seen.push(n);
+      return n;
+    });
+    expect(seen.sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+});
+
+// ─── parseRooms / parseEntities ─────────────────────────────────────
+
+describe("parseRooms", () => {
+  it("extracts a rooms array (ignoring code fences)", () => {
+    const raw = '```json\n{"rooms": [{"id": "a", "title": "A", "description": "."}]}\n```';
+    expect(parseRooms(raw)).toHaveLength(1);
+  });
+
+  it("throws when the rooms array is missing", () => {
+    expect(() => parseRooms('{"mobs": []}')).toThrow();
+  });
+});
+
+describe("parseEntities", () => {
+  it("returns mobs and items when present", () => {
+    const raw = JSON.stringify({
+      mobs: [{ id: "slime", name: "Slime", description: ".", tier: "weak", room: "a" }],
+      items: [{ id: "blade", displayName: "Blade", description: "." }],
+    });
+    const result = parseEntities(raw);
+    expect(result.mobs).toHaveLength(1);
+    expect(result.items).toHaveLength(1);
+  });
+
+  it("defaults missing arrays to empty", () => {
+    const result = parseEntities('{"mobs": [{"id": "a", "name": "A", "description": ".", "tier": "weak", "room": "r"}]}');
+    expect(result.mobs).toHaveLength(1);
+    expect(result.items).toEqual([]);
   });
 });

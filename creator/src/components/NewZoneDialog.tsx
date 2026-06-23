@@ -82,6 +82,7 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
   // ─── Wizard state ─────────────────────────────────────────────
   const [step, setStep] = useState<WizardStep>(prefill ? "content" : "target");
   const [creating, setCreating] = useState(false);
+  const [genProgress, setGenProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const trapRef = useFocusTrap<HTMLDivElement>(creating ? undefined : onClose);
 
@@ -240,6 +241,7 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
   const handleGenerate = async () => {
     if (!project || creating) return;
     setCreating(true);
+    setGenProgress(null);
     setError(null);
 
     try {
@@ -253,8 +255,12 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
       setStep("error");
     } finally {
       setCreating(false);
+      setGenProgress(null);
     }
   };
+
+  const reportProgress = (done: number, total: number) =>
+    setGenProgress({ done, total });
 
   const handleCreateNew = async () => {
     if (!project) return;
@@ -279,7 +285,7 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
         // No description → stub sketch rooms without LLM
         world = buildStubFromSketch(zoneId, layout);
       } else {
-        world = await generateZoneFromSketch(buildGenParams(zoneId), layout);
+        world = await generateZoneFromSketch(buildGenParams(zoneId), layout, reportProgress);
       }
     } else {
       // Pure AI generation
@@ -287,7 +293,7 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
         // No description → fall back to an empty stub of the requested size
         world = createFallbackZone(zoneId, preset.rooms);
       } else {
-        world = await generateZoneContent(buildGenParams(zoneId));
+        world = await generateZoneContent(buildGenParams(zoneId), reportProgress);
       }
     }
 
@@ -386,6 +392,7 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
               .join(" "),
           },
           layout,
+          reportProgress,
         );
         newRooms = partial.rooms;
         newMobs = partial.mobs ?? {};
@@ -605,9 +612,11 @@ export function NewZoneDialog({ onClose, prefill, onCreated }: NewZoneDialogProp
             {step === "review" && (
               <ActionButton variant="primary" size="sm" onClick={handleGenerate} disabled={creating}>
                 {creating
-                  ? target === "new"
-                    ? "Generating zone..."
-                    : "Generating rooms..."
+                  ? genProgress && genProgress.total > 0
+                    ? `Flavoring rooms ${genProgress.done}/${genProgress.total}...`
+                    : target === "new"
+                      ? "Generating zone..."
+                      : "Generating rooms..."
                   : target === "new"
                     ? "Create Zone"
                     : "Add Rooms"}

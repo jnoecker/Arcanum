@@ -357,23 +357,36 @@ Respond with ONLY valid, strict JSON (no trailing commas, no comments, all prope
   "items": [{ "id": string, "displayName": string, "description": string, "slot"?: string, "damage"?: number, "armor"?: number, "stats"?: { statId: number }, "room"?: string }]
 }`;
 
-const SYSTEM_PROMPT_SKETCH = `You are a creative game content designer for a text-based MUD (Multi-User Dungeon). The player has sketched a zone layout and you will write flavor for each of its pre-defined rooms.
+const SYSTEM_PROMPT_SKETCH_ROOMS = `You are a creative game content designer for a text-based MUD (Multi-User Dungeon). The player has sketched a zone layout and you will write flavor for a SUBSET of its pre-defined rooms.
 
 Rules:
 - You will be given a list of room IDs with optional hints from the sketch
 - Return one entry per room, using the SAME room ID (do not rename, do not invent new rooms)
 - Do NOT include exits — the layout is already fixed
+- Do NOT include mobs or items — those are authored separately
 - Use the hint (if any) to inform the room's title and description
-- Mob tiers: "weak", "standard", "elite", or "boss"
-- Mob IDs and item IDs must be snake_case
-- Mob "room" must be one of the provided room IDs
-- Item slots must come from the provided equipment slots list, or be omitted for non-equipment items
 - ${ROOM_DESCRIPTION_GUIDANCE}
 - Match the world and zone themes in tone and content
 
 Respond with ONLY valid, strict JSON (no trailing commas, no comments, all property names double-quoted) matching this schema:
 {
-  "rooms": [{ "id": string, "title": string, "description": string }],
+  "rooms": [{ "id": string, "title": string, "description": string }]
+}`;
+
+const SYSTEM_PROMPT_SKETCH_ENTITIES = `You are a creative game content designer for a text-based MUD (Multi-User Dungeon). The zone's rooms already exist; you will populate them with mobs and items.
+
+Rules:
+- You will be given the zone's room IDs — place mobs and items in those rooms only
+- Do NOT generate rooms
+- Mob tiers: "weak", "standard", "elite", or "boss"
+- Mob IDs and item IDs must be snake_case
+- Mob "room" and item "room" must be one of the provided room IDs
+- Item slots must come from the provided equipment slots list, or be omitted for non-equipment items
+- Item stat bonuses should use the provided stat names
+- Match the world and zone themes in tone and content
+
+Respond with ONLY valid, strict JSON (no trailing commas, no comments, all property names double-quoted) matching this schema:
+{
   "mobs": [{ "id": string, "name": string, "description": string, "tier": string, "room": string }],
   "items": [{ "id": string, "displayName": string, "description": string, "slot"?: string, "damage"?: number, "armor"?: number, "stats"?: { statId: number }, "room"?: string }]
 }`;
@@ -426,25 +439,52 @@ function buildUserPrompt(params: ZoneGenerationParams): string {
   return parts.join("\n");
 }
 
-function buildSketchUserPrompt(
+/** Theme-only context — rooms don't need the stat/slot/class lists. */
+function buildThemeContext(params: ZoneGenerationParams): string[] {
+  return [
+    `World theme: ${params.worldTheme || "A classic fantasy world"}`,
+    `Zone theme: ${params.zoneTheme || "A starting area for adventurers"}`,
+    ...(params.backgroundContext
+      ? [`Background context: ${params.backgroundContext}`]
+      : []),
+  ];
+}
+
+function buildRoomBatchPrompt(
   params: ZoneGenerationParams,
-  layout: FixedLayout,
+  batch: FixedLayoutRoom[],
 ): string {
   const parts = [
-    `Write flavor for a MUD zone called "${params.zoneName}" whose layout has already been sketched.`,
+    `Write flavor for part of a MUD zone called "${params.zoneName}" whose layout has already been sketched.`,
     ``,
-    ...buildCommonContext(params),
+    ...buildThemeContext(params),
     ``,
-    `Room IDs (with optional hints from the sketch):`,
+    `Write a title and description for each of these rooms (with optional hints):`,
   ];
-  for (const room of layout.rooms) {
+  for (const room of batch) {
     parts.push(`- ${room.id}${room.hint ? ` — ${room.hint}` : ""}`);
   }
   parts.push(``);
-  parts.push(`Generate exactly:`);
-  parts.push(`- One entry per room above, using the same IDs`);
-  parts.push(`- ${params.mobCount} mobs spread across the rooms`);
-  parts.push(`- ${params.itemCount} items (some as equipment, some as ground items)`);
+  parts.push(`Return one entry per room above, using the same IDs. Rooms only — no mobs, items, or exits.`);
+  return parts.join("\n");
+}
+
+function buildEntitiesPrompt(
+  params: ZoneGenerationParams,
+  roomIds: string[],
+): string {
+  const parts = [
+    `Populate a MUD zone called "${params.zoneName}" with mobs and items.`,
+    ``,
+    ...buildCommonContext(params),
+    ``,
+    `Room IDs to place content in:`,
+    roomIds.join(", "),
+    ``,
+    `Generate exactly:`,
+    `- ${params.mobCount} mobs spread across the rooms`,
+    `- ${params.itemCount} items (some as equipment, some as ground items)`,
+  ];
   return parts.join("\n");
 }
 
@@ -529,6 +569,61 @@ function parseGeneratedContent(raw: string): GeneratedZoneContent {
     mobs: parsed.mobs ?? [],
     items: parsed.items ?? [],
   };
+}
+
+/** Parse a rooms-only batch response into an array of rooms. */
+function parseRooms(raw: string): LlmRoom[] {
+  const parsed = JSON.parse(extractJson(raw));
+  if (!Array.isArray(parsed.rooms)) {
+    throw new Error("Room batch response missing rooms array");
+  }
+  return parsed.rooms;
+}
+
+/** Parse an entities-only response into mobs + items (both optional). */
+function parseEntities(raw: string): { mobs: LlmMob[]; items: LlmItem[] } {
+  const parsed = JSON.parse(extractJson(raw));
+  return {
+    mobs: Array.isArray(parsed.mobs) ? parsed.mobs : [],
+    items: Array.isArray(parsed.items) ? parsed.items : [],
+  };
+}
+
+// ─── Concurrency helpers ────────────────────────────────────────
+
+function chunk<T>(items: T[], size: number): T[][] {
+  if (size < 1) return [items];
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    out.push(items.slice(i, i + size));
+  }
+  return out;
+}
+
+/**
+ * Run `fn` over `items` with at most `limit` in flight at once, preserving
+ * input order in the results. A worker pool pulls from a shared cursor so a
+ * slow item doesn't stall the others.
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < items.length) {
+      const i = cursor++;
+      results[i] = await fn(items[i]!, i);
+    }
+  };
+  const pool = Array.from(
+    { length: Math.max(1, Math.min(limit, items.length)) },
+    worker,
+  );
+  await Promise.all(pool);
+  return results;
 }
 
 // ─── WorldFile construction ─────────────────────────────────────
@@ -683,21 +778,98 @@ function buildSystemPrompt(base: string): string {
   return tone ? `${base}\n\nWorld context: ${tone}` : base;
 }
 
+/** Rooms per LLM flavor request. Small batches stay well under the response
+ *  timeout and per-call token ceiling, and they run concurrently. */
+const ROOM_BATCH_SIZE = 20;
+
+/** Max LLM requests in flight while flavoring a zone. */
+const GEN_CONCURRENCY = 5;
+
+/** Progress callback for long multi-batch generations: (roomsDone, total). */
+export type ZoneGenProgress = (done: number, total: number) => void;
+
 function scaleMaxTokens(entityCount: number): number {
   return Math.max(2048, Math.min(entityCount * 350, 16000));
+}
+
+/** One `llm_complete` call with a single retry before giving up. */
+async function llmCompleteOnce(
+  systemPrompt: string,
+  userPrompt: string,
+  maxTokens: number,
+): Promise<string> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await invoke<string>("llm_complete", {
+        systemPrompt,
+        userPrompt,
+        maxTokens,
+      });
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr;
+}
+
+/**
+ * Flavor one batch of layout rooms. On failure (after a retry) returns `[]` so
+ * the caller stubs those rooms instead of failing the whole zone.
+ */
+async function flavorRoomBatch(
+  params: ZoneGenerationParams,
+  batch: FixedLayoutRoom[],
+): Promise<LlmRoom[]> {
+  try {
+    const response = await llmCompleteOnce(
+      buildSystemPrompt(SYSTEM_PROMPT_SKETCH_ROOMS),
+      buildRoomBatchPrompt(params, batch),
+      scaleMaxTokens(batch.length),
+    );
+    return parseRooms(response);
+  } catch (err) {
+    console.error(`Room batch failed (${batch.length} rooms), stubbing:`, err);
+    return [];
+  }
+}
+
+/**
+ * Generate the zone's mobs + items in a single call, placed in `roomIds`. On
+ * failure (after a retry) returns empty sets so the rooms still ship.
+ */
+async function generateEntities(
+  params: ZoneGenerationParams,
+  roomIds: string[],
+): Promise<{ mobs: LlmMob[]; items: LlmItem[] }> {
+  if (params.mobCount <= 0 && params.itemCount <= 0) {
+    return { mobs: [], items: [] };
+  }
+  try {
+    const response = await llmCompleteOnce(
+      buildSystemPrompt(SYSTEM_PROMPT_SKETCH_ENTITIES),
+      buildEntitiesPrompt(params, roomIds),
+      scaleMaxTokens(params.mobCount + params.itemCount),
+    );
+    return parseEntities(response);
+  } catch (err) {
+    console.error("Entity generation failed; zone will have no mobs/items:", err);
+    return { mobs: [], items: [] };
+  }
 }
 
 /**
  * Generate a fresh zone from scratch.
  *
- * For zones larger than `SMALL_TOPOLOGY_LIMIT` we now place rooms on a grid
- * *first* with a deterministic random-walk, then ask the LLM to flavor the
- * fixed layout (title + description per room). This replaces the old flow
- * where the LLM invented free-form compass exits — which routinely produced
- * geometrically impossible graphs and messy layouts after grid embedding.
+ * For zones larger than `SMALL_TOPOLOGY_LIMIT` we pack the rooms into a square
+ * grid *first* (see `generateGridLayout`), then ask the LLM to flavor the fixed
+ * layout (title + description per room) in parallel batches. This replaces the
+ * old flow where the LLM invented free-form compass exits — which routinely
+ * produced geometrically impossible graphs and messy layouts after embedding.
  */
 export async function generateZoneContent(
   params: ZoneGenerationParams,
+  onProgress?: ZoneGenProgress,
 ): Promise<WorldFile> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
 
@@ -706,7 +878,7 @@ export async function generateZoneContent(
       count: params.roomCount,
       seed: `${params.zoneName}|${params.zoneTheme}`,
     });
-    const flavored = await generateZoneFromSketch(params, layout);
+    const flavored = await generateZoneFromSketch(params, layout, onProgress);
     return renameRoomsByTitle(flavored);
   }
 
@@ -727,41 +899,57 @@ export async function generateZoneContent(
 }
 
 /**
- * Generate a zone where the layout (rooms + exits) is already fixed,
- * typically from a user-provided sketch. The LLM only writes flavor.
+ * Generate a zone where the layout (rooms + exits) is already fixed — typically
+ * a square grid or a user-provided sketch. The LLM only writes flavor, and it
+ * does so in parallel batches: each batch flavors a slice of the rooms, mobs +
+ * items are authored in one overlapping call, and a batch that fails is stubbed
+ * rather than sinking the whole zone. `onProgress` reports rooms flavored.
  */
 export async function generateZoneFromSketch(
   params: ZoneGenerationParams,
   layout: FixedLayout,
+  onProgress?: ZoneGenProgress,
 ): Promise<WorldFile> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
   if (layout.rooms.length === 0) {
     throw new Error("Sketch layout has no rooms");
   }
 
-  const userPrompt = buildSketchUserPrompt(params, layout);
-  const systemPrompt = buildSystemPrompt(SYSTEM_PROMPT_SKETCH);
-  const maxTokens = scaleMaxTokens(
-    layout.rooms.length + params.mobCount + params.itemCount,
+  const total = layout.rooms.length;
+  onProgress?.(0, total);
+
+  // Mobs + items are zone-wide; start that single call now so it overlaps the
+  // parallel room-flavor batches instead of running after them.
+  const entitiesPromise = generateEntities(
+    params,
+    layout.rooms.map((r) => r.id),
   );
 
-  const response = await invoke<string>("llm_complete", {
-    systemPrompt,
-    userPrompt,
-    maxTokens,
-  });
+  let done = 0;
+  const batchResults = await mapWithConcurrency(
+    chunk(layout.rooms, ROOM_BATCH_SIZE),
+    GEN_CONCURRENCY,
+    async (batch) => {
+      const flavored = await flavorRoomBatch(params, batch);
+      done += batch.length;
+      onProgress?.(Math.min(done, total), total);
+      return flavored;
+    },
+  );
 
-  const parsed = parseGeneratedContent(response);
-
-  // Enforce: one entry per layout room, use layout's fixed exits.
-  // Match LLM rooms back to layout by ID; if missing, synthesize a stub.
-  const llmById = new Map(parsed.rooms.map((r) => [r.id, r]));
+  // Enforce: one entry per layout room, using the layout's fixed exits. Match
+  // flavored rooms back by ID; stub any the LLM dropped or any failed batch.
+  const llmById = new Map(
+    batchResults
+      .flat()
+      .filter((r) => r && r.id)
+      .map((r) => [r.id, r]),
+  );
   const rooms: LlmRoom[] = layout.rooms.map((layoutRoom) => {
     const llm = llmById.get(layoutRoom.id);
     if (llm) {
       return { ...llm, id: layoutRoom.id };
     }
-    // Fallback: use the hint (or derived title) if the LLM didn't return this room
     const title =
       layoutRoom.hint ||
       layoutRoom.id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -775,14 +963,15 @@ export async function generateZoneFromSketch(
   const roomFiles = applyFixedLayout(rooms, layout);
   const roomIds = new Set(Object.keys(roomFiles));
   const fallback = layout.rooms[0]!.id;
+  const { mobs, items } = await entitiesPromise;
 
   return {
     zone: params.zoneName,
     lifespan: 30,
     startRoom: fallback,
     rooms: roomFiles,
-    mobs: buildMobs(parsed.mobs, roomIds, fallback),
-    items: buildItems(parsed.items, roomIds),
+    mobs: buildMobs(mobs, roomIds, fallback),
+    items: buildItems(items, roomIds),
     shops: {},
     quests: {},
     gatheringNodes: {},
@@ -936,6 +1125,10 @@ export const __test__ = {
   applyHandTopology,
   extractJson,
   parseGeneratedContent,
+  parseRooms,
+  parseEntities,
+  chunk,
+  mapWithConcurrency,
   renameRoomsByTitle,
   slugifyTitle,
 };

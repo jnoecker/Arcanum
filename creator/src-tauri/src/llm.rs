@@ -31,7 +31,7 @@ async fn openai_complete(
         "max_tokens": max_tokens,
         "temperature": 0.7,
     });
-    let client = crate::http::shared_client();
+    let client = crate::http::llm_client();
     let response = client
         .post(OPENAI_CHAT_URL)
         .header("Authorization", crate::http::bearer_header(api_key))
@@ -151,7 +151,7 @@ pub async fn complete_from_settings(
                 "temperature": 0.7
             });
 
-            let client = crate::http::shared_client();
+            let client = crate::http::llm_client();
             let response = client
                 .post(chat_url)
                 .header("Authorization", crate::http::bearer_header(&s.deepinfra_api_key))

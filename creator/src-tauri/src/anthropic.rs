@@ -77,7 +77,7 @@ pub async fn complete(
         }],
     };
 
-    let client = crate::http::shared_client();
+    let client = crate::http::llm_client();
     let response = client
         .post(API_URL)
         .header("x-api-key", api_key)
@@ -131,7 +131,7 @@ pub async fn complete_with_vision(
         }],
     };
 
-    let client = crate::http::shared_client();
+    let client = crate::http::llm_client();
     let response = client
         .post(API_URL)
         .header("x-api-key", api_key)

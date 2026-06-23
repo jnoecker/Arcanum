@@ -285,7 +285,7 @@ pub async fn complete(
         max_tokens: Some(max_tokens),
     };
     let url = format!("{}/ai/llm/complete", base_url(s));
-    let client = crate::http::shared_client();
+    let client = crate::http::llm_client();
     let response = client
         .post(&url)
         .bearer_auth(&s.hub_api_key)
@@ -319,7 +319,7 @@ pub async fn complete_with_vision(
         max_tokens: Some(4096),
     };
     let url = format!("{}/ai/llm/vision", base_url(s));
-    let client = crate::http::shared_client();
+    let client = crate::http::llm_client();
     let response = client
         .post(&url)
         .bearer_auth(&s.hub_api_key)

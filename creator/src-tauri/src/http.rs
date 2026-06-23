@@ -17,6 +17,24 @@ pub fn shared_client() -> &'static reqwest::Client {
     })
 }
 
+/// Dedicated client for text LLM completions. These are non-streaming, so the
+/// total timeout has to cover the full generation time — a large zone can ask
+/// for up to 16k output tokens, which is several minutes of wall-clock. The
+/// 120s budget on `shared_client` (sized for image generation) cuts those off
+/// mid-flight and surfaces as "error sending request for url". connect_timeout
+/// stays short so dead connections still fail fast.
+static LLM_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+
+pub fn llm_client() -> &'static reqwest::Client {
+    LLM_CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .timeout(std::time::Duration::from_secs(600))
+            .build()
+            .expect("Failed to build LLM HTTP client")
+    })
+}
+
 /// Build a Bearer authorization header value.
 pub fn bearer_header(api_key: &str) -> String {
     format!("Bearer {api_key}")

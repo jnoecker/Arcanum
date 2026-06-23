@@ -54,7 +54,7 @@ pub async fn complete(
         temperature: 0.7,
     };
 
-    let client = crate::http::shared_client();
+    let client = crate::http::llm_client();
     let response = client
         .post(API_URL)
         .header("Authorization", crate::http::bearer_header(api_key))

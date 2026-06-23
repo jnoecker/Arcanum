@@ -149,37 +149,62 @@ export function shouldRemoveBg(assetType: string): boolean {
  * Existing call sites that relied on null-return can still get that behavior
  * by appending `.catch(() => null)`.
  */
+async function runBgRemoval(
+  imageDataUrl: string,
+  assetType: string,
+  context?: AssetContext,
+  variantGroup?: string,
+): Promise<AssetEntry> {
+  console.log(
+    `[bg-removal] Starting for ${assetType}${variantGroup ? ` (variant: ${variantGroup})` : ""}`,
+  );
+  const blob = await removeBackground(imageDataUrl);
+  const buffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  const chunks: string[] = [];
+  const CHUNK = 8192;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    chunks.push(String.fromCharCode(...bytes.subarray(i, i + CHUNK)));
+  }
+  const b64 = btoa(chunks.join(""));
+
+  const entry = await invoke<AssetEntry>("save_bytes_as_asset", {
+    bytesB64: b64,
+    assetType,
+    context: context ?? null,
+    variantGroup: variantGroup ?? null,
+  });
+  if (variantGroup) {
+    await invoke("set_active_variant", { variantGroup, assetId: entry.id });
+    console.log(`[bg-removal] Set as active variant for ${variantGroup}`);
+  }
+  return entry;
+}
+
 export async function removeBgAndSave(
   imageDataUrl: string,
   assetType: string,
   context?: AssetContext,
   variantGroup?: string,
 ): Promise<AssetEntry> {
-  return enqueueBgTask(async () => {
-    console.log(
-      `[bg-removal] Starting for ${assetType}${variantGroup ? ` (variant: ${variantGroup})` : ""}`,
-    );
-    const blob = await removeBackground(imageDataUrl);
-    const buffer = await blob.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    const chunks: string[] = [];
-    const CHUNK = 8192;
-    for (let i = 0; i < bytes.length; i += CHUNK) {
-      chunks.push(String.fromCharCode(...bytes.subarray(i, i + CHUNK)));
-    }
-    const b64 = btoa(chunks.join(""));
+  return enqueueBgTask(() => runBgRemoval(imageDataUrl, assetType, context, variantGroup));
+}
 
-    const entry = await invoke<AssetEntry>("save_bytes_as_asset", {
-      bytesB64: b64,
-      assetType,
-      context: context ?? null,
-      variantGroup: variantGroup ?? null,
-    });
-    if (variantGroup) {
-      await invoke("set_active_variant", { variantGroup, assetId: entry.id });
-      console.log(`[bg-removal] Set as active variant for ${variantGroup}`);
-    }
-    return entry;
+/**
+ * Like `removeBgAndSave`, but reads the source image from disk *inside* the
+ * serialized task instead of holding a multi-MB data URL in memory until the
+ * queue reaches it. Batch art generation uses this so a whole zone's worth of
+ * pending removals doesn't pin every source image at once.
+ */
+export async function removeBgFromFileAndSave(
+  filePath: string,
+  assetType: string,
+  context?: AssetContext,
+  variantGroup?: string,
+): Promise<AssetEntry> {
+  return enqueueBgTask(async () => {
+    const imageDataUrl = await invoke<string>("read_image_data_url", { path: filePath });
+    return runBgRemoval(imageDataUrl, assetType, context, variantGroup);
   });
 }
 

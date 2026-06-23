@@ -22,7 +22,7 @@ import {
 import type { GeneratedImage } from "@/types/assets";
 import { ENTITY_DIMENSIONS, requestsTransparentBackground, resolveImageModel, modelNativelyTransparent } from "@/types/assets";
 import { generateAssetImage } from "@/lib/imageGen";
-import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
+import { removeBgFromFileAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import { AI_ENABLED } from "@/lib/featureFlags";
 
 export function assetTypeForKind(kind: string): string {
@@ -44,7 +44,6 @@ export interface BatchTarget {
   checked: boolean;
   hasExisting: boolean;
   status: "pending" | "generating" | "done" | "error";
-  result?: GeneratedImage;
   error?: string;
   /** For `musicBoxKeepsake` targets: the song the lyric-sheet commemorates,
    *  resolved from the audio library at collect time (the prompt needs it, and
@@ -263,7 +262,7 @@ export async function runBatchArtGeneration(
   const worldRef = { current: { ...world } };
 
   // Collect background removal promises so we can await them before saving
-  const pendingBgRemovals: { promise: ReturnType<typeof removeBgAndSave>; kind: string; id: string }[] = [];
+  const pendingBgRemovals: { promise: ReturnType<typeof removeBgFromFileAndSave>; kind: string; id: string }[] = [];
 
   const checkedTargets = targets.filter((t) => t.checked);
   const queue = checkedTargets.map((t) =>
@@ -327,7 +326,7 @@ export async function runBatchArtGeneration(
           continue;
         }
 
-        callbacks.onTargetUpdate(idx, { status: "done", result: image });
+        callbacks.onTargetUpdate(idx, { status: "done" });
 
         // Keepsakes share the per-room music-box editor's manifest identity
         // (entity_type "item", entity_id "musicbox:<roomId>") so variants from
@@ -350,9 +349,9 @@ export async function runBatchArtGeneration(
 
         // Queue background removal — skip if the model already produced native transparency
         const skipBgRemoval = nativeTransparency && requestsTransparentBackground(batchAssetType);
-        if (autoRemoveBg && shouldRemoveBg(batchAssetType) && image.data_url && !skipBgRemoval) {
+        if (autoRemoveBg && shouldRemoveBg(batchAssetType) && image.file_path && !skipBgRemoval) {
           pendingBgRemovals.push({
-            promise: removeBgAndSave(image.data_url, batchAssetType, batchContext, variantGroup),
+            promise: removeBgFromFileAndSave(image.file_path, batchAssetType, batchContext, variantGroup),
             kind: target.kind,
             id: target.id,
           });

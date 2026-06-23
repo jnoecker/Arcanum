@@ -99,10 +99,39 @@ describe("generateGridLayout", () => {
     expect(a).toEqual(b);
   });
 
-  it("produces different layouts for different seeds", () => {
+  it("ignores the seed — a given count always yields the same rectangle", () => {
     const a = generateGridLayout({ count: 20, seed: "one" });
     const b = generateGridLayout({ count: 20, seed: "two" });
-    expect(a).not.toEqual(b);
+    expect(a).toEqual(b);
+  });
+
+  it("packs rooms into a compact rectangle", () => {
+    const layout = generateGridLayout({ count: 24 });
+    const grid = reconstructGrid(layout);
+    expect(grid).not.toBeNull();
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const [, [x, y]] of grid!) {
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    }
+    const cols = maxX - minX + 1;
+    const rows = maxY - minY + 1;
+    // Big enough to hold every room...
+    expect(cols * rows).toBeGreaterThanOrEqual(24);
+    // ...but tight: dropping a whole row or column would no longer fit.
+    expect((cols - 1) * rows).toBeLessThan(24);
+    expect(cols * (rows - 1)).toBeLessThan(24);
+  });
+
+  it("fully connects interior rooms (all four cardinals)", () => {
+    const layout = generateGridLayout({ count: 9 }); // 3x3 → a center room
+    const maxExits = Math.max(
+      ...layout.rooms.map((r) => Object.keys(r.exits).length),
+    );
+    expect(maxExits).toBe(4);
   });
 
   it("uses only cardinal directions", () => {

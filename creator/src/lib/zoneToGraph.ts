@@ -86,19 +86,19 @@ function buildEntityFingerprint(entities: EntitySprite[]): string {
 }
 
 function cachedRoomData(
-  roomId: string,
+  cacheKey: string,
   build: () => RoomNodeData & { _fingerprint: string },
 ): RoomNodeData {
   const next = build();
   const fingerprint = next._fingerprint;
-  const cached = roomDataCache.get(roomId);
+  const cached = roomDataCache.get(cacheKey);
   if (cached && cached.fingerprint === fingerprint) {
     return cached.data;
   }
   // Strip the internal fingerprint field — RoomNodeData doesn't carry it.
   const { _fingerprint: _ignore, ...data } = next;
   void _ignore;
-  roomDataCache.set(roomId, { fingerprint, data });
+  roomDataCache.set(cacheKey, { fingerprint, data });
   return data;
 }
 
@@ -106,7 +106,7 @@ function cachedRoomData(
  *  doesn't pin memory for rooms that no longer exist. */
 export function clearRoomDataCache(): void {
   roomDataCache.clear();
-  graphCache = null;
+  graphCache.clear();
 }
 
 // ─── Whole-graph memoization ─────────────────────────────────────────
@@ -128,7 +128,15 @@ interface GraphCacheEntry {
   edges: Edge[];
 }
 
-let graphCache: GraphCacheEntry | null = null;
+// Keyed by a stable per-zone cache key (the zone id) rather than by the
+// fingerprint itself. Each zone keeps exactly one entry holding its latest
+// fingerprint + result, so the cache is bounded by the number of distinct
+// zones — not by the number of edits — while still letting the multi-zone
+// atlas reuse unchanged zones across rebuilds. A single shared slot (the old
+// behavior) would thrash the moment buildAtlas iterates more than one zone.
+// Callers that don't pass a key share one default slot.
+const DEFAULT_GRAPH_CACHE_KEY = "__default__";
+const graphCache = new Map<string, GraphCacheEntry>();
 
 function buildGraphFingerprint(world: WorldFile): string {
   const parts: string[] = [`s:${world.startRoom}`];
@@ -205,15 +213,24 @@ interface RawExit {
 
 // ─── Main conversion ────────────────────────────────────────────────
 
+/** Stable content fingerprint of a zone's displayed graph. Exposed so a
+ *  multi-zone consumer (the atlas) can detect whether a zone's graph would
+ *  change — and skip reassembling the whole world — without rebuilding it. */
+export function worldGraphFingerprint(world: WorldFile): string {
+  return buildGraphFingerprint(world);
+}
+
 export function zoneToGraph(
   world: WorldFile,
+  cacheKey: string = DEFAULT_GRAPH_CACHE_KEY,
 ): {
   nodes: Node[];
   edges: Edge[];
 } {
   const fingerprint = buildGraphFingerprint(world);
-  if (graphCache && graphCache.fingerprint === fingerprint) {
-    return { nodes: graphCache.nodes, edges: graphCache.edges };
+  const cached = graphCache.get(cacheKey);
+  if (cached && cached.fingerprint === fingerprint) {
+    return { nodes: cached.nodes, edges: cached.edges };
   }
 
   // Count entities per room
@@ -277,7 +294,7 @@ export function zoneToGraph(
     const gatheringNodeCount = gatheringNodesPerRoom.get(roomId) ?? 0;
     const entities = entitiesPerRoom.get(roomId) ?? [];
 
-    const data = cachedRoomData(roomId, () => {
+    const data = cachedRoomData(`${cacheKey}::${roomId}`, () => {
       // Fingerprint of every field RoomNode renders. `description` is
       // intentionally excluded — it's authored frequently but not displayed
       // in the graph node, so editing it shouldn't bust the memo.
@@ -369,6 +386,16 @@ export function zoneToGraph(
     }
   }
 
+  // Index exits by "source|target" so the bidirectional-pair lookup below is
+  // O(1) instead of a linear scan per edge (O(exits²) in dense zones). First
+  // writer wins, matching the previous Array.find which returned the first
+  // matching reverse exit.
+  const exitByEndpoints = new Map<string, RawExit>();
+  for (const exit of sameZoneExits) {
+    const key = `${exit.source}|${exit.target}`;
+    if (!exitByEndpoints.has(key)) exitByEndpoints.set(key, exit);
+  }
+
   // Deduplicate bidirectional exits: show one edge per room pair
   const edges: Edge[] = [];
   const seen = new Set<string>();
@@ -379,9 +406,7 @@ export function zoneToGraph(
     seen.add(pairKey);
 
     // Look for the reverse exit
-    const reverse = sameZoneExits.find(
-      (e) => e.source === exit.target && e.target === exit.source,
-    );
+    const reverse = exitByEndpoints.get(`${exit.target}|${exit.source}`);
 
     const isBidirectional = !!reverse;
     const isCrossZone = exit.target.startsWith("xzone:");
@@ -415,6 +440,6 @@ export function zoneToGraph(
     });
   }
 
-  graphCache = { fingerprint, nodes, edges };
+  graphCache.set(cacheKey, { fingerprint, nodes, edges });
   return { nodes, edges };
 }

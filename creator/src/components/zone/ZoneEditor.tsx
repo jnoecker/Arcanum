@@ -301,8 +301,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   // Rebuild graph when WorldFile changes
   const { layoutNodes, layoutEdges } = useMemo(() => {
     if (!zoneState) return { layoutNodes: [], layoutEdges: [] };
-    const { nodes: rawNodes, edges } = zoneToGraph(zoneState.data);
-    const nodes = compassLayout(rawNodes, zoneState.data);
+    const { nodes: rawNodes, edges } = zoneToGraph(zoneState.data, zoneId);
+    const nodes = compassLayout(rawNodes, zoneState.data, undefined, zoneId);
     return { layoutNodes: nodes, layoutEdges: edges };
   }, [zoneState]);
 
@@ -397,8 +397,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
         measurements.set(node.id, { width, height });
       }
     }
-    const { nodes: rawNodes } = zoneToGraph(zoneState.data);
-    const fresh = compassLayout(rawNodes, zoneState.data, measurements);
+    const { nodes: rawNodes } = zoneToGraph(zoneState.data, zoneId);
+    const fresh = compassLayout(rawNodes, zoneState.data, measurements, zoneId);
     setNodes(fresh);
     const bounds = getLayoutBounds(fresh, measurements);
     if (bounds && bounds.width > 0 && bounds.height > 0) {

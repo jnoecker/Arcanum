@@ -75,21 +75,18 @@ export function Starfield() {
     const resizeObs = new ResizeObserver(resize);
     resizeObs.observe(canvas.parentElement!);
 
-    // Visibility — pause when off-screen
+    // Visibility — fully stop the rAF loop when off-screen rather than
+    // rescheduling empty frames forever; the observer restarts it on return.
     let visible = true;
-    const visObs = new IntersectionObserver(
-      ([entry]) => {
-        visible = !!entry?.isIntersecting;
-      },
-      { threshold: 0 },
-    );
-    visObs.observe(canvas);
-
+    let running = false;
     let lastTime = performance.now();
 
     const draw = (now: number) => {
+      if (!visible) {
+        running = false;
+        return;
+      }
       rafRef.current = requestAnimationFrame(draw);
-      if (!visible) return;
 
       const dt = (now - lastTime) / 1000;
       lastTime = now;
@@ -127,10 +124,29 @@ export function Starfield() {
       }
     };
 
-    rafRef.current = requestAnimationFrame(draw);
+    const start = () => {
+      if (running) return;
+      running = true;
+      lastTime = performance.now();
+      rafRef.current = requestAnimationFrame(draw);
+    };
+
+    const visObs = new IntersectionObserver(
+      ([entry]) => {
+        const nowVisible = !!entry?.isIntersecting;
+        if (nowVisible === visible) return;
+        visible = nowVisible;
+        if (visible) start();
+      },
+      { threshold: 0 },
+    );
+    visObs.observe(canvas);
+
+    start();
 
     return () => {
       cancelAnimationFrame(rafRef.current);
+      running = false;
       resizeObs.disconnect();
       visObs.disconnect();
     };

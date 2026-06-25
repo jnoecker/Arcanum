@@ -76,12 +76,17 @@ interface LayoutCacheEntry {
   result: Node[];
 }
 
-let layoutCache: LayoutCacheEntry | null = null;
+// Keyed by a stable per-zone cache key (the zone id). A single shared slot
+// thrashes the moment the atlas lays out more than one zone in a loop, so each
+// zone gets its own entry. Bounded by the number of distinct zones, cleared on
+// project switch. Callers that don't pass a key share one default slot.
+const DEFAULT_LAYOUT_CACHE_KEY = "__default__";
+const layoutCache = new Map<string, LayoutCacheEntry>();
 
 /** Free the layout cache. Call when switching projects so the cache doesn't
  *  pin memory for rooms that no longer exist. */
 export function clearLayoutCache(): void {
-  layoutCache = null;
+  layoutCache.clear();
 }
 
 function buildLayoutFingerprint(world: WorldFile): string {
@@ -128,30 +133,32 @@ export function compassLayout(
   nodes: Node[],
   world: WorldFile,
   measurements?: Map<string, LayoutMeasurement>,
+  cacheKey: string = DEFAULT_LAYOUT_CACHE_KEY,
 ): Node[] {
   if (nodes.length === 0) return nodes;
 
   // Cache hits only when not measuring (the measurement path is for the
   // user-triggered relayout and must always recompute).
-  if (!measurements && layoutCache) {
-    if (layoutCache.rawNodesRef === nodes) {
-      return layoutCache.result;
+  const cached = measurements ? undefined : layoutCache.get(cacheKey);
+  if (cached) {
+    if (cached.rawNodesRef === nodes) {
+      return cached.result;
     }
     const fp = buildLayoutFingerprint(world);
-    if (layoutCache.fingerprint === fp) {
+    if (cached.fingerprint === fp) {
       // Layout structure unchanged, but rawNodes refs differ (zoneToGraph
       // had to rebuild for a non-layout-affecting reason). Apply cached
       // positions to the new rawNodes so downstream consumers still see
       // a stable visual layout.
       const posById = new Map<string, { x: number; y: number }>();
-      for (const n of layoutCache.result) {
+      for (const n of cached.result) {
         posById.set(n.id, n.position);
       }
       const result = nodes.map((n) => {
         const pos = posById.get(n.id);
         return pos ? { ...n, position: pos } : n;
       });
-      layoutCache = { fingerprint: fp, rawNodesRef: nodes, result };
+      layoutCache.set(cacheKey, { fingerprint: fp, rawNodesRef: nodes, result });
       return result;
     }
   }
@@ -289,11 +296,11 @@ export function compassLayout(
   }
 
   if (!measurements) {
-    layoutCache = {
+    layoutCache.set(cacheKey, {
       fingerprint: buildLayoutFingerprint(world),
       rawNodesRef: nodes,
       result,
-    };
+    });
   }
   return result;
 }
@@ -430,8 +437,9 @@ export function layoutZone(
   nodes: Node[],
   world: WorldFile,
   measurements?: Map<string, LayoutMeasurement>,
+  cacheKey?: string,
 ): Node[] {
-  return compassLayout(nodes, world, measurements);
+  return compassLayout(nodes, world, measurements, cacheKey);
 }
 
 /**

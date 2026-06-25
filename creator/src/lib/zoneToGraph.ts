@@ -53,6 +53,7 @@ export interface RoomNodeData extends Record<string, unknown> {
   stylist?: boolean;
   housingBroker?: boolean;
   akathavaeShrine?: boolean;
+  flightMaster?: boolean;
   image?: string;
   entities: EntitySprite[];
 }
@@ -134,7 +135,7 @@ function buildGraphFingerprint(world: WorldFile): string {
   const parts: string[] = [`s:${world.startRoom}`];
 
   for (const [id, room] of Object.entries(world.rooms)) {
-    const flags = `${room.bank ? 1 : 0}${room.tavern ? 1 : 0}${room.inn ? 1 : 0}${room.dungeon ? 1 : 0}${room.auction ? 1 : 0}${room.stylist ? 1 : 0}${room.housingBroker ? 1 : 0}${room.akathavaeShrine ? 1 : 0}`;
+    const flags = `${room.bank ? 1 : 0}${room.tavern ? 1 : 0}${room.inn ? 1 : 0}${room.dungeon ? 1 : 0}${room.auction ? 1 : 0}${room.stylist ? 1 : 0}${room.housingBroker ? 1 : 0}${room.akathavaeShrine ? 1 : 0}${room.flightMaster ? 1 : 0}`;
     let exits = "";
     if (room.exits) {
       const exitParts: string[] = [];
@@ -281,7 +282,7 @@ export function zoneToGraph(
       // Fingerprint of every field RoomNode renders. `description` is
       // intentionally excluded — it's authored frequently but not displayed
       // in the graph node, so editing it shouldn't bust the memo.
-      const flags = `${room.bank ? 1 : 0}${room.tavern ? 1 : 0}${room.inn ? 1 : 0}${room.dungeon ? 1 : 0}${room.auction ? 1 : 0}${room.stylist ? 1 : 0}${room.housingBroker ? 1 : 0}${room.akathavaeShrine ? 1 : 0}`;
+      const flags = `${room.bank ? 1 : 0}${room.tavern ? 1 : 0}${room.inn ? 1 : 0}${room.dungeon ? 1 : 0}${room.auction ? 1 : 0}${room.stylist ? 1 : 0}${room.housingBroker ? 1 : 0}${room.akathavaeShrine ? 1 : 0}${room.flightMaster ? 1 : 0}`;
       const fingerprint = [
         room.title,
         room.image ?? "",
@@ -312,6 +313,7 @@ export function zoneToGraph(
         stylist: room.stylist,
         housingBroker: room.housingBroker,
         akathavaeShrine: room.akathavaeShrine,
+        flightMaster: room.flightMaster,
         image: room.image,
         entities,
         _fingerprint: fingerprint,

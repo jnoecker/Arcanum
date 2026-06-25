@@ -1067,6 +1067,7 @@ function RoomBadges({ room }: { room: RoomFile }) {
   if (room.auction) flags.push("Auction");
   if (room.stylist) flags.push("Stylist");
   if (room.housingBroker) flags.push("Housing Broker");
+  if (room.flightMaster) flags.push("Flight Master");
   if (room.station) flags.push(`Station: ${room.station}`);
   if (room.terrain) flags.push(room.terrain);
   if (flags.length === 0) return null;

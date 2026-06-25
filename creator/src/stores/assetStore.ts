@@ -52,7 +52,7 @@ interface AssetState {
   saveProjectSettings: (projectDir: string, settings: ProjectSettings) => Promise<void>;
 
   loadAssets: () => Promise<void>;
-  acceptAsset: (image: GeneratedImage, assetType: string, enhancedPrompt?: string, context?: AssetContext, variantGroup?: string, isActive?: boolean) => Promise<void>;
+  acceptAsset: (image: GeneratedImage, assetType: string, enhancedPrompt?: string, context?: AssetContext, variantGroup?: string, isActive?: boolean, reload?: boolean) => Promise<void>;
   importAsset: (
     sourcePath: string,
     assetType: string,
@@ -138,7 +138,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     set({ assets });
   },
 
-  acceptAsset: async (image, assetType, enhancedPrompt, context, variantGroup, isActive) => {
+  acceptAsset: async (image, assetType, enhancedPrompt, context, variantGroup, isActive, reload = true) => {
     const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
 
     await invoke<AssetEntry>("accept_asset", {
@@ -155,7 +155,10 @@ export const useAssetStore = create<AssetState>((set, get) => ({
       variantGroup: variantGroup ?? null,
       isActive: isActive ?? null,
     });
-    await get().loadAssets();
+    // Reloading the whole manifest after every accept is O(n²) across a batch
+    // (each reload marshals the entire AssetEntry[] over IPC into the WebView).
+    // Batch art passes reload=false and refreshes once when the run finishes.
+    if (reload) await get().loadAssets();
   },
 
   importAsset: async (sourcePath, assetType, context, variantGroup, isActive, displayName) => {

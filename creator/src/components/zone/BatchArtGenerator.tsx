@@ -44,6 +44,7 @@ export function BatchArtGenerator({
   const imageProvider = settings?.image_provider ?? "deepinfra";
 
   const acceptAsset = useAssetStore((s) => s.acceptAsset);
+  const loadAssets = useAssetStore((s) => s.loadAssets);
 
   const toggleTarget = (idx: number) => {
     setTargets((prev) => prev.map((t, i) => (i === idx ? { ...t, checked: !t.checked } : t)));
@@ -58,32 +59,38 @@ export function BatchArtGenerator({
     abortRef.current = false;
 
     setBgRemoval(null);
-    await runBatchArtGeneration(
-      targets,
-      world,
-      zoneId,
-      artStyle,
-      vibe,
-      imageProvider,
-      settings?.image_model,
-      concurrency,
-      abortRef,
-      {
-        onTargetUpdate: (idx, update) => {
-          setTargets((prev) =>
-            prev.map((t, i) => (i === idx ? { ...t, ...update } : t)),
-          );
+    try {
+      await runBatchArtGeneration(
+        targets,
+        world,
+        zoneId,
+        artStyle,
+        vibe,
+        imageProvider,
+        settings?.image_model,
+        concurrency,
+        abortRef,
+        {
+          onTargetUpdate: (idx, update) => {
+            setTargets((prev) =>
+              prev.map((t, i) => (i === idx ? { ...t, ...update } : t)),
+            );
+          },
+          onWorldUpdate: onWorldChange,
+          onBgRemovalProgress: (done, total) => setBgRemoval({ done, total }),
+          // reload=false: skip the per-image manifest reload (O(n²) on big
+          // zones — it OOMs the WebView). The whole batch refreshes once below.
+          acceptAsset: (image, assetType, enhancedPrompt, context, variantGroup, isActive) =>
+            acceptAsset(image, assetType, enhancedPrompt, context, variantGroup, isActive, false),
         },
-        onWorldUpdate: onWorldChange,
-        onBgRemovalProgress: (done, total) => setBgRemoval({ done, total }),
-        acceptAsset,
-      },
-      settings?.auto_remove_bg,
-    );
-
-    setBgRemoval(null);
-    setRunning(false);
-  }, [targets, world, onWorldChange, artStyle, vibe, imageProvider, concurrency, zoneId, acceptAsset, settings]);
+        settings?.auto_remove_bg,
+      );
+    } finally {
+      await loadAssets();
+      setBgRemoval(null);
+      setRunning(false);
+    }
+  }, [targets, world, onWorldChange, artStyle, vibe, imageProvider, concurrency, zoneId, acceptAsset, loadAssets, settings]);
 
   if (!AI_ENABLED) return null;
 

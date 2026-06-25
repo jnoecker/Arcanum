@@ -42,6 +42,7 @@ const PlaytestPanel = lazy(() => import("./playtest/PlaytestPanel").then(m => ({
 const VoiceOverPanel = lazy(() => import("./VoiceOverPanel"));
 const BackupPanel = lazy(() => import("./BackupPanel").then(m => ({ default: m.BackupPanel })));
 const ReferencesPanel = lazy(() => import("./ReferencesPanel").then(m => ({ default: m.ReferencesPanel })));
+const FlightMapEditor = lazy(() => import("./flight/FlightMapEditor").then(m => ({ default: m.FlightMapEditor })));
 
 function IslandBackPill({ island }: { island: Island }) {
   const openIsland = useProjectStore((s) => s.openIsland);
@@ -125,6 +126,7 @@ export function MainArea() {
           case "voices": content = <VoiceOverPanel />; break;
           case "backup": content = <BackupPanel />; break;
           case "references": content = <ReferencesPanel />; break;
+          case "flightMap": content = <FlightMapEditor />; break;
           default: content = null;
         }
       } else {

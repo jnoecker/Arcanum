@@ -398,14 +398,28 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
   },
   {
+    key: "flight_map",
+    defaultFilename: "flight_map.png",
+    label: "Flight Map",
+    description:
+      "Painted world map of Ambon shown in the flight-master kiosk. Discovered roosts appear as griffin hotspots positioned by each room's flight-map coordinates. Optional — the kiosk falls back to a plain destination list when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted antique cartographer's map of the fantasy land of Ambon, full-bleed edge to edge, weathered vellum with hand-inked coastlines, mountains, forests, and rivers, warm sepia and muted jewel tones, soft ambient candlelight, no grid, no pins, no markers, no readable text, no labels, suitable as a backdrop for overlaid travel hotspots.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
     key: "flight_roost",
     defaultFilename: "flight_roost.png",
     label: "Flight Roost",
-    description: "Badge shown on flight master rooms where players can fast-travel between discovered flight points.",
+    description: "Griffin marker seated on the flight map for each discovered roost, and the badge shown on flight master rooms. Optional — a CSS jewel-dot renders without it.",
     assetType: "ability_icon",
     defaultPrompt:
       "A single winged creature perched on an ornate roost post, ready for flight, centered, soft outline, transparent background.",
     transparent: true,
+    optional: true,
   },
   // Persistent player-UI navigation buttons rendered down the left edge of
   // every room canvas (unlike the room-feature badges above, which only

@@ -207,10 +207,23 @@ function normalizeMusicBox(box?: MusicBoxFile): MusicBoxFile | undefined {
   return out;
 }
 
+/** Clamp a flight-map percentage to 0..100 with one decimal of precision,
+ *  or `undefined` if it isn't a usable number. */
+function normalizeFlightCoord(value: unknown): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  return Math.round(Math.min(100, Math.max(0, value)) * 10) / 10;
+}
+
 function normalizeRoomOutput(room: RoomFile): RoomFile {
+  // Flight-map pins only mean anything on a flight master; drop orphaned
+  // coords and clamp the rest to the server's 0..100 contract.
+  const flightMapX = room.flightMaster ? normalizeFlightCoord(room.flightMapX) : undefined;
+  const flightMapY = room.flightMaster ? normalizeFlightCoord(room.flightMapY) : undefined;
   let next: RoomFile = {
     ...room,
     audio: undefined,
+    flightMapX,
+    flightMapY,
     jukebox: normalizeJukebox(room.jukebox),
     musicBox: normalizeMusicBox(room.musicBox),
   };

@@ -130,6 +130,15 @@ export interface RoomFile {
   /** True if this room has a flight master. Enables the `flights`/`fly`
    *  fast-travel commands and the in-world kiosk badge. */
   flightMaster?: boolean;
+  /** Flight-map pin: percent across the Ambon flight map, 0 (left) to 100
+   *  (right). Paired with {@link flightMapY}. The web client seats a griffin
+   *  hotspot at this point. Leave both unset to keep the roost "unmapped" —
+   *  it still works but is listed textually under the map instead of pinned.
+   *  The server fails to load if either value is outside 0..100. */
+  flightMapX?: number;
+  /** Flight-map pin: percent down the Ambon flight map, 0 (top) to 100
+   *  (bottom). See {@link flightMapX}. */
+  flightMapY?: number;
   image?: string;
   video?: string;
   /** Prose vision narrated to text/screen-reader clients in place of the video.

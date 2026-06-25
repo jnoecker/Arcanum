@@ -861,4 +861,42 @@ describe("validateZone", () => {
       expect(issues.some((i) => i.message.includes("is not a known type"))).toBe(true);
     });
   });
+
+  // ─── Flight map pins ─────────────────────────────────────────
+  describe("flight map coordinates", () => {
+    it("accepts a flight master with both coordinates in range", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, flightMaster: true, flightMapX: 40, flightMapY: 60 };
+      const issues = validateZone(world).filter((i) => i.message.toLowerCase().includes("flight"));
+      expect(issues).toHaveLength(0);
+    });
+
+    it("accepts an unmapped flight master (no coordinates)", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, flightMaster: true };
+      const issues = validateZone(world).filter((i) => i.message.toLowerCase().includes("flight"));
+      expect(issues).toHaveLength(0);
+    });
+
+    it("errors when a coordinate is out of the 0..100 range", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, flightMaster: true, flightMapX: 120, flightMapY: 60 };
+      const issues = errors(validateZone(world));
+      expect(issues.some((i) => i.message.includes("flightMapX"))).toBe(true);
+    });
+
+    it("warns when only one coordinate axis is set", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, flightMaster: true, flightMapX: 40 };
+      const issues = warnings(validateZone(world));
+      expect(issues.some((i) => i.message.includes("both flightMapX and flightMapY"))).toBe(true);
+    });
+
+    it("warns when coordinates sit on a non–flight-master room", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, flightMapX: 40, flightMapY: 60 };
+      const issues = warnings(validateZone(world));
+      expect(issues.some((i) => i.message.includes("not a flight master"))).toBe(true);
+    });
+  });
 });

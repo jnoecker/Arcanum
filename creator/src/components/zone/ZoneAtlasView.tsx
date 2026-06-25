@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -475,13 +475,34 @@ function ZoneAtlas() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initial.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initial.edges);
 
-  // When the zone set (or saved positions) changes, snap back to the freshly
-  // computed atlas. Saved positions are already baked into `initial.nodes`,
-  // so this also restores on first open.
+  // Reconcile ReactFlow state with the freshly computed atlas.
+  //
+  // `savedPositions` only changes identity on a project switch or an explicit
+  // "Reset Layout" (its memo is keyed on [projectPath, resetNonce]). We use
+  // that to decide between two behaviors:
+  //   • savedPositions changed → apply the fresh layout wholesale (first open,
+  //     project switch, or reset).
+  //   • only `zones` changed (e.g. an exit was added) → refresh node data and
+  //     edges but KEEP the positions currently on screen, so creating a link
+  //     doesn't relayout the atlas and shove every cluster around.
+  const prevSavedRef = useRef(savedPositions);
   useEffect(() => {
-    setNodes(initial.nodes);
+    const savedChanged = prevSavedRef.current !== savedPositions;
+    prevSavedRef.current = savedPositions;
+    if (savedChanged) {
+      setNodes(initial.nodes);
+      setEdges(initial.edges);
+      return;
+    }
+    setNodes((current) => {
+      const positions = new Map(current.map((n) => [n.id, n.position]));
+      return initial.nodes.map((n) => {
+        const existing = positions.get(n.id);
+        return existing ? { ...n, position: existing } : n;
+      });
+    });
     setEdges(initial.edges);
-  }, [initial, setNodes, setEdges]);
+  }, [initial, savedPositions, setNodes, setEdges]);
 
   const onNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {

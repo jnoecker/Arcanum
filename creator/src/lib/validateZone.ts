@@ -68,6 +68,38 @@ function addIssue(
   issues.push({ severity, entity, message });
 }
 
+/**
+ * Flight-map pins must satisfy the server's load contract: each coordinate, if
+ * present, is a number in 0..100, and the engine only seats a hotspot when both
+ * are set. A roost with no coords is valid (it stays "unmapped").
+ */
+function validateFlightMapCoords(
+  issues: ValidationIssue[],
+  entity: string,
+  room: WorldFile["rooms"][string],
+): void {
+  const { flightMapX, flightMapY, flightMaster } = room;
+  const hasX = flightMapX != null;
+  const hasY = flightMapY != null;
+  if (!hasX && !hasY) return;
+
+  for (const [axis, value] of [["flightMapX", flightMapX], ["flightMapY", flightMapY]] as const) {
+    if (value == null) continue;
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      addIssue(issues, "error", entity, `${axis} must be a number between 0 and 100`);
+    } else if (value < 0 || value > 100) {
+      addIssue(issues, "error", entity, `${axis} (${value}) is outside the valid 0–100 range; the server will refuse to load this zone`);
+    }
+  }
+
+  if (hasX !== hasY) {
+    addIssue(issues, "warning", entity, "Flight map pin needs both flightMapX and flightMapY — set both to place the roost, or clear both to leave it unmapped");
+  }
+  if (!flightMaster) {
+    addIssue(issues, "warning", entity, "Room has flight map coordinates but is not a flight master — the pin will be ignored");
+  }
+}
+
 function hasPositiveOnUse(item: NonNullable<WorldFile["items"]>[string]): boolean {
   const onUse = item.onUse;
   if (!onUse) return false;
@@ -508,6 +540,8 @@ export function validateZone(
     if (room.terrain && !VALID_TERRAINS.has(room.terrain)) {
       addIssue(issues, "warning", entity, `Terrain "${room.terrain}" is not a recognized terrain type`);
     }
+
+    validateFlightMapCoords(issues, entity, room);
 
     for (const [dir, exit] of Object.entries(room.exits ?? {})) {
       const target = exitTarget(exit);

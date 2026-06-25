@@ -8,6 +8,7 @@ import {
   MiniMap,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   type Node,
   type Edge,
   type NodeMouseHandler,
@@ -24,9 +25,13 @@ import { RoomNode } from "./RoomNode";
 import { ExitEdge } from "./ExitEdge";
 import { DirectionPicker } from "./DirectionPicker";
 import { Starfield } from "./Starfield";
-import { zoneToGraph } from "@/lib/zoneToGraph";
+import { zoneToGraph, worldGraphFingerprint, GRAPH } from "@/lib/zoneToGraph";
 import { addExit, OPPOSITE } from "@/lib/zoneEdits";
-import { compassLayout, getLayoutBounds } from "@/lib/dagreLayout";
+import {
+  compassLayout,
+  getLayoutBounds,
+  type LayoutMeasurement,
+} from "@/lib/dagreLayout";
 import {
   loadAtlasClusterPositions,
   saveAtlasClusterPosition,
@@ -212,17 +217,56 @@ function layoutClusters(
   return positions;
 }
 
+interface AtlasBuildCacheEntry {
+  digest: string;
+  build: AtlasBuild;
+}
+
+// One-slot memo of the last assembled atlas. The zones Map gets a fresh
+// reference on every edit (zoneStore allocates a new Map per mutation), so the
+// upstream useMemo re-runs buildAtlas on edits to *any* zone. Returning the
+// previous build verbatim when nothing that affects the atlas changed keeps
+// `initial` referentially stable, which lets the reconcile effect skip the
+// O(rooms) setNodes pass entirely. The single slot self-replaces on the next
+// distinct digest (e.g. a project switch), so it stays bounded without an
+// explicit clear, and the content digest guarantees a stale build is never
+// returned for a different world.
+let atlasBuildCache: AtlasBuildCacheEntry | null = null;
+
+function buildAtlasDigest(
+  zones: ReturnType<typeof useZoneStore.getState>["zones"],
+  savedPositions: Record<string, AtlasPosition>,
+): string {
+  const parts: string[] = [];
+  for (const [zoneId, state] of zones) {
+    // The graph fingerprint covers rooms, exits, start room, and entities —
+    // everything that changes the atlas's nodes, edges, or layout. The zone
+    // name is added because it shows in the group header but isn't part of the
+    // graph fingerprint.
+    parts.push(
+      `${zoneId} ${state.data.zone ?? ""} ${worldGraphFingerprint(state.data)}`,
+    );
+  }
+  parts.push(`__saved__ ${JSON.stringify(savedPositions)}`);
+  return parts.join("\n");
+}
+
 function buildAtlas(
   zones: ReturnType<typeof useZoneStore.getState>["zones"],
   savedPositions: Record<string, AtlasPosition>,
 ): AtlasBuild {
+  const digest = buildAtlasDigest(zones, savedPositions);
+  if (atlasBuildCache && atlasBuildCache.digest === digest) {
+    return atlasBuildCache.build;
+  }
+
   const specs: ClusterSpec[] = Array.from(zones.entries()).map(([zoneId, state]) => {
     const world = state.data;
-    const { nodes: rawNodes, edges: rawEdges } = zoneToGraph(world);
+    const { nodes: rawNodes, edges: rawEdges } = zoneToGraph(world, zoneId);
     // Drop the synthetic cross-zone ghost nodes — we'll resolve their edges
     // to real nodes in sibling clusters after all clusters are built.
     const realNodes = rawNodes.filter((n) => !n.id.startsWith("xzone:"));
-    const laid = compassLayout(realNodes, world);
+    const laid = compassLayout(realNodes, world, undefined, zoneId);
     const bounds = getLayoutBounds(laid) ?? { x: 0, y: 0, width: 320, height: 240 };
     return {
       zoneId,
@@ -236,12 +280,14 @@ function buildAtlas(
   });
 
   if (specs.length === 0) {
-    return {
+    const build: AtlasBuild = {
       nodes: [],
       edges: [],
       stats: { zones: 0, rooms: 0, crossLinks: 0, orphans: 0 },
       isEmpty: true,
     };
+    atlasBuildCache = { digest, build };
+    return build;
   }
 
   // ── First pass: collect all cross-zone link pairs for meta-graph layout ──
@@ -293,6 +339,11 @@ function buildAtlas(
         roomCount: spec.layoutNodes.length,
         zoneId: spec.zoneId,
       } satisfies ZoneGroupData,
+      // Explicit dimensions (not just style) so fit-to-view and bounds math
+      // know each cluster's size even while it's culled off-screen by
+      // onlyRenderVisibleElements and has never been DOM-measured.
+      width: spec.groupWidth,
+      height: spec.groupHeight,
       style: {
         width: spec.groupWidth,
         height: spec.groupHeight,
@@ -432,7 +483,7 @@ function buildAtlas(
 
   const totalRooms = specs.reduce((sum, c) => sum + c.layoutNodes.length, 0);
 
-  return {
+  const build: AtlasBuild = {
     nodes: allNodes,
     edges: allEdges,
     stats: {
@@ -443,11 +494,14 @@ function buildAtlas(
     },
     isEmpty: false,
   };
+  atlasBuildCache = { digest, build };
+  return build;
 }
 
 // ─── Component ──────────────────────────────────────────────────────
 
 function ZoneAtlas() {
+  const reactFlow = useReactFlow();
   const zones = useZoneStore((s) => s.zones);
   const updateZone = useZoneStore((s) => s.updateZone);
   const navigateTo = useProjectStore((s) => s.navigateTo);
@@ -503,6 +557,58 @@ function ZoneAtlas() {
     });
     setEdges(initial.edges);
   }, [initial, savedPositions, setNodes, setEdges]);
+
+  // ─── One-shot fit-to-view ────────────────────────────────────────
+  // We can't use the `fitView` prop: it's unreliable under
+  // `onlyRenderVisibleElements` (off-screen clusters aren't DOM-measured, so
+  // the prop's bounds collapse) and it re-queues a store write on every render
+  // because `fitViewOptions` would be a fresh object. Instead we fit once per
+  // loadout from `getLayoutBounds`, which derives bounds from node positions +
+  // explicit cluster sizes and therefore works without measuring every node.
+  // `savedPositions` only changes identity on project switch or "Reset Layout",
+  // so edits and pans never re-fit.
+  //
+  // We fit over the zone-group nodes only: they're top-level (absolute
+  // positions) and each is sized to fully contain its rooms, so their union is
+  // the whole atlas extent. The room nodes are children whose `position` is
+  // relative to their group — feeding those into `getLayoutBounds`, which
+  // treats position as absolute, would skew the bounds. Group dimensions are
+  // explicit, so this works even while every group is culled off-screen and
+  // unmeasured.
+  const fitDoneRef = useRef<Record<string, AtlasPosition> | null>(null);
+  useEffect(() => {
+    if (nodes.length === 0) return;
+    if (fitDoneRef.current === savedPositions) return;
+
+    let cancelled = false;
+    // Two rAFs: one to let React commit the nodes, one to let ReactFlow adopt
+    // their dimensions before we measure.
+    const raf1 = requestAnimationFrame(() => {
+      if (cancelled) return;
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        const groups = reactFlow
+          .getNodes()
+          .filter((node) => node.type === "zoneGroup");
+        if (groups.length === 0) return;
+        const measurements = new Map<string, LayoutMeasurement>();
+        for (const node of groups) {
+          const width = node.measured?.width ?? node.width;
+          const height = node.measured?.height ?? node.height;
+          if (width && height) measurements.set(node.id, { width, height });
+        }
+        const bounds = getLayoutBounds(groups, measurements);
+        if (bounds && bounds.width > 0 && bounds.height > 0) {
+          reactFlow.fitBounds(bounds, { padding: 0.15, duration: 0 });
+          fitDoneRef.current = savedPositions;
+        }
+      });
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf1);
+    };
+  }, [savedPositions, nodes.length, reactFlow]);
 
   const onNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
@@ -668,8 +774,11 @@ function ZoneAtlas() {
         // RoomNode ships a single source-type handle per direction; loose
         // mode lets edge targets anchor to them.
         connectionMode={ConnectionMode.Loose}
-        fitView
-        fitViewOptions={{ padding: 0.15 }}
+        // Mount only the clusters/rooms in the viewport. At ~700 rooms the
+        // atlas otherwise keeps every room node (10 handles each) live at all
+        // times, which is what makes pan/zoom crawl. Initial fit is handled
+        // manually above. See ZoneEditor for the same trade-off.
+        onlyRenderVisibleElements
         nodesDraggable
         // Rooms stay non-draggable (set per-node), but their handles are live
         // so users can drag a room→room cross-zone link.
@@ -685,7 +794,15 @@ function ZoneAtlas() {
           color="var(--color-graph-grid)"
         />
         <Controls showInteractive={false} />
-        <MiniMap pannable zoomable className="!bg-bg-abyss/80" />
+        <MiniMap
+          pannable
+          zoomable
+          className="!bg-bg-abyss/80"
+          nodeColor={(node) =>
+            node.type === "zoneGroup" ? GRAPH().cross : GRAPH().node
+          }
+          maskColor="var(--graph-minimap-mask)"
+        />
       </ReactFlow>
       <div className="pointer-events-none absolute left-4 top-4 z-10 flex flex-wrap items-center gap-2 text-2xs">
         <AtlasStat label="zones" value={initial.stats.zones} />

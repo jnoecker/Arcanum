@@ -168,6 +168,7 @@ const BASE_CONFIG: AppConfig = {
     stylist_mirror: "stylist_mirror.png",
     housing_broker: "housing_broker.png",
     inn_widget: "inn_widget.png",
+    flight_roost: "flight_roost.png",
     character_widget: "character_widget.png",
     inventory_widget: "inventory_widget.png",
     equipment_widget: "equipment_widget.png",

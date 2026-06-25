@@ -397,6 +397,16 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
       "A single cozy curtained bed with a warm glowing lantern beside it, centered, soft outline, transparent background.",
     transparent: true,
   },
+  {
+    key: "flight_roost",
+    defaultFilename: "flight_roost.png",
+    label: "Flight Roost",
+    description: "Badge shown on flight master rooms where players can fast-travel between discovered flight points.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single winged creature perched on an ornate roost post, ready for flight, centered, soft outline, transparent background.",
+    transparent: true,
+  },
   // Persistent player-UI navigation buttons rendered down the left edge of
   // every room canvas (unlike the room-feature badges above, which only
   // appear on rooms that host the corresponding feature).

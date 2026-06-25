@@ -127,6 +127,9 @@ export interface RoomFile {
   /** True if this room holds an Akathavae shrine. Enables the `pledge`/`renounce`
    *  commands for the pacifist explorer path. */
   akathavaeShrine?: boolean;
+  /** True if this room has a flight master. Enables the `flights`/`fly`
+   *  fast-travel commands and the in-world kiosk badge. */
+  flightMaster?: boolean;
   image?: string;
   video?: string;
   /** Prose vision narrated to text/screen-reader clients in place of the video.

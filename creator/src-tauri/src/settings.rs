@@ -130,6 +130,27 @@ fn default_openai_image_quality() -> String {
     "low".to_string()
 }
 
+/// Resolve the OpenAI image quality tier ("low" | "medium" | "high" | "auto")
+/// from settings, honoring an optional per-AssetType override before falling
+/// back to the global default. Returns None when neither is set, so the caller
+/// applies its own fallback. Shared by the direct OpenAI and Runware GPT paths.
+pub fn resolve_openai_image_quality(s: &Settings, asset_type: Option<&str>) -> Option<String> {
+    if let Some(at) = asset_type {
+        if let Some(q) = s.openai_image_quality_overrides.get(at) {
+            let trimmed = q.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
+            }
+        }
+    }
+    let trimmed = s.openai_image_quality.trim();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
+    }
+}
+
 impl Default for Settings {
     fn default() -> Self {
         Self {

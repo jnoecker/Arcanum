@@ -16,6 +16,7 @@ import {
   DEFAULT_STATUS_EFFECTS,
   DEFAULT_COMMANDS,
   DEFAULT_AKATHAVAE,
+  DEFAULT_FLIGHT,
   DEFAULT_EMOTE_PRESETS,
   DEFAULT_WEATHER_TYPES,
   DEFAULT_ENVIRONMENT_CONFIG,
@@ -142,6 +143,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     gambling: parseGamblingConfig(engine.gambling),
     stylist: parseStylistConfig(engine.stylist),
     akathavae: parseAkathavaeConfig(engine.akathavae),
+    flight: parseFlightConfig(engine.flight),
     respec: parseRespecConfig(engine.respec),
     prestige: engine.prestige as AppConfig["prestige"],
     dailyQuests: parseDailyQuestsConfig(engine.dailyQuests),
@@ -749,6 +751,34 @@ function parseAkathavaeConfig(raw: unknown): AppConfig["akathavae"] {
   };
 }
 
+function parseFlightConfig(raw: unknown): AppConfig["flight"] {
+  const d = DEFAULT_FLIGHT;
+  if (!raw || typeof raw !== "object") return { ...d, messages: { ...d.messages } };
+  const s = raw as Record<string, unknown>;
+  const m = (s.messages && typeof s.messages === "object" ? s.messages : {}) as Record<string, unknown>;
+  const dm = d.messages;
+  return {
+    baseCost: asNumber(s.baseCost, d.baseCost),
+    costPerRoom: asNumber(s.costPerRoom, d.costPerRoom),
+    minCost: asNumber(s.minCost, d.minCost),
+    maxCost: asNumber(s.maxCost, d.maxCost),
+    unreachableCost: asNumber(s.unreachableCost, d.unreachableCost),
+    messages: {
+      combatBlocked: asString(m.combatBlocked, dm.combatBlocked),
+      notAtFlightMaster: asString(m.notAtFlightMaster, dm.notAtFlightMaster),
+      noDestinations: asString(m.noDestinations, dm.noDestinations),
+      unknownDestination: asString(m.unknownDestination, dm.unknownDestination),
+      alreadyHere: asString(m.alreadyHere, dm.alreadyHere),
+      notEnoughGold: asString(m.notEnoughGold, dm.notEnoughGold),
+      discovered: asString(m.discovered, dm.discovered),
+      departNotice: asString(m.departNotice, dm.departNotice),
+      arriveNotice: asString(m.arriveNotice, dm.arriveNotice),
+      depart: asString(m.depart, dm.depart),
+      arrival: asString(m.arrival, dm.arrival),
+    },
+  };
+}
+
 function parseRespecConfig(raw: unknown): AppConfig["respec"] {
   if (!raw || typeof raw !== "object") return undefined;
   const s = raw as Record<string, unknown>;
@@ -983,7 +1013,7 @@ function collectRawSections(
     "craftingSkills", "craftingStationTypes",
     "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets", "enchanting", "bank",
     "worldTime", "season", "weather", "mobVariants", "worldEvents", "environment", "skillPoints", "multiclass",
-    "lottery", "gambling", "stylist", "akathavae", "respec", "prestige", "dailyQuests", "autoQuests", "globalQuests",
+    "lottery", "gambling", "stylist", "akathavae", "flight", "respec", "prestige", "dailyQuests", "autoQuests", "globalQuests",
     "guildHalls", "factions", "leaderboard", "currencies",
   ]);
 
@@ -1723,6 +1753,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       gambling: parseGamblingConfig(worldRaw.gambling),
       stylist: parseStylistConfig(worldRaw.stylist),
       akathavae: parseAkathavaeConfig(worldRaw.akathavae),
+      flight: parseFlightConfig(worldRaw.flight),
       respec: parseRespecConfig(worldRaw.respec),
       prestige: worldRaw.prestige as AppConfig["prestige"],
       dailyQuests: parseDailyQuestsConfig(worldRaw.dailyQuests),

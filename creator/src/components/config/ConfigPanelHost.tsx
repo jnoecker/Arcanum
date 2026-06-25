@@ -32,6 +32,7 @@ import { FactionPanel } from "./panels/FactionPanel";
 import { PetsPanel } from "./panels/PetsPanel";
 import { EnchantingPanel } from "./panels/EnchantingPanel";
 import { AkathavaePanel } from "./panels/AkathavaePanel";
+import { FlightPanel } from "./panels/FlightPanel";
 import { WorldEventsPanel } from "./panels/WorldEventsPanel";
 import { WeatherEnvironmentPanel } from "./panels/WeatherEnvironmentPanel";
 import { CurrenciesPanel } from "./panels/CurrenciesPanel";
@@ -90,6 +91,8 @@ function renderPanel(panelId: string, props: ConfigPanelProps): ReactNode {
       return <EnchantingPanel config={config} onChange={onChange} />;
     case "akathavae":
       return <AkathavaePanel config={config} onChange={onChange} />;
+    case "flight":
+      return <FlightPanel config={config} onChange={onChange} />;
     case "factions":
       return <FactionPanel />;
     case "guilds":

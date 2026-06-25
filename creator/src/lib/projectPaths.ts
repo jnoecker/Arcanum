@@ -135,6 +135,7 @@ export const WORLD_SECTION_HOMES = {
   prestige: "world",
   leaderboard: "world",
   akathavae: "world",
+  flight: "world",
 } as const satisfies Record<string, WorldPoolFileName>;
 
 export type WorldSectionKey = keyof typeof WORLD_SECTION_HOMES;

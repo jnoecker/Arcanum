@@ -558,6 +558,81 @@ ambonmud:
   });
 });
 
+describe("flight config", () => {
+  it("parses engine.flight overrides and fills defaults for missing keys", () => {
+    const yaml = `
+ambonmud:
+  server:
+    telnetPort: 4000
+    webPort: 8080
+  world:
+    startRoom: hub:square
+    resources: []
+  engine:
+    flight:
+      baseCost: 100
+      costPerRoom: 10
+      messages:
+        arrival: "Touchdown at {dest}."
+`;
+    const config = parseAppConfigYaml(yaml);
+    expect(config.flight.baseCost).toBe(100);
+    expect(config.flight.costPerRoom).toBe(10);
+    expect(config.flight.messages.arrival).toBe("Touchdown at {dest}.");
+    // Untouched keys fall back to the canonical defaults.
+    expect(config.flight.minCost).toBe(25);
+    expect(config.flight.maxCost).toBe(5000);
+    expect(config.flight.unreachableCost).toBe(500);
+    expect(config.flight.messages.alreadyHere).toBe("You're already at that flight point.");
+  });
+
+  it("defaults the whole block when engine.flight is absent", () => {
+    const config = parseAppConfigYaml(`
+ambonmud:
+  server: { telnetPort: 4000, webPort: 8080 }
+  world: { startRoom: hub:square, resources: [] }
+  engine: {}
+`);
+    expect(config.flight.baseCost).toBe(25);
+    expect(config.flight.costPerRoom).toBe(4);
+  });
+
+  it("omits the block on export when unchanged, emits it when tuned", () => {
+    const base = parseAppConfigYaml(`
+ambonmud:
+  server: { telnetPort: 4000, webPort: 8080 }
+  world: { startRoom: hub:square, resources: [] }
+  engine: {}
+`);
+    // Default config → no flight block in the rebuilt monolith.
+    const clean = buildMonolithicConfigObject(base) as any;
+    expect(clean.engine).not.toHaveProperty("flight");
+
+    // Tuned config → block round-trips with the change preserved.
+    const tuned: AppConfig = { ...base, flight: { ...base.flight, costPerRoom: 9 } };
+    const runtime = buildMonolithicConfigObject(tuned) as any;
+    expect(runtime.engine.flight.costPerRoom).toBe(9);
+    // Block re-parses cleanly with the change preserved.
+    expect(parseAppConfigYaml(stringify({ ambonmud: runtime })).flight.costPerRoom).toBe(9);
+  });
+
+  it("round-trips a customized message even when costs are default", () => {
+    const base = parseAppConfigYaml(`
+ambonmud:
+  server: { telnetPort: 4000, webPort: 8080 }
+  world: { startRoom: hub:square, resources: [] }
+  engine: {}
+`);
+    const tuned: AppConfig = {
+      ...base,
+      flight: { ...base.flight, messages: { ...base.flight.messages, depart: "Up, up and away to {dest}!" } },
+    };
+    const runtime = buildMonolithicConfigObject(tuned) as any;
+    expect(runtime.engine.flight.messages.depart).toBe("Up, up and away to {dest}!");
+    expect(parseAppConfigYaml(stringify({ ambonmud: runtime })).flight.messages.depart).toBe("Up, up and away to {dest}!");
+  });
+});
+
 describe("racial ability round-trip", () => {
   it("serializes a race's racialAbility and re-parses it intact", () => {
     const config: AppConfig = {

@@ -44,6 +44,29 @@ export const DEFAULT_AKATHAVAE: AppConfig["akathavae"] = {
   discoveryXpThrottleMs: 1_500,
 };
 
+/** Canonical defaults for flight masters (mirrors the server's FlightConfig).
+ *  Used to seed the parser and to omit an unchanged block on save. */
+export const DEFAULT_FLIGHT: AppConfig["flight"] = {
+  baseCost: 25,
+  costPerRoom: 4,
+  minCost: 25,
+  maxCost: 5000,
+  unreachableCost: 500,
+  messages: {
+    combatBlocked: "You can't take flight in the middle of a battle!",
+    notAtFlightMaster: "You need to be at a flight master to do that.",
+    noDestinations: "You haven't discovered any other flight points yet. Explore to find more!",
+    unknownDestination: "The flight master doesn't recognize that destination.",
+    alreadyHere: "You're already at that flight point.",
+    notEnoughGold: "That flight costs {cost} gold, but you only have {gold}.",
+    discovered: "[Flight] You commit this flight point to memory — you can now fly here from afar.",
+    departNotice: "leaps skyward and soars away.",
+    arriveNotice: "descends from the sky and alights gracefully.",
+    depart: "You climb aboard and take to the skies, bound for {dest}...",
+    arrival: "You alight at {dest}. (-{cost} gold)",
+  },
+};
+
 // ─── Registries with simple map shapes ─────────────────────────────
 
 export const DEFAULT_ACHIEVEMENT_CATEGORIES: AppConfig["achievementCategories"] = {

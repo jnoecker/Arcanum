@@ -16,6 +16,7 @@ import {
   DEFAULT_STACK_BEHAVIORS,
   DEFAULT_ABILITY_TARGET_TYPES,
   DEFAULT_AKATHAVAE,
+  DEFAULT_FLIGHT,
 } from "@/lib/configDefaults";
 
 import { YAML_OPTS } from "@/lib/yamlOpts";
@@ -227,6 +228,25 @@ export function normalizeAkathavaeConfig(config?: AppConfig["akathavae"]): AppCo
     itemDiscoveryXp: c.itemDiscoveryXp,
     observeNpcXp: c.observeNpcXp,
     discoveryXpThrottleMs: c.discoveryXpThrottleMs,
+  };
+  return JSON.stringify(ordered) === JSON.stringify(d) ? undefined : ordered;
+}
+
+/**
+ * Normalize the flight-master config for serialization. Returns `undefined` when
+ * it matches the canonical defaults so untouched worlds don't grow a redundant
+ * block. Keys are emitted in the server's declaration order.
+ */
+export function normalizeFlightConfig(config?: AppConfig["flight"]): AppConfig["flight"] | undefined {
+  const d = DEFAULT_FLIGHT;
+  const c = { ...d, ...(config ?? {}) };
+  const ordered: AppConfig["flight"] = {
+    baseCost: c.baseCost,
+    costPerRoom: c.costPerRoom,
+    minCost: c.minCost,
+    maxCost: c.maxCost,
+    unreachableCost: c.unreachableCost,
+    messages: { ...d.messages, ...(config?.messages ?? {}) },
   };
   return JSON.stringify(ordered) === JSON.stringify(d) ? undefined : ordered;
 }
@@ -514,6 +534,8 @@ export function buildMonolithicConfigObject(
   if (c.stylist) engine.stylist = normalizeStylistConfig(c.stylist);
   const akathavae = normalizeAkathavaeConfig(c.akathavae);
   if (akathavae) engine.akathavae = akathavae;
+  const flight = normalizeFlightConfig(c.flight);
+  if (flight) engine.flight = flight;
   if (c.respec) engine.respec = normalizeRespecConfig(c.respec);
   if (c.prestige) engine.prestige = c.prestige;
   if (c.dailyQuests) engine.dailyQuests = normalizeDailyQuestsConfig(c.dailyQuests);

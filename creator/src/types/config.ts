@@ -1452,6 +1452,49 @@ export interface AkathavaeConfig {
   discoveryXpThrottleMs: number;
 }
 
+// ─── Flight masters (gold fast-travel) ─────────────────────────────
+
+/**
+ * Tuning for flight masters — room kiosks (flagged with the `flightMaster`
+ * room flag) where players pay gold to fast-travel between flight points they
+ * have personally discovered by visiting. Mirrors the server's
+ * `ambonMUD.engine.flight` block. The fare scales with travel distance: the
+ * BFS hop count between the player's current room and the destination over the
+ * world's exit graph, so the same destination costs more the farther you fly
+ * from. Flying is blocked only in combat; otherwise gold is the sole gate.
+ */
+export interface FlightConfig {
+  /** Base gold fare for any flight, before distance scaling. */
+  baseCost: number;
+  /** Additional gold per room of travel distance (BFS hops between source and destination). */
+  costPerRoom: number;
+  /** Floor for the total fare after scaling. */
+  minCost: number;
+  /** Ceiling for the total fare after scaling. */
+  maxCost: number;
+  /** Fare charged when distance can't be computed (destination not loaded on this engine). */
+  unreachableCost: number;
+  /** Player-facing flavor text. `{cost}`, `{gold}`, and `{dest}` placeholders are substituted by the server. */
+  messages: FlightMessagesConfig;
+}
+
+export interface FlightMessagesConfig {
+  combatBlocked: string;
+  notAtFlightMaster: string;
+  noDestinations: string;
+  unknownDestination: string;
+  alreadyHere: string;
+  /** Uses `{cost}` and `{gold}` placeholders. */
+  notEnoughGold: string;
+  discovered: string;
+  departNotice: string;
+  arriveNotice: string;
+  /** Uses the `{dest}` placeholder. */
+  depart: string;
+  /** Uses `{dest}` and `{cost}` placeholders. */
+  arrival: string;
+}
+
 // ─── Auto Quests (Bounties) ────────────────────────────────────────
 
 export interface AutoQuestsConfig {
@@ -1607,6 +1650,7 @@ export interface AppConfig {
   gambling?: GamblingConfig;
   stylist?: StylistConfig;
   akathavae: AkathavaeConfig;
+  flight: FlightConfig;
   autoQuests?: AutoQuestsConfig;
   dailyQuests?: DailyQuestsConfig;
   globalQuests?: GlobalQuestsConfig;

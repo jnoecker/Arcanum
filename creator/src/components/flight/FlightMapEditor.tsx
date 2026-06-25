@@ -40,6 +40,9 @@ export function FlightMapEditor() {
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const [saving, setSaving] = useState(false);
+  // Match the canvas box to the map's natural aspect ratio so left/top
+  // percentages map 1:1 to the image the player sees — no crop, no letterbox.
+  const [mapAspect, setMapAspect] = useState<number | null>(null);
 
   // Every flight-master room across all loaded zones.
   const roosts = useMemo<Roost[]>(() => {
@@ -247,8 +250,9 @@ export function FlightMapEditor() {
                 onPointerMove={handleCanvasPointerMove}
                 onPointerUp={handleCanvasPointerUp}
                 onClick={handleCanvasClick}
+                style={{ aspectRatio: String(mapAspect ?? 3 / 2) }}
                 className={cx(
-                  "relative aspect-[3/2] w-full select-none overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] shadow-section",
+                  "relative w-full select-none overflow-hidden rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] shadow-section",
                   placingKey ? "cursor-crosshair" : "",
                 )}
               >
@@ -257,7 +261,13 @@ export function FlightMapEditor() {
                     src={mapSrc}
                     alt="Map of Ambon"
                     draggable={false}
-                    className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+                    onLoad={(e) => {
+                      const img = e.currentTarget;
+                      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+                        setMapAspect(img.naturalWidth / img.naturalHeight);
+                      }
+                    }}
+                    className="pointer-events-none absolute inset-0 h-full w-full object-fill"
                   />
                 ) : (
                   <div

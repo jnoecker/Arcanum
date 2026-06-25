@@ -111,7 +111,7 @@ pub async fn openai_generate_image(
     let size = snap_to_openai_size(w, h);
 
     let resolved_quality = quality
-        .or_else(|| resolve_quality_from_settings(&settings, asset_type.as_deref()))
+        .or_else(|| settings::resolve_openai_image_quality(&settings, asset_type.as_deref()))
         .unwrap_or_else(|| "low".to_string());
 
     let body = OpenAIImageRequest {
@@ -178,29 +178,6 @@ pub async fn openai_generate_image(
         behavior.output_format,
     )
     .await
-}
-
-/// Resolve the OpenAI image quality from project settings, honoring an
-/// optional per-AssetType override before falling back to the project default.
-/// Returns None when neither is set, so the caller can apply its own fallback.
-fn resolve_quality_from_settings(
-    s: &settings::Settings,
-    asset_type: Option<&str>,
-) -> Option<String> {
-    if let Some(at) = asset_type {
-        if let Some(q) = s.openai_image_quality_overrides.get(at) {
-            let trimmed = q.trim();
-            if !trimmed.is_empty() {
-                return Some(trimmed.to_string());
-            }
-        }
-    }
-    let trimmed = s.openai_image_quality.trim();
-    if trimmed.is_empty() {
-        None
-    } else {
-        Some(trimmed.to_string())
-    }
 }
 
 /// Snap arbitrary dimensions to the nearest supported OpenAI image size.

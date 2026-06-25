@@ -437,7 +437,8 @@ export function ApiSettingsPanel() {
                   })}
                 </div>
 
-                {projectDraft.image_provider === "openai" && (
+                {(projectDraft.image_provider === "openai" ||
+                  projectDraft.image_model?.startsWith("openai:")) && (
                   <OpenAiQualitySection
                     projectDraft={projectDraft}
                     setProjectDraft={setProjectDraft}
@@ -586,7 +587,8 @@ export function ApiSettingsPanel() {
 }
 
 // ─── OpenAI quality controls ───────────────────────────────────────
-// Surfaced only when image_provider === "openai". The hub proxy forces
+// Surfaced whenever a GPT Image model is selected — direct OpenAI or
+// routed through Runware (model id `openai:…`). The hub proxy forces
 // "low" regardless, so this UI is meaningless in hub mode (covered by
 // the hub-mode banner at the top of the panel).
 
@@ -629,9 +631,9 @@ function OpenAiQualitySection({
         Image quality
       </h4>
       <p className="mb-3 text-3xs text-text-muted/70">
-        Higher quality means more output tokens — and OpenAI bills per token. Use the per-asset
-        overrides to keep bulk types (icons, ornaments) cheap while heroes (sprites, portraits)
-        render at full quality.
+        Higher quality means more output tokens — and GPT Image is billed per token (by OpenAI
+        directly, or by Runware when routed through it). Use the per-asset overrides to keep bulk
+        types (icons, ornaments) cheap while heroes (sprites, portraits) render at full quality.
       </p>
 
       <div className="flex items-center gap-2">

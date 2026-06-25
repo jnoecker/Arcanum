@@ -197,11 +197,13 @@ pub async fn runware_generate_image(
 
     // Build provider settings for GPT Image models. v2 dropped the
     // `background` field; only `quality` remains on providerSettings.openai.
+    // Resolution order: per-asset-type override → project default → "low"
+    // fallback. (Hub mode forces "low" and short-circuits above.)
     let provider_settings = if is_gpt_image_model(&mdl) {
+        let quality = settings::resolve_openai_image_quality(&s, asset_type.as_deref())
+            .unwrap_or_else(|| "low".to_string());
         Some(ImageProviderSettings {
-            openai: OpenAIImageSettings {
-                quality: "low".to_string(),
-            },
+            openai: OpenAIImageSettings { quality },
         })
     } else {
         None

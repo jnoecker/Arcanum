@@ -1115,3 +1115,55 @@ describe("sanitizeZone — keepsake items", () => {
     expect(item.description).toContain("\n");
   });
 });
+
+// ─── sanitizeZone — flight map pins ───────────────────────────────
+
+describe("sanitizeZone — flight map pins", () => {
+  it("preserves valid flight-map coordinates on a flight master", () => {
+    const world = makeWorld({
+      rooms: {
+        roost: { title: "Roost", description: "A roost", flightMaster: true, flightMapX: 42, flightMapY: 63.5 },
+      },
+      startRoom: "roost",
+    });
+    const result = sanitizeZone(world);
+    expect(result.rooms["roost"]!.flightMapX).toBe(42);
+    expect(result.rooms["roost"]!.flightMapY).toBe(63.5);
+  });
+
+  it("clamps out-of-range coordinates to 0..100", () => {
+    const world = makeWorld({
+      rooms: {
+        roost: { title: "Roost", description: "A roost", flightMaster: true, flightMapX: -10, flightMapY: 250 },
+      },
+      startRoom: "roost",
+    });
+    const result = sanitizeZone(world);
+    expect(result.rooms["roost"]!.flightMapX).toBe(0);
+    expect(result.rooms["roost"]!.flightMapY).toBe(100);
+  });
+
+  it("rounds coordinates to one decimal place", () => {
+    const world = makeWorld({
+      rooms: {
+        roost: { title: "Roost", description: "A roost", flightMaster: true, flightMapX: 33.333, flightMapY: 66.666 },
+      },
+      startRoom: "roost",
+    });
+    const result = sanitizeZone(world);
+    expect(result.rooms["roost"]!.flightMapX).toBe(33.3);
+    expect(result.rooms["roost"]!.flightMapY).toBe(66.7);
+  });
+
+  it("drops orphaned coordinates when the room is not a flight master", () => {
+    const world = makeWorld({
+      rooms: {
+        roost: { title: "Roost", description: "A roost", flightMapX: 42, flightMapY: 63 },
+      },
+      startRoom: "roost",
+    });
+    const result = sanitizeZone(world);
+    expect(result.rooms["roost"]!.flightMapX).toBeUndefined();
+    expect(result.rooms["roost"]!.flightMapY).toBeUndefined();
+  });
+});

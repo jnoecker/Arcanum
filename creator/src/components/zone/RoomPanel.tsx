@@ -18,7 +18,7 @@ import {
 } from "@/lib/zoneEdits";
 import { ExitDoorEditor } from "./ExitDoorEditor";
 import { RoomFeaturesEditor } from "./RoomFeaturesEditor";
-import { EditableField, Section, IconButton, FieldRow, TextInput, SelectInput, TabBar } from "@/components/ui/FormWidgets";
+import { EditableField, Section, IconButton, FieldRow, TextInput, NumberInput, SelectInput, TabBar } from "@/components/ui/FormWidgets";
 import { ReferenceMentionField } from "@/components/ui/ReferenceMentionField";
 import { YamlPreview } from "@/components/ui/YamlPreview";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
@@ -906,6 +906,62 @@ export function RoomPanel({
               </button>
             );
           })}
+          {room.flightMaster && (
+            <div className="mt-1 flex flex-col gap-2 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-display text-2xs uppercase tracking-wide-ui text-text-muted">
+                  Flight map pin
+                </span>
+                <span className="font-mono text-2xs text-text-secondary">
+                  {room.flightMapX != null && room.flightMapY != null
+                    ? `${room.flightMapX}, ${room.flightMapY}`
+                    : "Unmapped"}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="flex flex-col gap-1">
+                  <span className="text-2xs text-text-muted">X (% across)</span>
+                  <NumberInput
+                    value={room.flightMapX}
+                    onCommit={(v) => onWorldChange(updateRoom(world, roomId, { flightMapX: v }))}
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    dense
+                  />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-2xs text-text-muted">Y (% down)</span>
+                  <NumberInput
+                    value={room.flightMapY}
+                    onCommit={(v) => onWorldChange(updateRoom(world, roomId, { flightMapY: v }))}
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    dense
+                  />
+                </label>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-2xs text-text-muted">
+                  Leave both blank to keep this roost off the map. Place it visually in the Flight Map editor.
+                </p>
+                {(room.flightMapX != null || room.flightMapY != null) && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onWorldChange(
+                        updateRoom(world, roomId, { flightMapX: undefined, flightMapY: undefined }),
+                      )
+                    }
+                    className="shrink-0 rounded border border-status-error/40 px-2 py-1 font-display text-2xs uppercase tracking-wide-ui text-status-error transition hover:bg-status-error/10"
+                  >
+                    Clear pin
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </Section>
       </>

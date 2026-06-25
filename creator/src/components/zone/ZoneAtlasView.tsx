@@ -12,16 +12,20 @@ import {
   type Edge,
   type NodeMouseHandler,
   type OnNodeDrag,
+  type Connection,
   ConnectionMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import dagre from "@dagrejs/dagre";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { useToastStore } from "@/stores/toastStore";
 import { RoomNode } from "./RoomNode";
 import { ExitEdge } from "./ExitEdge";
+import { DirectionPicker } from "./DirectionPicker";
 import { Starfield } from "./Starfield";
 import { zoneToGraph } from "@/lib/zoneToGraph";
+import { addExit, OPPOSITE } from "@/lib/zoneEdits";
 import { compassLayout, getLayoutBounds } from "@/lib/dagreLayout";
 import {
   loadAtlasClusterPositions,
@@ -73,6 +77,17 @@ const edgeTypes = {
 interface AtlasRoomExtra {
   __zoneId: string;
   __roomId: string;
+}
+
+/** An in-progress cross-zone link awaiting a direction choice. */
+interface PendingXLink {
+  sourceZone: string;
+  sourceRoom: string;
+  sourceTitle?: string;
+  targetZone: string;
+  targetRoom: string;
+  targetTitle?: string;
+  inferredDir: string;
 }
 
 /** Split "xzone:zone:room" into { zone, room }, respecting only the first colon after the prefix. */
@@ -434,8 +449,12 @@ function buildAtlas(
 
 function ZoneAtlas() {
   const zones = useZoneStore((s) => s.zones);
+  const updateZone = useZoneStore((s) => s.updateZone);
   const navigateTo = useProjectStore((s) => s.navigateTo);
   const projectPath = useProjectStore((s) => s.project?.mudDir ?? "");
+
+  // An in-progress room→room drag awaiting a direction. Cross-zone only.
+  const [pendingLink, setPendingLink] = useState<PendingXLink | null>(null);
 
   // Saved cluster positions per project. `resetNonce` bumps when the user
   // resets the layout, forcing `initial` to re-run with a fresh (empty) map.
@@ -472,6 +491,105 @@ function ZoneAtlas() {
       }
     },
     [navigateTo],
+  );
+
+  // ─── Cross-zone linking ──────────────────────────────────────────
+  // Dragging from one room's exit handle to a room in another cluster opens
+  // the direction picker; confirming writes a two-way cross-zone exit into
+  // both zones. Same-cluster drags are ignored — intra-zone exits belong in
+  // the zone editor.
+  const onConnect = useCallback(
+    (connection: Connection) => {
+      const { source, target, sourceHandle } = connection;
+      if (!source || !target || source === target) return;
+
+      const byId = new Map(nodes.map((n) => [n.id, n]));
+      const srcData = byId.get(source)?.data as
+        | (Partial<AtlasRoomExtra> & { title?: string })
+        | undefined;
+      const tgtData = byId.get(target)?.data as
+        | (Partial<AtlasRoomExtra> & { title?: string })
+        | undefined;
+      if (!srcData?.__zoneId || !srcData.__roomId) return;
+      if (!tgtData?.__zoneId || !tgtData.__roomId) return;
+
+      if (srcData.__zoneId === tgtData.__zoneId) {
+        useToastStore
+          .getState()
+          .show("Atlas links connect different zones — use the zone editor for exits within a zone");
+        return;
+      }
+
+      setPendingLink({
+        sourceZone: srcData.__zoneId,
+        sourceRoom: srcData.__roomId,
+        sourceTitle: srcData.title,
+        targetZone: tgtData.__zoneId,
+        targetRoom: tgtData.__roomId,
+        targetTitle: tgtData.title,
+        inferredDir: sourceHandle ?? "n",
+      });
+    },
+    [nodes],
+  );
+
+  const handleConfirmLink = useCallback(
+    (direction: string) => {
+      if (!pendingLink) return;
+      const { sourceZone, sourceRoom, targetZone, targetRoom } = pendingLink;
+      const reverse = OPPOSITE[direction] ?? direction;
+
+      const sourceData = useZoneStore.getState().zones.get(sourceZone)?.data;
+      const targetData = useZoneStore.getState().zones.get(targetZone)?.data;
+      if (!sourceData || !targetData) {
+        useToastStore.getState().show("One of the zones is no longer loaded");
+        setPendingLink(null);
+        return;
+      }
+
+      // Don't clobber an existing exit on either end — keep the picker open so
+      // the user can choose a free direction.
+      if (sourceData.rooms[sourceRoom]?.exits?.[direction]) {
+        useToastStore
+          .getState()
+          .show(`${sourceRoom} already has a ${direction.toUpperCase()} exit — pick another direction`);
+        return;
+      }
+      if (targetData.rooms[targetRoom]?.exits?.[reverse]) {
+        useToastStore
+          .getState()
+          .show(`${targetRoom} already has a ${reverse.toUpperCase()} exit — pick another direction`);
+        return;
+      }
+
+      try {
+        const nextSource = addExit(
+          sourceData,
+          sourceRoom,
+          direction,
+          `${targetZone}:${targetRoom}`,
+          false,
+        );
+        const nextTarget = addExit(
+          targetData,
+          targetRoom,
+          reverse,
+          `${sourceZone}:${sourceRoom}`,
+          false,
+        );
+        updateZone(sourceZone, nextSource);
+        updateZone(targetZone, nextTarget);
+        useToastStore
+          .getState()
+          .show(`Linked ${sourceZone} ↔ ${targetZone} — save both zones to persist`);
+      } catch (err) {
+        useToastStore
+          .getState()
+          .show(err instanceof Error ? err.message : "Couldn't create the link");
+      }
+      setPendingLink(null);
+    },
+    [pendingLink, updateZone],
   );
 
   const onNodeDragStop: OnNodeDrag = useCallback(
@@ -523,6 +641,7 @@ function ZoneAtlas() {
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
         onNodeDragStop={onNodeDragStop}
+        onConnect={onConnect}
         minZoom={0.04}
         maxZoom={2}
         // RoomNode ships a single source-type handle per direction; loose
@@ -531,7 +650,9 @@ function ZoneAtlas() {
         fitView
         fitViewOptions={{ padding: 0.15 }}
         nodesDraggable
-        nodesConnectable={false}
+        // Rooms stay non-draggable (set per-node), but their handles are live
+        // so users can drag a room→room cross-zone link.
+        nodesConnectable
         elementsSelectable={false}
         proOptions={{ hideAttribution: true }}
         style={{ background: "var(--color-surface-scrim)" }}
@@ -564,9 +685,22 @@ function ZoneAtlas() {
         )}
       </div>
       <div className="pointer-events-none absolute bottom-20 right-4 z-10 max-w-xs rounded-lg border border-border-muted bg-bg-abyss/85 px-3 py-2 text-2xs italic text-text-muted backdrop-blur">
-        Drag a cluster to reposition it — positions are saved per project. Click any room
-        to jump into its zone.
+        Drag from a room's edge handle to a room in another zone to link them two ways. Drag a
+        cluster to reposition it (saved per project). Click a room to open its zone.
       </div>
+
+      {/* Cross-zone direction picker */}
+      {pendingLink && (
+        <DirectionPicker
+          source={`${pendingLink.sourceZone}:${pendingLink.sourceRoom}`}
+          target={`${pendingLink.targetZone}:${pendingLink.targetRoom}`}
+          sourceTitle={pendingLink.sourceTitle ?? pendingLink.sourceRoom}
+          targetTitle={pendingLink.targetTitle ?? pendingLink.targetRoom}
+          initialDirection={pendingLink.inferredDir}
+          onConfirm={handleConfirmLink}
+          onCancel={() => setPendingLink(null)}
+        />
+      )}
     </div>
   );
 }

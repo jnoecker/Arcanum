@@ -22,7 +22,7 @@ export interface ServerState {
   lastError?: string;
 }
 
-export type TabKind = "panel" | "zone" | "zoneAtlas" | "console" | "sprites" | "admin";
+export type TabKind = "panel" | "zone" | "zoneAtlas" | "worldOverlay" | "console" | "sprites" | "admin";
 
 export type AdminSubView =
   | "overview"

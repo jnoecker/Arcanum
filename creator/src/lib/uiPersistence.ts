@@ -14,6 +14,21 @@ export interface AtlasPosition {
   y: number;
 }
 
+/** A zone's placed rectangle on the world-overlay map, in map pixel space. */
+export interface OverlayPlacement {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface WorldOverlayState {
+  /** Last lore map the user overlaid zones onto. */
+  selectedMapId?: string;
+  /** Placements keyed by map id, then zone id. */
+  placements: Record<string, Record<string, OverlayPlacement>>;
+}
+
 export interface PersistedUI {
   lastProjectPath: string;
   tabs: Tab[];
@@ -28,6 +43,11 @@ export interface PersistedUI {
    * Populated when the user drags a cluster in the World Atlas view.
    */
   atlasClusterPositions?: Record<string, Record<string, AtlasPosition>>;
+  /**
+   * World-overlay atlas state, keyed by project path: which lore map is
+   * selected and where each zone is placed on it.
+   */
+  worldOverlay?: Record<string, WorldOverlayState>;
 }
 
 export function saveUIState(state: PersistedUI): void {
@@ -55,7 +75,9 @@ export function loadUIState(): PersistedUI | null {
       ];
     }
     // Migration: drop tabs with removed kinds (studio, config)
-    const VALID_KINDS = new Set(["panel", "zone", "console", "sprites", "admin"]);
+    const VALID_KINDS = new Set([
+      "panel", "zone", "zoneAtlas", "worldOverlay", "console", "sprites", "admin",
+    ]);
     if (Array.isArray(parsed.tabs)) {
       parsed.tabs = parsed.tabs.filter((t: any) => VALID_KINDS.has(t.kind));
       // Migration: convert old command-kind tabs to panel-kind tabs
@@ -199,4 +221,65 @@ export function clearAtlasClusterPositions(projectPath: string): void {
   if (!(projectPath in state.atlasClusterPositions)) return;
   const { [projectPath]: _removed, ...rest } = state.atlasClusterPositions;
   saveUIState({ ...state, atlasClusterPositions: rest });
+}
+
+// ─── World-overlay atlas state ──────────────────────────────────────
+
+const EMPTY_OVERLAY: WorldOverlayState = { placements: {} };
+
+export function loadWorldOverlay(projectPath: string): WorldOverlayState {
+  if (!projectPath) return EMPTY_OVERLAY;
+  return loadUIState()?.worldOverlay?.[projectPath] ?? EMPTY_OVERLAY;
+}
+
+function mutateWorldOverlay(
+  projectPath: string,
+  fn: (current: WorldOverlayState) => WorldOverlayState,
+): void {
+  if (!projectPath) return;
+  const state = loadUIState();
+  if (!state) return;
+  const all = state.worldOverlay ?? {};
+  const current = all[projectPath] ?? { placements: {} };
+  saveUIState({
+    ...state,
+    worldOverlay: { ...all, [projectPath]: fn(current) },
+  });
+}
+
+export function saveOverlaySelectedMap(projectPath: string, mapId: string): void {
+  mutateWorldOverlay(projectPath, (c) => ({ ...c, selectedMapId: mapId }));
+}
+
+export function saveOverlayPlacement(
+  projectPath: string,
+  mapId: string,
+  zoneId: string,
+  placement: OverlayPlacement,
+): void {
+  if (!mapId || !zoneId) return;
+  mutateWorldOverlay(projectPath, (c) => {
+    const forMap = { ...(c.placements[mapId] ?? {}), [zoneId]: placement };
+    return { ...c, placements: { ...c.placements, [mapId]: forMap } };
+  });
+}
+
+export function removeOverlayPlacement(
+  projectPath: string,
+  mapId: string,
+  zoneId: string,
+): void {
+  mutateWorldOverlay(projectPath, (c) => {
+    const forMap = { ...(c.placements[mapId] ?? {}) };
+    delete forMap[zoneId];
+    return { ...c, placements: { ...c.placements, [mapId]: forMap } };
+  });
+}
+
+export function clearOverlayPlacements(projectPath: string, mapId: string): void {
+  mutateWorldOverlay(projectPath, (c) => {
+    const next = { ...c.placements };
+    delete next[mapId];
+    return { ...c, placements: next };
+  });
 }

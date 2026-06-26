@@ -103,7 +103,7 @@ function RoomBackground({ image }: { image?: string }) {
 
 /** Role pill badges (bank, tavern/lottery, inn, dungeon, auction, stylist, housingBroker) */
 function RoleBadges({ d }: { d: RoomNodeData }) {
-  if (!d.bank && !d.tavern && !d.inn && !d.dungeon && !d.auction && !d.stylist && !d.housingBroker && !d.akathavaeShrine && !d.flightMaster) return null;
+  if (!d.bank && !d.tavern && !d.inn && !d.dungeon && !d.auction && !d.stylist && !d.housingBroker && !d.akathavaeShrine && !d.flightMaster && !d.boatDock) return null;
   return (
     <div className="relative flex flex-wrap gap-1">
       {d.bank && (
@@ -158,6 +158,12 @@ function RoleBadges({ d }: { d: RoomNodeData }) {
         <span className="flex items-center gap-0.5 rounded bg-accent/20 px-1 text-3xs font-semibold text-accent" title="Flight master (flights/fly)">
           <img src={ROLE_ICONS.flightMaster} alt="" className="h-3 w-3" />
           Flight
+        </span>
+      )}
+      {d.boatDock && (
+        <span className="flex items-center gap-0.5 rounded bg-accent/20 px-1 text-3xs font-semibold text-accent" title="Boat dock (voyages/sail)">
+          <img src={ROLE_ICONS.boatDock} alt="" className="h-3 w-3" />
+          Boat
         </span>
       )}
     </div>

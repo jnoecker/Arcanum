@@ -2,6 +2,7 @@ import type {
   WorldFile,
   RoomFile,
   ExitValue,
+  BoatRouteFile,
   MobFile,
   ItemFile,
   ShopFile,
@@ -214,16 +215,43 @@ function normalizeFlightCoord(value: unknown): number | undefined {
   return Math.round(Math.min(100, Math.max(0, value)) * 10) / 10;
 }
 
+/** Sanitize a dock's authored routes: trim each destination, drop entries with
+ *  no destination, and floor the fare at 0. Returns undefined when nothing
+ *  meaningful remains so an empty list isn't serialized. */
+function normalizeBoatRoutes(
+  routes: BoatRouteFile[] | undefined,
+): BoatRouteFile[] | undefined {
+  if (!routes || routes.length === 0) return undefined;
+  const out: BoatRouteFile[] = [];
+  for (const route of routes) {
+    const to = typeof route?.to === "string" ? route.to.trim() : "";
+    if (!to) continue;
+    const price = typeof route.price === "number" && Number.isFinite(route.price)
+      ? Math.max(0, Math.round(route.price))
+      : 0;
+    out.push({ to, price });
+  }
+  return out.length > 0 ? out : undefined;
+}
+
 function normalizeRoomOutput(room: RoomFile): RoomFile {
   // Flight-map pins only mean anything on a flight master; drop orphaned
   // coords and clamp the rest to the server's 0..100 contract.
   const flightMapX = room.flightMaster ? normalizeFlightCoord(room.flightMapX) : undefined;
   const flightMapY = room.flightMaster ? normalizeFlightCoord(room.flightMapY) : undefined;
+  // Boat-dock pins and routes only mean anything on a boat dock; same 0..100
+  // coord contract as flight, routes floored at a 0 fare.
+  const boatMapX = room.boatDock ? normalizeFlightCoord(room.boatMapX) : undefined;
+  const boatMapY = room.boatDock ? normalizeFlightCoord(room.boatMapY) : undefined;
+  const boatRoutes = room.boatDock ? normalizeBoatRoutes(room.boatRoutes) : undefined;
   let next: RoomFile = {
     ...room,
     audio: undefined,
     flightMapX,
     flightMapY,
+    boatMapX,
+    boatMapY,
+    boatRoutes,
     jukebox: normalizeJukebox(room.jukebox),
     musicBox: normalizeMusicBox(room.musicBox),
   };
@@ -330,6 +358,16 @@ function applyIdRemaps(world: WorldFile, t: RemapTables): WorldFile {
         features[fId] = f;
       }
       r2 = { ...r2, features };
+    }
+
+    if (room.boatRoutes && room.boatRoutes.length > 0 && t.room.size > 0) {
+      r2 = {
+        ...r2,
+        boatRoutes: room.boatRoutes.map((route) => ({
+          ...route,
+          to: route.to.includes(":") ? route.to : rId(route.to, t.room),
+        })),
+      };
     }
 
     rooms[key ?? oldId] = r2;

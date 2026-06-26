@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { WorldFile, ExitValue, DoorFile, JukeboxSongFile } from "@/types/world";
+import type { WorldFile, ExitValue, DoorFile, JukeboxSongFile, RoomFile, BoatRouteFile } from "@/types/world";
 import {
   updateRoom,
   deleteRoom,
@@ -17,8 +17,9 @@ import {
   normalizeDir,
 } from "@/lib/zoneEdits";
 import { ExitDoorEditor } from "./ExitDoorEditor";
+import { RoomPicker } from "@/components/config/panels/world/RoomPicker";
 import { RoomFeaturesEditor } from "./RoomFeaturesEditor";
-import { EditableField, Section, IconButton, FieldRow, TextInput, NumberInput, SelectInput, TabBar } from "@/components/ui/FormWidgets";
+import { EditableField, Section, IconButton, FieldRow, TextInput, NumberInput, SelectInput, TabBar, ActionButton } from "@/components/ui/FormWidgets";
 import { ReferenceMentionField } from "@/components/ui/ReferenceMentionField";
 import { YamlPreview } from "@/components/ui/YamlPreview";
 import { EntityArtGenerator } from "@/components/ui/EntityArtGenerator";
@@ -844,7 +845,7 @@ export function RoomPanel({
       {/* Room roles */}
       <Section
         title="Room Roles"
-        defaultExpanded={!!room.station || !!room.bank || !!room.tavern || !!room.dungeon || !!room.auction || !!room.stylist || !!room.housingBroker || !!room.inn || !!room.akathavaeShrine || !!room.flightMaster}
+        defaultExpanded={!!room.station || !!room.bank || !!room.tavern || !!room.dungeon || !!room.auction || !!room.stylist || !!room.housingBroker || !!room.inn || !!room.akathavaeShrine || !!room.flightMaster || !!room.boatDock}
       >
         <div className="flex flex-col gap-2">
           {/* Station — dropdown instead of toggle */}
@@ -880,6 +881,7 @@ export function RoomPanel({
             { key: "housingBroker" as const, label: "Housing Broker", icon: ROLE_ICONS.housingBroker },
             { key: "akathavaeShrine" as const, label: "Akathavae Shrine", icon: ROLE_ICONS.akathavaeShrine },
             { key: "flightMaster" as const, label: "Flight Master", icon: ROLE_ICONS.flightMaster },
+            { key: "boatDock" as const, label: "Boat Dock", icon: ROLE_ICONS.boatDock },
           ] as const).map(({ key, label, icon }) => {
             const active = !!(room[key]);
             return (
@@ -961,6 +963,15 @@ export function RoomPanel({
                 )}
               </div>
             </div>
+          )}
+          {room.boatDock && (
+            <BoatDockEditor
+              world={world}
+              roomId={roomId}
+              room={room}
+              zoneId={zoneId}
+              onWorldChange={onWorldChange}
+            />
           )}
         </div>
       </Section>
@@ -1640,6 +1651,148 @@ function MusicBoxEditor({ world, roomId, zoneId, onWorldChange }: JukeboxEditorP
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Boat dock editor (map pin + authored routes) ──────────────────
+
+interface BoatDockEditorProps {
+  world: WorldFile;
+  roomId: string;
+  room: RoomFile;
+  zoneId: string;
+  onWorldChange: (world: WorldFile) => void;
+}
+
+function BoatDockEditor({ world, roomId, room, zoneId, onWorldChange }: BoatDockEditorProps) {
+  const routes = room.boatRoutes ?? [];
+
+  // RoomPicker speaks full `zone:room`; boat routes store a bare `room` when the
+  // destination is in this dock's own zone (matching exit targets, so ID renames
+  // remap and local-existence validation still apply). Bridge the two here.
+  const toPickerValue = (to: string) => (to.includes(":") ? to : to ? `${zoneId}:${to}` : "");
+  const fromPickerValue = (picked: string) => {
+    if (!picked.includes(":")) return picked;
+    const [zone, ...rest] = picked.split(":");
+    const room = rest.join(":");
+    return zone === zoneId ? room : picked;
+  };
+
+  const writeRoutes = (next: BoatRouteFile[]) =>
+    onWorldChange(updateRoom(world, roomId, { boatRoutes: next.length > 0 ? next : undefined }));
+
+  const updateRouteAt = (i: number, patch: Partial<BoatRouteFile>) =>
+    writeRoutes(routes.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+
+  const addRoute = () => writeRoutes([...routes, { to: "", price: 0 }]);
+  const removeRoute = (i: number) => writeRoutes(routes.filter((_, idx) => idx !== i));
+
+  const pinned = room.boatMapX != null && room.boatMapY != null;
+
+  return (
+    <div className="mt-1 flex flex-col gap-3 rounded-lg border border-[var(--chrome-stroke)] bg-[var(--chrome-fill-soft)] p-2.5">
+      {/* Map pin */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-display text-2xs uppercase tracking-wide-ui text-text-muted">
+            Boat map pin
+          </span>
+          <span className="font-mono text-2xs text-text-secondary">
+            {pinned ? `${room.boatMapX}, ${room.boatMapY}` : "Unmapped"}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-2xs text-text-muted">X (% across)</span>
+            <NumberInput
+              value={room.boatMapX}
+              onCommit={(v) => onWorldChange(updateRoom(world, roomId, { boatMapX: v }))}
+              min={0}
+              max={100}
+              step={0.5}
+              dense
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-2xs text-text-muted">Y (% down)</span>
+            <NumberInput
+              value={room.boatMapY}
+              onCommit={(v) => onWorldChange(updateRoom(world, roomId, { boatMapY: v }))}
+              min={0}
+              max={100}
+              step={0.5}
+              dense
+            />
+          </label>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-2xs text-text-muted">
+            Leave both blank to keep this dock off the map. Place it visually in the Boat Map editor.
+          </p>
+          {(room.boatMapX != null || room.boatMapY != null) && (
+            <button
+              type="button"
+              onClick={() =>
+                onWorldChange(updateRoom(world, roomId, { boatMapX: undefined, boatMapY: undefined }))
+              }
+              className="shrink-0 rounded border border-status-error/40 px-2 py-1 font-display text-2xs uppercase tracking-wide-ui text-status-error transition hover:bg-status-error/10"
+            >
+              Clear pin
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Authored routes */}
+      <div className="flex flex-col gap-2 border-t border-[var(--chrome-stroke)] pt-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-display text-2xs uppercase tracking-wide-ui text-text-muted">
+            Routes ({routes.length})
+          </span>
+          <ActionButton variant="secondary" size="sm" onClick={addRoute}>
+            Add route
+          </ActionButton>
+        </div>
+        {routes.length === 0 ? (
+          <p className="text-2xs italic text-text-muted/70">
+            No routes yet. Each route is a flat-fare voyage to another room — local (<span className="font-mono">room</span>) or cross-zone (<span className="font-mono">zone:room</span>).
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {routes.map((route, i) => (
+              <li key={i} className="grid grid-cols-[1fr_auto_auto] items-end gap-2">
+                <div className="flex min-w-0 flex-col gap-1">
+                  <span className="text-2xs text-text-muted">Destination</span>
+                  <RoomPicker
+                    value={toPickerValue(route.to)}
+                    onChange={(v) => updateRouteAt(i, { to: fromPickerValue(v) })}
+                    placeholder="Select dock…"
+                  />
+                </div>
+                <label className="flex w-24 flex-col gap-1">
+                  <span className="text-2xs text-text-muted">Fare (gold)</span>
+                  <NumberInput
+                    value={route.price}
+                    onCommit={(v) => updateRouteAt(i, { price: Math.max(0, Math.round(v ?? 0)) })}
+                    min={0}
+                    step={10}
+                    dense
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => removeRoute(i)}
+                  aria-label={`Remove route ${i + 1}`}
+                  className="mb-0.5 shrink-0 rounded border border-status-error/40 px-2 py-1.5 font-display text-2xs uppercase tracking-wide-ui text-status-error transition hover:bg-status-error/10"
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

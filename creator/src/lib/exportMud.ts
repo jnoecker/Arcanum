@@ -17,6 +17,7 @@ import {
   DEFAULT_ABILITY_TARGET_TYPES,
   DEFAULT_AKATHAVAE,
   DEFAULT_FLIGHT,
+  DEFAULT_BOAT,
 } from "@/lib/configDefaults";
 
 import { YAML_OPTS } from "@/lib/yamlOpts";
@@ -246,6 +247,20 @@ export function normalizeFlightConfig(config?: AppConfig["flight"]): AppConfig["
     minCost: c.minCost,
     maxCost: c.maxCost,
     unreachableCost: c.unreachableCost,
+    messages: { ...d.messages, ...(config?.messages ?? {}) },
+  };
+  return JSON.stringify(ordered) === JSON.stringify(d) ? undefined : ordered;
+}
+
+/**
+ * Normalize the boat-dock config for serialization. Returns `undefined` when it
+ * matches the canonical defaults so untouched worlds don't grow a redundant
+ * block. Boats have no numeric fares (those live per-route on each room), so
+ * this is messages only.
+ */
+export function normalizeBoatConfig(config?: AppConfig["boat"]): AppConfig["boat"] | undefined {
+  const d = DEFAULT_BOAT;
+  const ordered: AppConfig["boat"] = {
     messages: { ...d.messages, ...(config?.messages ?? {}) },
   };
   return JSON.stringify(ordered) === JSON.stringify(d) ? undefined : ordered;
@@ -536,6 +551,8 @@ export function buildMonolithicConfigObject(
   if (akathavae) engine.akathavae = akathavae;
   const flight = normalizeFlightConfig(c.flight);
   if (flight) engine.flight = flight;
+  const boat = normalizeBoatConfig(c.boat);
+  if (boat) engine.boat = boat;
   if (c.respec) engine.respec = normalizeRespecConfig(c.respec);
   if (c.prestige) engine.prestige = c.prestige;
   if (c.dailyQuests) engine.dailyQuests = normalizeDailyQuestsConfig(c.dailyQuests);

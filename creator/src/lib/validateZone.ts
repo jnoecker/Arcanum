@@ -100,6 +100,60 @@ function validateFlightMapCoords(
   }
 }
 
+/**
+ * Boat docks share the flight map's coordinate contract (each coord, if present,
+ * is a number in 0..100, and the engine only seats a hotspot when both are set),
+ * and additionally carry authored routes. Each route needs a non-negative fare
+ * and a destination; local destinations must resolve to a real room, while
+ * cross-zone destinations (`zone:room`) are passed through — the server silently
+ * skips routes whose target isn't loaded, mirroring the flight kiosk.
+ */
+function validateBoatDock(
+  issues: ValidationIssue[],
+  entity: string,
+  room: WorldFile["rooms"][string],
+  roomIds: Set<string>,
+): void {
+  const { boatMapX, boatMapY, boatDock, boatRoutes } = room;
+  const hasX = boatMapX != null;
+  const hasY = boatMapY != null;
+
+  if (hasX || hasY) {
+    for (const [axis, value] of [["boatMapX", boatMapX], ["boatMapY", boatMapY]] as const) {
+      if (value == null) continue;
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        addIssue(issues, "error", entity, `${axis} must be a number between 0 and 100`);
+      } else if (value < 0 || value > 100) {
+        addIssue(issues, "error", entity, `${axis} (${value}) is outside the valid 0–100 range; the server will refuse to load this zone`);
+      }
+    }
+    if (hasX !== hasY) {
+      addIssue(issues, "warning", entity, "Boat map pin needs both boatMapX and boatMapY — set both to place the dock, or clear both to leave it unmapped");
+    }
+    if (!boatDock) {
+      addIssue(issues, "warning", entity, "Room has boat map coordinates but is not a boat dock — the pin will be ignored");
+    }
+  }
+
+  if (boatRoutes && boatRoutes.length > 0) {
+    if (!boatDock) {
+      addIssue(issues, "warning", entity, "Room has boat routes but is not a boat dock — the routes will be ignored");
+    }
+    boatRoutes.forEach((route, i) => {
+      const label = `Boat route ${i + 1}`;
+      const to = typeof route?.to === "string" ? route.to.trim() : "";
+      if (!to) {
+        addIssue(issues, "error", entity, `${label} has no destination`);
+      } else if (!to.includes(":") && !roomIds.has(to)) {
+        addIssue(issues, "error", entity, `${label} points to non-existent room "${to}"`);
+      }
+      if (typeof route?.price !== "number" || !Number.isFinite(route.price) || route.price < 0) {
+        addIssue(issues, "error", entity, `${label} needs a fare of 0 or more`);
+      }
+    });
+  }
+}
+
 function hasPositiveOnUse(item: NonNullable<WorldFile["items"]>[string]): boolean {
   const onUse = item.onUse;
   if (!onUse) return false;
@@ -542,6 +596,7 @@ export function validateZone(
     }
 
     validateFlightMapCoords(issues, entity, room);
+    validateBoatDock(issues, entity, room, roomIds);
 
     for (const [dir, exit] of Object.entries(room.exits ?? {})) {
       const target = exitTarget(exit);

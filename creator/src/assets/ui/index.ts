@@ -16,6 +16,8 @@ import roleTavern from "./role_tavern.png";
 import roleAkathavaeShrine from "./panel_scroll.png";
 // Placeholder: reuses the cloud panel icon until a bespoke role_flight_master.png is generated.
 import roleFlightMaster from "./panel_cloud.png";
+// Placeholder: reuses the underwater terrain swatch until a bespoke role_boat_dock.png is generated.
+import roleBoatDock from "./terrain_underwater.png";
 
 // Feature type icons (16×16) — room feature badges
 import featureContainer from "./feature_container.png";
@@ -150,6 +152,7 @@ export const ROLE_ICONS: Record<string, string> = {
   inn: roleInn,
   akathavaeShrine: roleAkathavaeShrine,
   flightMaster: roleFlightMaster,
+  boatDock: roleBoatDock,
 };
 
 /** Feature type (lowercase) → icon URL. */

@@ -899,4 +899,81 @@ describe("validateZone", () => {
       expect(issues.some((i) => i.message.includes("not a flight master"))).toBe(true);
     });
   });
+
+  // ─── Boat docks (pins + routes) ──────────────────────────────
+  describe("boat dock coordinates and routes", () => {
+    it("accepts a boat dock with both coordinates in range and a valid local route", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = {
+        ...world.rooms.room1!,
+        boatDock: true,
+        boatMapX: 40,
+        boatMapY: 60,
+        boatRoutes: [{ to: "room2", price: 150 }],
+      };
+      const issues = validateZone(world).filter((i) => i.message.toLowerCase().includes("boat"));
+      expect(issues).toHaveLength(0);
+    });
+
+    it("accepts an unmapped boat dock (no coordinates)", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, boatDock: true };
+      const issues = validateZone(world).filter((i) => i.message.toLowerCase().includes("boat"));
+      expect(issues).toHaveLength(0);
+    });
+
+    it("errors when a coordinate is out of the 0..100 range", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, boatDock: true, boatMapX: 120, boatMapY: 60 };
+      const issues = errors(validateZone(world));
+      expect(issues.some((i) => i.message.includes("boatMapX"))).toBe(true);
+    });
+
+    it("warns when only one coordinate axis is set", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, boatDock: true, boatMapX: 40 };
+      const issues = warnings(validateZone(world));
+      expect(issues.some((i) => i.message.includes("both boatMapX and boatMapY"))).toBe(true);
+    });
+
+    it("warns when coordinates sit on a non–boat-dock room", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, boatMapX: 40, boatMapY: 60 };
+      const issues = warnings(validateZone(world));
+      expect(issues.some((i) => i.message.includes("not a boat dock"))).toBe(true);
+    });
+
+    it("errors on a route to a non-existent local room", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = {
+        ...world.rooms.room1!,
+        boatDock: true,
+        boatRoutes: [{ to: "nowhere", price: 100 }],
+      };
+      const issues = errors(validateZone(world));
+      expect(issues.some((i) => i.message.includes('non-existent room "nowhere"'))).toBe(true);
+    });
+
+    it("accepts a cross-zone route without checking existence", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = {
+        ...world.rooms.room1!,
+        boatDock: true,
+        boatRoutes: [{ to: "coast:wharf", price: 100 }],
+      };
+      const issues = errors(validateZone(world)).filter((i) => i.message.includes("Boat route"));
+      expect(issues).toHaveLength(0);
+    });
+
+    it("errors on a negative fare", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = {
+        ...world.rooms.room1!,
+        boatDock: true,
+        boatRoutes: [{ to: "room2", price: -5 }],
+      };
+      const issues = errors(validateZone(world));
+      expect(issues.some((i) => i.message.includes("fare of 0 or more"))).toBe(true);
+    });
+  });
 });

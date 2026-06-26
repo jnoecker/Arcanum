@@ -1495,6 +1495,39 @@ export interface FlightMessagesConfig {
   arrival: string;
 }
 
+// ─── Boat docks (gold fast-travel, authored routes) ────────────────
+
+/**
+ * Tuning for boat docks — room kiosks (flagged with the `boatDock` room flag)
+ * that let players pay gold to sail a fixed set of routes the worldbuilder
+ * authored on each dock. Mirrors the server's `ambonMUD.engine.boat` block.
+ * Unlike the flight master, fares are flat and author-set per route (no distance
+ * scaling), routes need no discovery, and the fare is paid on every trip.
+ * Sailing is blocked only in combat; otherwise gold is the sole gate. There are
+ * no numeric knobs — the per-route price lives on each room's `boatRoutes` — so
+ * this block is messages only.
+ */
+export interface BoatConfig {
+  /** Player-facing flavor text. `{cost}`, `{gold}`, and `{dest}` placeholders are substituted by the server. */
+  messages: BoatMessagesConfig;
+}
+
+export interface BoatMessagesConfig {
+  combatBlocked: string;
+  notAtDock: string;
+  noRoutes: string;
+  unknownDestination: string;
+  alreadyHere: string;
+  /** Uses `{cost}` and `{gold}` placeholders. */
+  notEnoughGold: string;
+  departNotice: string;
+  arriveNotice: string;
+  /** Uses the `{dest}` placeholder. */
+  depart: string;
+  /** Uses `{dest}` and `{cost}` placeholders. */
+  arrival: string;
+}
+
 // ─── Auto Quests (Bounties) ────────────────────────────────────────
 
 export interface AutoQuestsConfig {
@@ -1651,6 +1684,7 @@ export interface AppConfig {
   stylist?: StylistConfig;
   akathavae: AkathavaeConfig;
   flight: FlightConfig;
+  boat: BoatConfig;
   autoQuests?: AutoQuestsConfig;
   dailyQuests?: DailyQuestsConfig;
   globalQuests?: GlobalQuestsConfig;

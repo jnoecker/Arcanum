@@ -139,6 +139,26 @@ export interface RoomFile {
   /** Flight-map pin: percent down the Ambon flight map, 0 (top) to 100
    *  (bottom). See {@link flightMapX}. */
   flightMapY?: number;
+  /** True if this room is a boat dock. Enables the `voyages`/`sail`
+   *  fast-travel commands and the in-world harbor kiosk badge. Unlike a flight
+   *  master, boat routes are authored (see {@link boatRoutes}) rather than
+   *  discovered, and charge a flat author-set fare on every trip. */
+  boatDock?: boolean;
+  /** Boat-map pin: percent across the Ambon world map, 0 (left) to 100
+   *  (right). Paired with {@link boatMapY}. Shares the flight map by default
+   *  (`boat_map` global asset). Doubles as the destination pin for any route
+   *  whose `to` is this room. Leave both unset to keep the dock "unmapped" —
+   *  it still works but is listed textually instead of pinned. Only meaningful
+   *  when {@link boatDock} is true; the server fails to load if either value is
+   *  outside 0..100. */
+  boatMapX?: number;
+  /** Boat-map pin: percent down the Ambon world map, 0 (top) to 100
+   *  (bottom). See {@link boatMapX}. */
+  boatMapY?: number;
+  /** Authored boat passages leaving this dock — the fixed routes players can
+   *  buy. Each is a flat author-set fare to a destination room. Only meaningful
+   *  when {@link boatDock} is true. */
+  boatRoutes?: BoatRouteFile[];
   image?: string;
   video?: string;
   /** Prose vision narrated to text/screen-reader clients in place of the video.
@@ -185,6 +205,18 @@ export interface MusicBoxFile {
    *  (like room/item art); omit to fall back to the client's generic item default. */
   image?: string;
   lyrics?: string[];
+}
+
+/**
+ * One authored boat passage from a {@link RoomFile.boatDock}: a fixed
+ * fast-travel route to {@link to} for a flat, author-set {@link price} in gold
+ * (no distance scaling, paid each trip). `to` is a destination room id — local
+ * (`room`) or cross-zone (`zone:room`), like an exit target. The destination's
+ * world-map pin is read from the `to` room's own `boatMapX`/`boatMapY`.
+ */
+export interface BoatRouteFile {
+  to: string;
+  price: number;
 }
 
 export interface ExitValue {

@@ -19,6 +19,7 @@ import {
   normalizeStylistConfig,
   normalizeAkathavaeConfig,
   normalizeFlightConfig,
+  normalizeBoatConfig,
   normalizeRespecConfig,
   normalizeCurrenciesConfig,
   normalizeDailyQuestsConfig,
@@ -146,6 +147,7 @@ async function saveSplitConfig(projectDir: string): Promise<void> {
     stylist: normalizeStylistConfig(config.stylist),
     akathavae: normalizeAkathavaeConfig(config.akathavae),
     flight: normalizeFlightConfig(config.flight),
+    boat: normalizeBoatConfig(config.boat),
     respec: normalizeRespecConfig(config.respec),
     housing: (config.housing.enabled || Object.keys(config.housing.templates).length > 0)
       ? housingToPlain(config.housing) : undefined,

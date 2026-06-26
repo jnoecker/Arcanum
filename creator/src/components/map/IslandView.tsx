@@ -297,6 +297,10 @@ export function IslandView({ island }: IslandViewProps) {
             setShowZonePicker(false);
             openTab({ id: "zoneAtlas", kind: "zoneAtlas", label: "World Atlas" });
           }}
+          onOpenOverlay={() => {
+            setShowZonePicker(false);
+            openTab({ id: "worldOverlay", kind: "worldOverlay", label: "Map Overlay" });
+          }}
           onCreateNew={() => {
             setShowZonePicker(false);
             setShowNewZone(true);
@@ -313,11 +317,13 @@ function ZonePickerDialog({
   onClose,
   onSelect,
   onOpenAtlas,
+  onOpenOverlay,
   onCreateNew,
 }: {
   onClose: () => void;
   onSelect: (zoneId: string) => void;
   onOpenAtlas: () => void;
+  onOpenOverlay: () => void;
   onCreateNew: () => void;
 }) {
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
@@ -381,6 +387,34 @@ function ZonePickerDialog({
           </div>
           <div className="mt-0.5 text-2xs text-text-muted">
             All zones at once — click any room to jump in.
+          </div>
+        </div>
+        <span className="text-text-muted">→</span>
+      </button>
+      <button
+        type="button"
+        onClick={onOpenOverlay}
+        className="mb-3 flex w-full items-center gap-3 rounded border border-accent/40 bg-gradient-active-strong px-3 py-2 text-left transition-colors hover:bg-accent/15"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-5 w-5 text-accent"
+        >
+          <path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4Z" />
+          <path d="M9 4v13" />
+          <path d="M15 6.5v13" />
+        </svg>
+        <div className="min-w-0 flex-1">
+          <div className="font-display text-sm uppercase tracking-widest text-accent">
+            Map Overlay
+          </div>
+          <div className="mt-0.5 text-2xs text-text-muted">
+            Drape zones over a world map to line up the geography.
           </div>
         </div>
         <span className="text-text-muted">→</span>

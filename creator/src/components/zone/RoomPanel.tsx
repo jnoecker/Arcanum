@@ -17,6 +17,7 @@ import {
   normalizeDir,
 } from "@/lib/zoneEdits";
 import { ExitDoorEditor } from "./ExitDoorEditor";
+import { RoomPicker } from "@/components/config/panels/world/RoomPicker";
 import { RoomFeaturesEditor } from "./RoomFeaturesEditor";
 import { EditableField, Section, IconButton, FieldRow, TextInput, NumberInput, SelectInput, TabBar, ActionButton } from "@/components/ui/FormWidgets";
 import { ReferenceMentionField } from "@/components/ui/ReferenceMentionField";
@@ -969,7 +970,6 @@ export function RoomPanel({
               roomId={roomId}
               room={room}
               zoneId={zoneId}
-              loadedZones={loadedZones}
               onWorldChange={onWorldChange}
             />
           )}
@@ -1662,12 +1662,22 @@ interface BoatDockEditorProps {
   roomId: string;
   room: RoomFile;
   zoneId: string;
-  loadedZones: Map<string, { data: WorldFile }>;
   onWorldChange: (world: WorldFile) => void;
 }
 
-function BoatDockEditor({ world, roomId, room, zoneId, loadedZones, onWorldChange }: BoatDockEditorProps) {
+function BoatDockEditor({ world, roomId, room, zoneId, onWorldChange }: BoatDockEditorProps) {
   const routes = room.boatRoutes ?? [];
+
+  // RoomPicker speaks full `zone:room`; boat routes store a bare `room` when the
+  // destination is in this dock's own zone (matching exit targets, so ID renames
+  // remap and local-existence validation still apply). Bridge the two here.
+  const toPickerValue = (to: string) => (to.includes(":") ? to : to ? `${zoneId}:${to}` : "");
+  const fromPickerValue = (picked: string) => {
+    if (!picked.includes(":")) return picked;
+    const [zone, ...rest] = picked.split(":");
+    const room = rest.join(":");
+    return zone === zoneId ? room : picked;
+  };
 
   const writeRoutes = (next: BoatRouteFile[]) =>
     onWorldChange(updateRoom(world, roomId, { boatRoutes: next.length > 0 ? next : undefined }));
@@ -1752,17 +1762,14 @@ function BoatDockEditor({ world, roomId, room, zoneId, loadedZones, onWorldChang
           <ul className="flex flex-col gap-2">
             {routes.map((route, i) => (
               <li key={i} className="grid grid-cols-[1fr_auto_auto] items-end gap-2">
-                <label className="flex min-w-0 flex-col gap-1">
+                <div className="flex min-w-0 flex-col gap-1">
                   <span className="text-2xs text-text-muted">Destination</span>
-                  <TextInput
-                    value={route.to}
-                    onCommit={(v) =>
-                      updateRouteAt(i, { to: resolveExitInput(v, zoneId, world, loadedZones) })
-                    }
-                    placeholder="room or zone:room"
-                    dense
+                  <RoomPicker
+                    value={toPickerValue(route.to)}
+                    onChange={(v) => updateRouteAt(i, { to: fromPickerValue(v) })}
+                    placeholder="Select dock…"
                   />
-                </label>
+                </div>
                 <label className="flex w-24 flex-col gap-1">
                   <span className="text-2xs text-text-muted">Fare (gold)</span>
                   <NumberInput

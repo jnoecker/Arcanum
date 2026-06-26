@@ -421,6 +421,30 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
     optional: true,
   },
+  {
+    key: "boat_map",
+    defaultFilename: "flight_map.png",
+    label: "Boat Map",
+    description:
+      "Painted world map of Ambon shown in the boat-dock kiosk. Defaults to the same art as the Flight Map, so harbors sit on the same coastline — only assign this if you want boats to use a different map. Optional — the kiosk falls back to a plain route list when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted antique cartographer's map of the fantasy land of Ambon, full-bleed edge to edge, weathered vellum with hand-inked coastlines, mountains, forests, and rivers, warm sepia and muted jewel tones, soft ambient candlelight, no grid, no pins, no markers, no readable text, no labels, suitable as a backdrop for overlaid travel hotspots.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "boat_dock",
+    defaultFilename: "boat_dock.png",
+    label: "Boat Dock",
+    description: "Anchor/ship marker seated on the boat map for each harbor, and the badge shown on boat dock rooms — distinguishes harbors from griffin roosts. Optional — a CSS jewel-dot renders without it.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A single ornate ship's anchor or small sailboat moored at a wooden dock post, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
   // Persistent player-UI navigation buttons rendered down the left edge of
   // every room canvas (unlike the room-feature badges above, which only
   // appear on rooms that host the corresponding feature).

@@ -1167,3 +1167,68 @@ describe("sanitizeZone — flight map pins", () => {
     expect(result.rooms["roost"]!.flightMapY).toBeUndefined();
   });
 });
+
+// ─── sanitizeZone — boat docks ────────────────────────────────────
+
+describe("sanitizeZone — boat docks", () => {
+  it("preserves coordinates and routes on a boat dock, clamping coords", () => {
+    const world = makeWorld({
+      rooms: {
+        harbor: {
+          title: "Harbor",
+          description: "A harbor",
+          boatDock: true,
+          boatMapX: 33.333,
+          boatMapY: 250,
+          boatRoutes: [{ to: "harbor2", price: 150 }],
+        },
+        harbor2: { title: "Harbor Two", description: "Another harbor", boatDock: true },
+      },
+      startRoom: "harbor",
+    });
+    const result = sanitizeZone(world);
+    expect(result.rooms["harbor"]!.boatMapX).toBe(33.3);
+    expect(result.rooms["harbor"]!.boatMapY).toBe(100);
+    expect(result.rooms["harbor"]!.boatRoutes).toEqual([{ to: "harbor2", price: 150 }]);
+  });
+
+  it("drops orphaned coordinates and routes when the room is not a boat dock", () => {
+    const world = makeWorld({
+      rooms: {
+        harbor: {
+          title: "Harbor",
+          description: "A harbor",
+          boatMapX: 42,
+          boatMapY: 63,
+          boatRoutes: [{ to: "harbor2", price: 100 }],
+        },
+        harbor2: { title: "Harbor Two", description: "Another harbor" },
+      },
+      startRoom: "harbor",
+    });
+    const result = sanitizeZone(world);
+    expect(result.rooms["harbor"]!.boatMapX).toBeUndefined();
+    expect(result.rooms["harbor"]!.boatMapY).toBeUndefined();
+    expect(result.rooms["harbor"]!.boatRoutes).toBeUndefined();
+  });
+
+  it("drops empty-destination routes and floors negative fares", () => {
+    const world = makeWorld({
+      rooms: {
+        harbor: {
+          title: "Harbor",
+          description: "A harbor",
+          boatDock: true,
+          boatRoutes: [
+            { to: "  ", price: 50 },
+            { to: "harbor2", price: -5 },
+          ],
+        },
+        harbor2: { title: "Harbor Two", description: "Another harbor", boatDock: true },
+      },
+      startRoom: "harbor",
+    });
+    const result = sanitizeZone(world);
+    expect(result.rooms["harbor"]!.boatRoutes).toEqual([{ to: "harbor2", price: 0 }]);
+  });
+});

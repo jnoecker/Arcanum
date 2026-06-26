@@ -67,6 +67,23 @@ export const DEFAULT_FLIGHT: AppConfig["flight"] = {
   },
 };
 
+/** Canonical defaults for boat docks (mirrors the server's BoatConfig).
+ *  Used to seed the parser and to omit an unchanged block on save. */
+export const DEFAULT_BOAT: AppConfig["boat"] = {
+  messages: {
+    combatBlocked: "You can't set sail in the middle of a battle!",
+    notAtDock: "You need to be at a boat dock to do that.",
+    noRoutes: "No boats are berthed here. This dock has no routes.",
+    unknownDestination: "The harbor master doesn't sail to that destination.",
+    alreadyHere: "You're already at that dock.",
+    notEnoughGold: "That voyage costs {cost} gold, but you only have {gold}.",
+    departNotice: "casts off and sails away across the water.",
+    arriveNotice: "sails in and steps ashore from the deck.",
+    depart: "You board the boat and cast off, bound for {dest}...",
+    arrival: "You step ashore at {dest}. (-{cost} gold)",
+  },
+};
+
 // ─── Registries with simple map shapes ─────────────────────────────
 
 export const DEFAULT_ACHIEVEMENT_CATEGORIES: AppConfig["achievementCategories"] = {

@@ -633,6 +633,40 @@ ambonmud:
   });
 });
 
+describe("boat config round-trip", () => {
+  it("defaults the whole block when engine.boat is absent", () => {
+    const config = parseAppConfigYaml(`
+ambonmud:
+  server: { telnetPort: 4000, webPort: 8080 }
+  world: { startRoom: hub:square, resources: [] }
+  engine: {}
+`);
+    expect(config.boat.messages.notAtDock).toBe("You need to be at a boat dock to do that.");
+    expect(config.boat.messages.combatBlocked).toBe("You can't set sail in the middle of a battle!");
+  });
+
+  it("omits the block on export when unchanged, emits it when a message is tuned", () => {
+    const base = parseAppConfigYaml(`
+ambonmud:
+  server: { telnetPort: 4000, webPort: 8080 }
+  world: { startRoom: hub:square, resources: [] }
+  engine: {}
+`);
+    // Default config → no boat block in the rebuilt monolith.
+    const clean = buildMonolithicConfigObject(base) as any;
+    expect(clean.engine).not.toHaveProperty("boat");
+
+    // Tuned config → block round-trips with the change preserved.
+    const tuned: AppConfig = {
+      ...base,
+      boat: { ...base.boat, messages: { ...base.boat.messages, depart: "Anchors aweigh for {dest}!" } },
+    };
+    const runtime = buildMonolithicConfigObject(tuned) as any;
+    expect(runtime.engine.boat.messages.depart).toBe("Anchors aweigh for {dest}!");
+    expect(parseAppConfigYaml(stringify({ ambonmud: runtime })).boat.messages.depart).toBe("Anchors aweigh for {dest}!");
+  });
+});
+
 describe("racial ability round-trip", () => {
   it("serializes a race's racialAbility and re-parses it intact", () => {
     const config: AppConfig = {

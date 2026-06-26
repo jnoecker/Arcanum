@@ -17,6 +17,7 @@ import {
   DEFAULT_COMMANDS,
   DEFAULT_AKATHAVAE,
   DEFAULT_FLIGHT,
+  DEFAULT_BOAT,
   DEFAULT_EMOTE_PRESETS,
   DEFAULT_WEATHER_TYPES,
   DEFAULT_ENVIRONMENT_CONFIG,
@@ -144,6 +145,7 @@ export function parseAppConfigYaml(content: string): AppConfig {
     stylist: parseStylistConfig(engine.stylist),
     akathavae: parseAkathavaeConfig(engine.akathavae),
     flight: parseFlightConfig(engine.flight),
+    boat: parseBoatConfig(engine.boat),
     respec: parseRespecConfig(engine.respec),
     prestige: engine.prestige as AppConfig["prestige"],
     dailyQuests: parseDailyQuestsConfig(engine.dailyQuests),
@@ -779,6 +781,28 @@ function parseFlightConfig(raw: unknown): AppConfig["flight"] {
   };
 }
 
+function parseBoatConfig(raw: unknown): AppConfig["boat"] {
+  const d = DEFAULT_BOAT;
+  if (!raw || typeof raw !== "object") return { messages: { ...d.messages } };
+  const s = raw as Record<string, unknown>;
+  const m = (s.messages && typeof s.messages === "object" ? s.messages : {}) as Record<string, unknown>;
+  const dm = d.messages;
+  return {
+    messages: {
+      combatBlocked: asString(m.combatBlocked, dm.combatBlocked),
+      notAtDock: asString(m.notAtDock, dm.notAtDock),
+      noRoutes: asString(m.noRoutes, dm.noRoutes),
+      unknownDestination: asString(m.unknownDestination, dm.unknownDestination),
+      alreadyHere: asString(m.alreadyHere, dm.alreadyHere),
+      notEnoughGold: asString(m.notEnoughGold, dm.notEnoughGold),
+      departNotice: asString(m.departNotice, dm.departNotice),
+      arriveNotice: asString(m.arriveNotice, dm.arriveNotice),
+      depart: asString(m.depart, dm.depart),
+      arrival: asString(m.arrival, dm.arrival),
+    },
+  };
+}
+
 function parseRespecConfig(raw: unknown): AppConfig["respec"] {
   if (!raw || typeof raw !== "object") return undefined;
   const s = raw as Record<string, unknown>;
@@ -1013,7 +1037,7 @@ function collectRawSections(
     "craftingSkills", "craftingStationTypes",
     "scheduler", "friends", "debug", "classStartRooms", "emotePresets", "housing", "pets", "enchanting", "bank",
     "worldTime", "season", "weather", "mobVariants", "worldEvents", "environment", "skillPoints", "multiclass",
-    "lottery", "gambling", "stylist", "akathavae", "flight", "respec", "prestige", "dailyQuests", "autoQuests", "globalQuests",
+    "lottery", "gambling", "stylist", "akathavae", "flight", "boat", "respec", "prestige", "dailyQuests", "autoQuests", "globalQuests",
     "guildHalls", "factions", "leaderboard", "currencies",
   ]);
 
@@ -1754,6 +1778,7 @@ async function loadSplitConfig(projectDir: string): Promise<AppConfig | null> {
       stylist: parseStylistConfig(worldRaw.stylist),
       akathavae: parseAkathavaeConfig(worldRaw.akathavae),
       flight: parseFlightConfig(worldRaw.flight),
+      boat: parseBoatConfig(worldRaw.boat),
       respec: parseRespecConfig(worldRaw.respec),
       prestige: worldRaw.prestige as AppConfig["prestige"],
       dailyQuests: parseDailyQuestsConfig(worldRaw.dailyQuests),

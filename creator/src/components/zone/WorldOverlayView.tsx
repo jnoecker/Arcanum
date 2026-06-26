@@ -250,7 +250,7 @@ function MapBackdrop({
   vp: Viewport;
 }) {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ zIndex: 0 }}>
       {src && (
         <img
           src={src}
@@ -432,7 +432,16 @@ function WorldOverlay() {
 
   // Reconcile: add/remove nodes by id, but keep live position/size/selection
   // of survivors so dragging and resizing aren't interrupted mid-gesture.
+  // On a map switch, apply the new map's placements wholesale instead — a zone
+  // placed on both maps must not inherit the previous map's geometry.
+  const prevMapRef = useRef(selectedMapId);
   useEffect(() => {
+    const mapChanged = prevMapRef.current !== selectedMapId;
+    prevMapRef.current = selectedMapId;
+    if (mapChanged) {
+      setNodes(desiredNodes);
+      return;
+    }
     setNodes((cur) => {
       const byId = new Map(cur.map((n) => [n.id, n]));
       return desiredNodes.map((n) => {
@@ -448,7 +457,7 @@ function WorldOverlay() {
         };
       });
     });
-  }, [desiredNodes, setNodes]);
+  }, [desiredNodes, selectedMapId, setNodes]);
 
   useEffect(() => {
     setEdges(desiredEdges);
@@ -600,7 +609,7 @@ function WorldOverlay() {
           elementsSelectable
           panOnDrag
           proOptions={{ hideAttribution: true }}
-          style={{ background: "transparent" }}
+          style={{ background: "transparent", position: "relative", zIndex: 1, height: "100%", width: "100%" }}
         >
           <Controls showInteractive={false} />
         </ReactFlow>

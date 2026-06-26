@@ -43,6 +43,7 @@ const VoiceOverPanel = lazy(() => import("./VoiceOverPanel"));
 const BackupPanel = lazy(() => import("./BackupPanel").then(m => ({ default: m.BackupPanel })));
 const ReferencesPanel = lazy(() => import("./ReferencesPanel").then(m => ({ default: m.ReferencesPanel })));
 const FlightMapEditor = lazy(() => import("./flight/FlightMapEditor").then(m => ({ default: m.FlightMapEditor })));
+const BoatMapEditor = lazy(() => import("./boat/BoatMapEditor").then(m => ({ default: m.BoatMapEditor })));
 
 function IslandBackPill({ island }: { island: Island }) {
   const openIsland = useProjectStore((s) => s.openIsland);
@@ -127,6 +128,7 @@ export function MainArea() {
           case "backup": content = <BackupPanel />; break;
           case "references": content = <ReferencesPanel />; break;
           case "flightMap": content = <FlightMapEditor />; break;
+          case "boatMap": content = <BoatMapEditor />; break;
           default: content = null;
         }
       } else {

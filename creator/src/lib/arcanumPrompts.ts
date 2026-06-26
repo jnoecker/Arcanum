@@ -690,27 +690,51 @@ Output ONLY the finished prompt text — no explanation, no labels, no markdown.
 /** System prompt for the prompt enhancement LLM — kept for backward compat */
 export const ENHANCE_SYSTEM_PROMPT = ENHANCE_SYSTEM_PROMPT_ARCANUM;
 
-/** Class color palette reference for ability and status effect icon generation. */
-export const CLASS_COLOR_PALETTES = `
-CLASS COLOR PALETTES (use when generating ability or status effect icons):
-- Bulwark (defensive tank): warm golds, burnished steel, shield shapes, fortress silhouettes, heavy metallic tones
-- Warden (aggressive fighter): warm amber, rust reds, earthy brown, sharp weapon motifs, fur and leather textures
-- Arcanist (scholarly mage): deep purples, electric blues, crystalline whites, arcane sigils, glowing tomes
-- Faeweaver (nature mage): living greens, floral pinks, vine tendrils, petal formations, budding flowers
-- Necromancer (death + clockwork): sickly greens, clockwork brass, bone whites, ghostly teal, gear motifs
-- Veil (shadow assassin): deep indigos, midnight purples, smoky grays, dagger silhouettes, living shadow wisps
-- Binder (anti-magic enforcer): blazing amber, golden chains, rune circles, suppression barriers, dissolving spell fragments
-- Stormblade (lightning warrior): electric blues, white lightning, storm grays, zig-zag energy streaks, crackling arcs
-- Herald (divine cleric): warm whites, soft golds, holy radiance, sacred symbols, gentle divine glow
-- Starweaver (cosmic mage): cosmic purples, nebula pinks, stellar whites, constellation patterns, swirling galaxies
+/** Per-class palette descriptors for ability and status effect icon generation,
+ *  keyed by the built-in Ambon class name (lowercased for matching). */
+const CLASS_PALETTE_LINES: Record<string, string> = {
+  bulwark: "- Bulwark (defensive tank): warm golds, burnished steel, shield shapes, fortress silhouettes, heavy metallic tones",
+  warden: "- Warden (aggressive fighter): warm amber, rust reds, earthy brown, sharp weapon motifs, fur and leather textures",
+  arcanist: "- Arcanist (scholarly mage): deep purples, electric blues, crystalline whites, arcane sigils, glowing tomes",
+  faeweaver: "- Faeweaver (nature mage): living greens, floral pinks, vine tendrils, petal formations, budding flowers",
+  necromancer: "- Necromancer (death + clockwork): sickly greens, clockwork brass, bone whites, ghostly teal, gear motifs",
+  veil: "- Veil (shadow assassin): deep indigos, midnight purples, smoky grays, dagger silhouettes, living shadow wisps",
+  binder: "- Binder (anti-magic enforcer): blazing amber, golden chains, rune circles, suppression barriers, dissolving spell fragments",
+  stormblade: "- Stormblade (lightning warrior): electric blues, white lightning, storm grays, zig-zag energy streaks, crackling arcs",
+  herald: "- Herald (divine cleric): warm whites, soft golds, holy radiance, sacred symbols, gentle divine glow",
+  starweaver: "- Starweaver (cosmic mage): cosmic purples, nebula pinks, stellar whites, constellation patterns, swirling galaxies",
+};
 
-EFFECT COLOR MODIFIERS:
+const EFFECT_COLOR_MODIFIERS = `EFFECT COLOR MODIFIERS:
 - Healing/regeneration: warm golden-white light, green life energy
 - Shields/protection: translucent barriers, dome shapes, soft glowing edges
 - Damage-over-time: smoldering embers, dripping venom, crackling energy
 - Stun/crowd-control: stars, shattered glass, frozen shards
 - Buffs: ascending arrows, radiant auras, empowering glows
 - Debuffs: descending spirals, dark mists, weakening auras`;
+
+/** Full class color palette reference (all classes). Used when the relevant
+ *  class is unknown — e.g. cross-class status effects, or custom-class worlds
+ *  whose class names don't match the built-in palettes. */
+export const CLASS_COLOR_PALETTES = `
+CLASS COLOR PALETTES (use when generating ability or status effect icons):
+${Object.values(CLASS_PALETTE_LINES).join("\n")}
+
+${EFFECT_COLOR_MODIFIERS}`;
+
+/** Palette block for an ability/status icon prompt. When the icon's class is
+ *  known and matches a built-in palette, emit only that class's line plus the
+ *  shared effect modifiers (instead of all ten palettes); otherwise fall back
+ *  to the full reference. */
+export function buildClassPalettes(iconClass?: string): string {
+  const line = CLASS_PALETTE_LINES[iconClass?.trim().toLowerCase() ?? ""];
+  if (!line) return CLASS_COLOR_PALETTES;
+  return `
+CLASS COLOR PALETTE (use for this ability/status effect icon):
+${line}
+
+${EFFECT_COLOR_MODIFIERS}`;
+}
 
 /** Full sprite safety block for BG-removal models (FLUX etc.) */
 const SPRITE_SAFETY_ENHANCER_BLOCK = `
@@ -748,7 +772,7 @@ function isRoomScene(assetType: string | undefined): boolean {
 
 /** Get the system prompt for prompt enhancement — defers to world visual style when defined.
  *  Pass `nativeTransparency` to use lighter framing rules instead of full BG-removal safety. */
-export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string, surface?: ArtStyleSurface, nativeTransparency?: boolean): string {
+export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string, surface?: ArtStyleSurface, nativeTransparency?: boolean, iconClass?: string): string {
   const visualStyle = buildVisualStyleDirective(surface);
   const tone = buildToneDirective({ imageContext: true });
   const spriteSafety = assetType && needsBgRemovalSafety(assetType)
@@ -763,7 +787,7 @@ export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string, surf
       ? `\n\nWorld visual style: ${visualStyle}\nAll enhanced prompts must conform to this visual style.`
       : "";
     const palettes = (assetType === "ability_icon" || assetType === "status_effect_icon" || assetType === "ability_sprite")
-      ? `\n\n${CLASS_COLOR_PALETTES}`
+      ? `\n\n${buildClassPalettes(iconClass)}`
       : "";
 
     return `You are an expert image prompt engineer for AI image generators.${toneBlock}${styleBlock}
@@ -787,7 +811,7 @@ When enhancing a prompt:
     ? ENHANCE_SYSTEM_PROMPT_ARCANUM
     : ENHANCE_SYSTEM_PROMPT_GENTLE_MAGIC;
   const palettes = (assetType === "ability_icon" || assetType === "status_effect_icon" || assetType === "ability_sprite")
-    ? `\n\n${CLASS_COLOR_PALETTES}`
+    ? `\n\n${buildClassPalettes(iconClass)}`
     : "";
   return `${base}${palettes}${spriteSafety}${roomScene}`;
 }

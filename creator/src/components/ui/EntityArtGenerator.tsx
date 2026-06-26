@@ -43,6 +43,9 @@ interface EntityArtGeneratorProps {
   onAccept: (filePath: string) => void;
   /** Asset type for manifest (e.g. "entity_portrait", "background") */
   assetType?: string;
+  /** For ability/status-effect icons: the entity's class, so prompt enhancement
+   *  includes only that class's color palette rather than all of them. */
+  iconClass?: string;
   /** Context tags for the asset manifest */
   context?: AssetContext;
   /** @deprecated Vibe no longer influences generation; field kept for callers pending cleanup. */
@@ -108,6 +111,7 @@ export function EntityArtGenerator({
   currentImage,
   onAccept,
   assetType,
+  iconClass,
   context,
   vibe: _vibe,
   surface,
@@ -264,7 +268,7 @@ export function EntityArtGenerator({
     ec: string | undefined,
     fh: string | undefined,
   ): Promise<string> => {
-    const systemPrompt = getEnhanceSystemPrompt(artStyle, assetType, surface, nativeTransparency);
+    const systemPrompt = getEnhanceSystemPrompt(artStyle, assetType, surface, nativeTransparency, iconClass);
     const resolver = useReferenceStore.getState().resolver();
     const used: ReferenceSubject[] = [];
     const collect = (subs: ReferenceSubject[]) => {

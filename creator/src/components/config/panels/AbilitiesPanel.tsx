@@ -419,6 +419,7 @@ export function AbilityDetail({
             currentImage={ability.image}
             onAccept={(filePath) => patch({ image: filePath })}
             assetType="ability_icon"
+            iconClass={ability.requiredClass || ability.classRestriction}
             context={{ zone: "", entity_type: "ability", entity_id: id }}
             surface="worldbuilding"
           />

@@ -7,8 +7,44 @@ const API_VERSION: &str = "2023-06-01";
 struct AnthropicRequest {
     model: String,
     max_tokens: u32,
-    system: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    system: Vec<SystemBlock>,
     messages: Vec<AnthropicMessage>,
+}
+
+// System prompt as a content block so we can attach `cache_control`. The
+// enhancement/generation system prompts are deterministic per (world, asset
+// type) and re-sent on every call; caching the prefix bills it at ~10% on
+// repeats within the 5-minute TTL. Prompts below the model's minimum cacheable
+// length (2048 tokens on Sonnet 4.6) silently skip caching with no penalty.
+#[derive(Debug, Serialize)]
+struct SystemBlock {
+    #[serde(rename = "type")]
+    block_type: String,
+    text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    cache_control: Option<CacheControl>,
+}
+
+#[derive(Debug, Serialize)]
+struct CacheControl {
+    #[serde(rename = "type")]
+    cache_type: String,
+}
+
+impl SystemBlock {
+    fn cached(text: &str) -> Vec<SystemBlock> {
+        if text.is_empty() {
+            return Vec::new();
+        }
+        vec![SystemBlock {
+            block_type: "text".to_string(),
+            text: text.to_string(),
+            cache_control: Some(CacheControl {
+                cache_type: "ephemeral".to_string(),
+            }),
+        }]
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -70,7 +106,7 @@ pub async fn complete(
     let body = AnthropicRequest {
         model: model.to_string(),
         max_tokens,
-        system: system_prompt.to_string(),
+        system: SystemBlock::cached(system_prompt),
         messages: vec![AnthropicMessage {
             role: "user".to_string(),
             content: user_prompt.to_string(),

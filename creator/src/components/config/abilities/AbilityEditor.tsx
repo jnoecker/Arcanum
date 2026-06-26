@@ -336,6 +336,7 @@ function CombatVisualsCard({
             currentImage={visual.projectileImage}
             onAccept={(filePath) => patchVisual({ projectileImage: filePath })}
             assetType="ability_sprite"
+            iconClass={ability.requiredClass || ability.classRestriction}
             context={{ zone: "", entity_type: "ability_visual", entity_id: id }}
             surface="worldbuilding"
           />

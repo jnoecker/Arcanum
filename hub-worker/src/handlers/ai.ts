@@ -479,7 +479,7 @@ async function llmComplete(req: Request, env: Env, user: UserRow): Promise<Respo
       model: LLM_MODEL,
       max_tokens: clamp(body.maxTokens ?? 1024, 16, 8192),
       temperature: clamp(body.temperature ?? 0.7, 0, 1),
-      system: body.system?.trim() || undefined,
+      system: cachedSystem(body.system),
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -749,6 +749,19 @@ async function embed(req: Request, env: Env, user: UserRow): Promise<Response> {
 function clamp(n: number, lo: number, hi: number): number {
   if (!Number.isFinite(n)) return lo;
   return Math.min(hi, Math.max(lo, Math.round(n)));
+}
+
+// Render the system prompt as a cache-controlled content block. The
+// enhancement/generation system prompts are deterministic per (world, asset
+// type) and re-sent on every call; an ephemeral breakpoint bills the prefix at
+// ~10% on cache reads within the 5-minute TTL (batch art, multi-room zone
+// generation reuse it constantly). Prompts under the model's minimum cacheable
+// length (2048 tokens on Sonnet 4.6) silently skip caching with no penalty.
+// Returns undefined for an empty system so the request omits the field.
+function cachedSystem(system: string | undefined) {
+  const text = system?.trim();
+  if (!text) return undefined;
+  return [{ type: "text", text, cache_control: { type: "ephemeral" } }];
 }
 
 function roundTo16(n: number): number {

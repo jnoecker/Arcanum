@@ -3,7 +3,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useVibeStore } from "@/stores/vibeStore";
-import { BatchArtGenerator } from "@/components/zone/BatchArtGenerator";
+import { useBatchArtStore } from "@/stores/batchArtStore";
 import { ZoneVibePanel } from "@/components/zone/ZoneVibePanel";
 import { ZoneAssetWorkbench } from "@/components/zone/ZoneAssetWorkbench";
 import { CustomAssetStudio } from "@/components/CustomAssetStudio";
@@ -141,7 +141,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
   const loadVibe = useVibeStore((s) => s.loadVibe);
   const vibeMap = useVibeStore((s) => s.vibes);
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
-  const [showBatchArt, setShowBatchArt] = useState(false);
+  const openBatchArt = useBatchArtStore((s) => s.openSetup);
   const [artSubTab, setArtSubTab] = useState<ArtSubTab>(() => loadArtSubTab());
 
   useEffect(() => {
@@ -217,7 +217,7 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
                           Open editor
                         </button>
                         <button
-                          onClick={() => setShowBatchArt(true)}
+                          onClick={() => openBatchArt(selectedZoneId!)}
                           className="focus-ring shell-pill-primary rounded-full px-4 py-2 text-xs font-medium"
                         >
                           Batch generate
@@ -271,14 +271,6 @@ export function StudioWorkspace({ panelId }: { panelId: string }) {
         {panelId === "studioAbilities" && <AbilityStudio />}
       </div>
 
-      {showBatchArt && selectedZone && (
-        <BatchArtGenerator
-          zoneId={selectedZoneId!}
-          world={selectedZone.data}
-          onWorldChange={(world) => updateZone(selectedZoneId!, world)}
-          onClose={() => setShowBatchArt(false)}
-        />
-      )}
     </div>
   );
 }

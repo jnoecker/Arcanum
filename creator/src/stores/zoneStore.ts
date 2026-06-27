@@ -17,6 +17,13 @@ interface ZoneStore {
 
   loadZone: (zoneId: string, filePath: string, data: WorldFile) => void;
   updateZone: (zoneId: string, data: WorldFile) => void;
+  /**
+   * Replace a zone's data and flag it dirty WITHOUT pushing onto the undo
+   * stack. For programmatic side-effects (e.g. backgrounded batch art writing
+   * image filenames) that shouldn't flood the 100-entry history or be reverted
+   * one image at a time by Ctrl+Z. No-op if the zone isn't loaded.
+   */
+  setZoneDataSilent: (zoneId: string, data: WorldFile) => void;
   markClean: (zoneId: string) => void;
   /** Flag a zone as needing a save without touching its data or undo history. */
   markDirty: (zoneId: string) => void;
@@ -68,6 +75,15 @@ export const useZoneStore = create<ZoneStore>((set, get) => ({
           future: [], // new edit clears redo stack
         });
       }
+      return { zones };
+    }),
+
+  setZoneDataSilent: (zoneId, data) =>
+    set((state) => {
+      const existing = state.zones.get(zoneId);
+      if (!existing) return state;
+      const zones = new Map(state.zones);
+      zones.set(zoneId, { ...existing, data, dirty: true });
       return { zones };
     }),
 

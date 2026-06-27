@@ -176,6 +176,67 @@ function collectionForKind(kind: string): string {
   }
 }
 
+/**
+ * Return a new WorldFile with the generated image filename assigned to the
+ * entity addressed by `kind`/`id`. Pure — no mutation. Applied incrementally
+ * against the live zone data so a backgrounded batch never clobbers concurrent
+ * edits to other fields. A no-op (returns the same world) if the target is gone.
+ */
+export function applyImageToWorld(
+  world: WorldFile,
+  kind: string,
+  id: string,
+  fileName: string,
+): WorldFile {
+  if (kind === "room") {
+    const room = world.rooms[id];
+    if (!room) return world;
+    return { ...world, rooms: { ...world.rooms, [id]: { ...room, image: fileName } } };
+  }
+  if (kind === "musicBoxKeepsake") {
+    const room = world.rooms[id];
+    if (!room?.musicBox) return world;
+    return {
+      ...world,
+      rooms: {
+        ...world.rooms,
+        [id]: { ...room, musicBox: { ...room.musicBox, image: fileName } },
+      },
+    };
+  }
+  if (kind === "dungeon" && world.dungeon) {
+    return { ...world, dungeon: { ...world.dungeon, image: fileName } };
+  }
+  if (kind === "dungeonRoom" && world.dungeon) {
+    const [category, idxStr] = id.split(":");
+    const idx = parseInt(idxStr!, 10);
+    const templates = world.dungeon.roomTemplates?.[category!];
+    if (!templates?.[idx]) return world;
+    const updatedTemplates = [...templates];
+    updatedTemplates[idx] = { ...templates[idx]!, image: fileName };
+    return {
+      ...world,
+      dungeon: {
+        ...world.dungeon,
+        roomTemplates: { ...world.dungeon.roomTemplates, [category!]: updatedTemplates },
+      },
+    };
+  }
+  const collection = collectionForKind(kind);
+  const entities = (world as unknown as Record<string, unknown>)[collection] as
+    | Record<string, Record<string, unknown>>
+    | undefined;
+  if (!entities?.[id]) return world;
+  return {
+    ...world,
+    [collection]: { ...entities, [id]: { ...entities[id], image: fileName } },
+  };
+}
+
+function fileNameFromPath(filePath: string, fallback: string): string {
+  return filePath.split(/[\\/]/).pop() ?? fallback;
+}
+
 export function getTargetPrompt(
   target: BatchTarget,
   world: WorldFile,
@@ -232,7 +293,13 @@ export function getTargetContext(
 
 export interface ArtGenerationCallbacks {
   onTargetUpdate: (idx: number, update: Partial<BatchTarget>) => void;
-  onWorldUpdate: (world: WorldFile) => void;
+  /**
+   * Assign a freshly generated image filename to one entity. Called once per
+   * image (and again after background removal swaps in the bg-free variant).
+   * Implementations apply it against the *current* zone data so the write is
+   * safe even while the batch runs in the background and the user edits on.
+   */
+  applyImage: (kind: string, id: string, fileName: string) => void;
   onBgRemovalProgress?: (done: number, total: number) => void;
   acceptAsset: (
     image: GeneratedImage,
@@ -256,10 +323,8 @@ export async function runBatchArtGeneration(
   abortRef: { current: boolean },
   callbacks: ArtGenerationCallbacks,
   autoRemoveBg?: boolean,
-): Promise<WorldFile> {
+): Promise<void> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
-  // Use a ref-like container so all workers always read/write the latest world
-  const worldRef = { current: { ...world } };
 
   // Collect background removal promises so we can await them before saving
   const pendingBgRemovals: { promise: ReturnType<typeof removeBgFromFileAndSave>; kind: string; id: string }[] = [];
@@ -283,8 +348,8 @@ export async function runBatchArtGeneration(
       callbacks.onTargetUpdate(idx, { status: "generating" });
 
       try {
-        const basePrompt = getTargetPrompt(target, worldRef.current, artStyle, vibe);
-        const context = getTargetContext(target, worldRef.current);
+        const basePrompt = getTargetPrompt(target, world, artStyle, vibe);
+        const context = getTargetContext(target, world);
         const batchAssetType = assetTypeForKind(target.kind);
 
         let finalPrompt = basePrompt;
@@ -357,71 +422,11 @@ export async function runBatchArtGeneration(
           });
         }
 
-        // Update worldRef atomically — always read current value to avoid lost updates
-        const { kind, id } = target;
-        const cur = worldRef.current;
-        if (kind === "room") {
-          const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
-          worldRef.current = {
-            ...cur,
-            rooms: {
-              ...cur.rooms,
-              [id]: { ...cur.rooms[id]!, image: fileName },
-            },
-          };
-        } else if (kind === "musicBoxKeepsake") {
-          const room = cur.rooms[id];
-          if (room?.musicBox) {
-            const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
-            worldRef.current = {
-              ...cur,
-              rooms: {
-                ...cur.rooms,
-                [id]: { ...room, musicBox: { ...room.musicBox, image: fileName } },
-              },
-            };
-          }
-        } else if (kind === "dungeon" && cur.dungeon) {
-          const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
-          worldRef.current = {
-            ...cur,
-            dungeon: { ...cur.dungeon, image: fileName },
-          };
-        } else if (kind === "dungeonRoom" && cur.dungeon) {
-          const [category, idxStr] = id.split(":");
-          const idx = parseInt(idxStr!, 10);
-          const templates = cur.dungeon.roomTemplates?.[category!];
-          if (templates?.[idx]) {
-            const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
-            const updatedTemplates = [...templates];
-            updatedTemplates[idx] = { ...templates[idx]!, image: fileName };
-            worldRef.current = {
-              ...cur,
-              dungeon: {
-                ...cur.dungeon,
-                roomTemplates: {
-                  ...cur.dungeon.roomTemplates,
-                  [category!]: updatedTemplates,
-                },
-              },
-            };
-          }
-        } else {
-          const collection = collectionForKind(kind);
-          const entities = (cur as Record<string, unknown>)[
-            collection
-          ] as Record<string, Record<string, unknown>> | undefined;
-          if (entities?.[id]) {
-            const fileName = image.file_path.split(/[\\/]/).pop() ?? image.hash;
-            worldRef.current = {
-              ...cur,
-              [collection]: {
-                ...entities,
-                [id]: { ...entities[id], image: fileName },
-              },
-            };
-          }
-        }
+        callbacks.applyImage(
+          target.kind,
+          target.id,
+          fileNameFromPath(image.file_path, image.hash),
+        );
       } catch (e) {
         callbacks.onTargetUpdate(idx, {
           status: "error",
@@ -447,35 +452,7 @@ export async function runBatchArtGeneration(
     try {
       const entry = await promise;
       if (entry) {
-        const cur = worldRef.current;
-        if (kind === "musicBoxKeepsake") {
-          const room = cur.rooms[id];
-          if (room?.musicBox) {
-            worldRef.current = {
-              ...cur,
-              rooms: {
-                ...cur.rooms,
-                [id]: { ...room, musicBox: { ...room.musicBox, image: entry.file_name } },
-              },
-            };
-          }
-        } else {
-          const collection =
-            kind === "mob" ? "mobs" : kind === "item" ? "items" : kind === "shop" ? "shops" : null;
-          if (collection) {
-            const entities = (cur as Record<string, unknown>)[collection] as
-              Record<string, Record<string, unknown>> | undefined;
-            if (entities?.[id]) {
-              worldRef.current = {
-                ...cur,
-                [collection]: {
-                  ...entities,
-                  [id]: { ...entities[id], image: entry.file_name },
-                },
-              };
-            }
-          }
-        }
+        callbacks.applyImage(kind, id, entry.file_name);
       }
     } catch {
       // bg removal failed; keep original image
@@ -483,7 +460,4 @@ export async function runBatchArtGeneration(
     removalsComplete++;
     callbacks.onBgRemovalProgress?.(removalsComplete, totalRemovals);
   }
-
-  callbacks.onWorldUpdate(worldRef.current);
-  return worldRef.current;
 }

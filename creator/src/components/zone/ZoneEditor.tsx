@@ -33,7 +33,7 @@ import { ExitEdge, ExitDeleteContext } from "./ExitEdge";
 import { RoomPanel, type EntitySelection } from "./RoomPanel";
 import { EntityPanel } from "./EntityPanel";
 import { DirectionPicker } from "./DirectionPicker";
-import { BatchArtGenerator } from "./BatchArtGenerator";
+import { useBatchArtStore } from "@/stores/batchArtStore";
 import { RethemeDialog } from "./RethemeDialog";
 import { DuplicateZoneDialog } from "@/components/DuplicateZoneDialog";
 import { RebalanceZoneDialog } from "@/components/zone/RebalanceZoneDialog";
@@ -185,7 +185,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     useState<PendingConnection | null>(null);
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
-  const [showBatchArt, setShowBatchArt] = useState(false);
+  const openBatchArt = useBatchArtStore((s) => s.openSetup);
   const [showBulkBgRemoval, setShowBulkBgRemoval] = useState(false);
   const [showDuplicate, setShowDuplicate] = useState(false);
   const [showRebalance, setShowRebalance] = useState(false);
@@ -710,7 +710,7 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
 
           <div className="flex flex-wrap items-center gap-2 border-l border-[var(--chrome-stroke)] pl-3">
             <button
-              onClick={() => setShowBatchArt(true)}
+              onClick={() => openBatchArt(zoneId)}
               className="h-6 rounded px-2 text-xs text-stellar-blue transition-colors hover:bg-stellar-blue/10 max-[1100px]:h-9"
               title="Generate art for all entities"
               aria-label="Generate art for all entities"
@@ -1139,15 +1139,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               </div>
             )}
 
-            {/* Batch art generator */}
-            {showBatchArt && zoneState && (
-              <BatchArtGenerator
-                zoneId={zoneId}
-                world={zoneState.data}
-                onWorldChange={applyWorldChange}
-                onClose={() => setShowBatchArt(false)}
-              />
-            )}
+            {/* Batch art generator is hosted globally (BatchArtOverlay in AppShell)
+                so the job survives closing the dialog and navigating zones. */}
 
             {/* Duplicate zone */}
             {showDuplicate && (

@@ -14,6 +14,7 @@ import { Toast } from "./ui/Toast";
 import { FloatingSaveButton } from "./ui/FloatingSaveButton";
 import { CosmicBackdrop } from "./ui/CosmicBackdrop";
 import { ValidationPanel } from "./ValidationPanel";
+import { BatchArtOverlay } from "./zone/BatchArtGenerator";
 import { loadGettingStarted, reopenGettingStarted } from "@/lib/gettingStartedPersistence";
 
 const ShortcutsHelp = lazy(() => import("./ui/ShortcutsHelp").then((m) => ({ default: m.ShortcutsHelp })));
@@ -130,6 +131,7 @@ export function AppShell({ onNewProject }: AppShellProps) {
       <Toast />
       <FloatingSaveButton />
       <ValidationPanel />
+      <BatchArtOverlay />
     </div>
   );
 }

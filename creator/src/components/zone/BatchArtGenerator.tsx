@@ -1,103 +1,110 @@
-import { useState, useCallback, useRef, useMemo } from "react";
 import { AI_ENABLED } from "@/lib/featureFlags";
-import type { WorldFile } from "@/types/world";
 import { ART_STYLE_LABELS } from "@/lib/arcanumPrompts";
 import { useAssetStore } from "@/stores/assetStore";
 import { useVibeStore } from "@/stores/vibeStore";
-import { buildAudioMetaIndex } from "@/lib/audioLibrary";
+import { useBatchArtStore } from "@/stores/batchArtStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { ActionButton } from "@/components/ui/FormWidgets";
-import {
-  collectTargets,
-  runBatchArtGeneration,
-} from "@/lib/batchArt";
 
-interface BatchArtGeneratorProps {
-  zoneId: string;
-  world: WorldFile;
-  onWorldChange: (world: WorldFile) => void;
-  onClose: () => void;
+/**
+ * Global host for the batch art generator. Renders the full dialog when the
+ * panel is open, or a compact progress pill when a job runs in the background.
+ * Mounted once at the app shell so the job survives closing the dialog and
+ * navigating between zones.
+ */
+export function BatchArtOverlay() {
+  const job = useBatchArtStore((s) => s.job);
+  const panelOpen = useBatchArtStore((s) => s.panelOpen);
+
+  if (!AI_ENABLED || !job) return null;
+  if (panelOpen) return <BatchArtPanel />;
+  if (job.running) return <BatchArtPill />;
+  return null;
 }
 
-export function BatchArtGenerator({
-  zoneId,
-  world,
-  onWorldChange,
-  onClose,
-}: BatchArtGeneratorProps) {
+function BatchArtPill() {
+  const job = useBatchArtStore((s) => s.job);
+  const showPanel = useBatchArtStore((s) => s.showPanel);
+  const abort = useBatchArtStore((s) => s.abort);
+  if (!job) return null;
+
+  const checked = job.targets.filter((t) => t.checked).length;
+  const done = job.targets.filter((t) => t.status === "done").length;
+  const errors = job.targets.filter((t) => t.status === "error").length;
+  const pct = job.bgRemoval
+    ? job.bgRemoval.total > 0
+      ? (job.bgRemoval.done / job.bgRemoval.total) * 100
+      : 0
+    : checked > 0
+      ? ((done + errors) / checked) * 100
+      : 0;
+
+  return (
+    <div className="pointer-events-none fixed bottom-6 left-6 z-40 flex justify-start">
+      <div className="pointer-events-auto w-72 rounded-2xl border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] p-3 shadow-lg backdrop-blur">
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 shrink-0 rounded-full border border-accent border-t-transparent animate-spin" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-2xs uppercase tracking-wide text-text-muted">
+              Batch Art &middot; {job.zoneId}
+            </p>
+            <p className="truncate text-xs text-text-secondary">
+              {job.bgRemoval
+                ? `Removing backgrounds: ${job.bgRemoval.done} of ${job.bgRemoval.total}`
+                : `${done + errors} of ${checked} generated`}
+            </p>
+          </div>
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-bg-primary">
+          <div
+            className="h-full rounded-full bg-accent transition-[width]"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="mt-2 flex justify-end gap-2">
+          <ActionButton onClick={showPanel} variant="ghost" size="sm" className="min-h-8 px-3">
+            View
+          </ActionButton>
+          <ActionButton onClick={abort} variant="danger" size="sm" className="min-h-8 px-3">
+            Abort
+          </ActionButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BatchArtPanel() {
+  const job = useBatchArtStore((s) => s.job)!;
   const artStyle = useAssetStore((s) => s.artStyle);
   const settings = useAssetStore((s) => s.settings);
-  const assets = useAssetStore((s) => s.assets);
-  const vibe = useVibeStore((s) => s.vibes.get(zoneId) ?? "");
-  const audioMeta = useMemo(() => buildAudioMetaIndex(assets), [assets]);
-  const [targets, setTargets] = useState(() => collectTargets(world, audioMeta));
-  const [running, setRunning] = useState(false);
-  const [bgRemoval, setBgRemoval] = useState<{ done: number; total: number } | null>(null);
-  const [concurrency, setConcurrency] = useState(settings?.batch_concurrency ?? 5);
-  const abortRef = useRef(false);
-  const trapRef = useFocusTrap<HTMLDivElement>(running ? undefined : onClose);
+  const vibe = useVibeStore((s) => s.vibes.get(job.zoneId) ?? "");
 
+  const closePanel = useBatchArtStore((s) => s.closePanel);
+  const dismiss = useBatchArtStore((s) => s.dismiss);
+  const toggleTarget = useBatchArtStore((s) => s.toggleTarget);
+  const selectAll = useBatchArtStore((s) => s.selectAll);
+  const selectNone = useBatchArtStore((s) => s.selectNone);
+  const selectMissing = useBatchArtStore((s) => s.selectMissing);
+  const setConcurrency = useBatchArtStore((s) => s.setConcurrency);
+  const start = useBatchArtStore((s) => s.start);
+  const abort = useBatchArtStore((s) => s.abort);
+
+  const { targets, running, bgRemoval, concurrency, zoneId } = job;
   const checkedTargets = targets.filter((t) => t.checked);
   const missingTargets = targets.filter((t) => !t.hasExisting);
   const doneCount = targets.filter((t) => t.status === "done").length;
   const errorCount = targets.filter((t) => t.status === "error").length;
   const imageProvider = settings?.image_provider ?? "deepinfra";
 
-  const acceptAsset = useAssetStore((s) => s.acceptAsset);
-  const loadAssets = useAssetStore((s) => s.loadAssets);
-
-  const toggleTarget = (idx: number) => {
-    setTargets((prev) => prev.map((t, i) => (i === idx ? { ...t, checked: !t.checked } : t)));
-  };
-
-  const selectAll = () => setTargets((prev) => prev.map((t) => ({ ...t, checked: true })));
-  const selectNone = () => setTargets((prev) => prev.map((t) => ({ ...t, checked: false })));
-  const selectMissing = () => setTargets((prev) => prev.map((t) => ({ ...t, checked: !t.hasExisting })));
-
-  const handleRun = useCallback(async () => {
-    setRunning(true);
-    abortRef.current = false;
-
-    setBgRemoval(null);
-    try {
-      await runBatchArtGeneration(
-        targets,
-        world,
-        zoneId,
-        artStyle,
-        vibe,
-        imageProvider,
-        settings?.image_model,
-        concurrency,
-        abortRef,
-        {
-          onTargetUpdate: (idx, update) => {
-            setTargets((prev) =>
-              prev.map((t, i) => (i === idx ? { ...t, ...update } : t)),
-            );
-          },
-          onWorldUpdate: onWorldChange,
-          onBgRemovalProgress: (done, total) => setBgRemoval({ done, total }),
-          // reload=false: skip the per-image manifest reload (O(n²) on big
-          // zones — it OOMs the WebView). The whole batch refreshes once below.
-          acceptAsset: (image, assetType, enhancedPrompt, context, variantGroup, isActive) =>
-            acceptAsset(image, assetType, enhancedPrompt, context, variantGroup, isActive, false),
-        },
-        settings?.auto_remove_bg,
-      );
-    } finally {
-      await loadAssets();
-      setBgRemoval(null);
-      setRunning(false);
-    }
-  }, [targets, world, onWorldChange, artStyle, vibe, imageProvider, concurrency, zoneId, acceptAsset, loadAssets, settings]);
-
-  if (!AI_ENABLED) return null;
+  // Escape backgrounds a running job; otherwise it discards setup / closes results.
+  const trapRef = useFocusTrap<HTMLDivElement>(running ? closePanel : dismiss);
+  const onOverlayClick = running ? closePanel : dismiss;
 
   if (targets.length === 0) {
     return (
-      <div className="dialog-overlay">
-        <div className="dialog-shell w-full max-w-md">
+      <div className="dialog-overlay" onClick={dismiss}>
+        <div className="dialog-shell w-full max-w-md" onClick={(e) => e.stopPropagation()}>
           <div className="dialog-header">
             <h2 className="dialog-title">Batch Art Generation</h2>
           </div>
@@ -107,7 +114,7 @@ export function BatchArtGenerator({
             </p>
           </div>
           <div className="dialog-footer">
-            <ActionButton onClick={onClose} variant="ghost" size="sm">
+            <ActionButton onClick={dismiss} variant="ghost" size="sm">
               Close
             </ActionButton>
           </div>
@@ -116,8 +123,10 @@ export function BatchArtGenerator({
     );
   }
 
+  const showSetup = !running && doneCount === 0;
+
   return (
-    <div className="dialog-overlay" onClick={running ? undefined : onClose}>
+    <div className="dialog-overlay" onClick={onOverlayClick}>
       <div
         ref={trapRef}
         role="dialog"
@@ -139,7 +148,7 @@ export function BatchArtGenerator({
             <span className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1 text-2xs text-text-secondary">
               {checkedTargets.length} of {targets.length} selected
             </span>
-            {!running && doneCount === 0 && (
+            {showSetup && (
               <div className="flex flex-wrap justify-end gap-2">
                 <ActionButton onClick={selectAll} variant="ghost" size="sm" className="min-h-9 px-3">
                   All
@@ -157,7 +166,7 @@ export function BatchArtGenerator({
           </div>
         </div>
 
-        {!running && doneCount === 0 && (
+        {showSetup && (
           <div className="border-b border-border-default px-5 py-3">
             <div className="rounded-2xl border border-border-default/60 bg-bg-primary/60 px-3 py-2 text-xs text-text-secondary">
               Style system: {ART_STYLE_LABELS[artStyle]}
@@ -202,7 +211,7 @@ export function BatchArtGenerator({
                 className="h-full rounded-full bg-accent transition-[width]"
                 style={{ width: `${bgRemoval
                   ? (bgRemoval.total > 0 ? (bgRemoval.done / bgRemoval.total) * 100 : 0)
-                  : ((doneCount + errorCount) / checkedTargets.length) * 100}%` }}
+                  : checkedTargets.length > 0 ? ((doneCount + errorCount) / checkedTargets.length) * 100 : 0}%` }}
               />
             </div>
           </div>
@@ -215,7 +224,7 @@ export function BatchArtGenerator({
                 key={`${target.kind}:${target.id}`}
                 className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-bg-elevated"
               >
-                {!running && doneCount === 0 && (
+                {showSetup && (
                   <input
                     type="checkbox"
                     checked={target.checked}
@@ -255,21 +264,22 @@ export function BatchArtGenerator({
 
         <div className="flex justify-end gap-2 border-t border-border-default px-5 py-3">
           {running ? (
-            <ActionButton
-              onClick={() => { abortRef.current = true; }}
-              variant="danger"
-              size="sm"
-            >
-              Abort
-            </ActionButton>
+            <>
+              <ActionButton onClick={closePanel} variant="ghost" size="sm">
+                Run in background
+              </ActionButton>
+              <ActionButton onClick={abort} variant="danger" size="sm">
+                Abort
+              </ActionButton>
+            </>
           ) : (
             <>
-              <ActionButton onClick={onClose} variant="ghost" size="sm">
+              <ActionButton onClick={dismiss} variant="ghost" size="sm">
                 {doneCount > 0 ? "Done" : "Cancel"}
               </ActionButton>
               {doneCount === 0 && (
                 <ActionButton
-                  onClick={handleRun}
+                  onClick={start}
                   disabled={checkedTargets.length === 0}
                   variant="primary"
                   size="sm"

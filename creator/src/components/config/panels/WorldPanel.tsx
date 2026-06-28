@@ -1,5 +1,5 @@
 import type { ConfigPanelProps, AppConfig } from "./types";
-import type { DiminishingXpConfig, DiminishingXpThreshold } from "@/types/config";
+import type { DiminishingXpConfig, DiminishingXpThreshold, UnderLevelBonusConfig } from "@/types/config";
 import { NumberInput, TextInput, IconButton, ActionButton } from "@/components/ui/FormWidgets";
 
 import { OrnateCard } from "@/components/ui/OrnateCard";
@@ -199,9 +199,21 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           />
         </OrnateCard>
 
-        {/* 6 — Level-Up Rewards */}
+        {/* 6 — Under-Level Bonus */}
         <OrnateCard
           number={6}
+          title="Under-Level Bonus"
+          description="Award extra XP when a player kills a mob above their own level, scaling with the level gap up to a cap."
+        >
+          <UnderLevelBonusEditor
+            value={p.xp.underLevelBonus}
+            onChange={(next) => patchXp({ underLevelBonus: next })}
+          />
+        </OrnateCard>
+
+        {/* 7 — Level-Up Rewards */}
+        <OrnateCard
+          number={7}
           title="Level-Up Rewards"
           description="Stat growth and rewards players receive on level up."
         >
@@ -255,9 +267,9 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           </div>
         </OrnateCard>
 
-        {/* 7 — Combat */}
+        {/* 8 — Combat */}
         <OrnateCard
-          number={7}
+          number={8}
           title="Combat"
           description="Combat pacing and on-screen feedback. Each tick processes one round of attacks for all active fights."
         >
@@ -301,9 +313,9 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           </div>
         </OrnateCard>
 
-        {/* 8 — Recall */}
+        {/* 9 — Recall */}
         <OrnateCard
-          number={8}
+          number={9}
           title="Recall"
           description="Controls the recall ability cooldown."
         >
@@ -320,9 +332,9 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           </IconField>
         </OrnateCard>
 
-        {/* 9 — Recall Messages */}
+        {/* 10 — Recall Messages */}
         <OrnateCard
-          number={9}
+          number={10}
           title="Recall Messages"
           description="Customize the messages players see during recall. Use {seconds} for the cooldown placeholder."
         >
@@ -380,9 +392,9 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           </div>
         </OrnateCard>
 
-        {/* 10 — Sanctum & Death */}
+        {/* 11 — Sanctum & Death */}
         <OrnateCard
-          number={10}
+          number={11}
           title="Sanctum & Death"
           description="Where players return after death. HP/Mana values are fractions of max (0–1.0). XP penalty is a fraction of total XP lost (0–0.5)."
         >
@@ -434,9 +446,9 @@ export function WorldPanel({ config, onChange }: ConfigPanelProps) {
           </div>
         </OrnateCard>
 
-        {/* 11 — Sanctum Messages */}
+        {/* 12 — Sanctum Messages */}
         <OrnateCard
-          number={11}
+          number={12}
           title="Sanctum Messages"
           description="Customize messages related to the sanctum, departure, and edge cases."
         >
@@ -605,6 +617,67 @@ function DiminishingReturnsEditor({
           <ActionButton variant="ghost" size="sm" onClick={addThreshold}>
             Add Threshold
           </ActionButton>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UnderLevelBonusEditor({
+  value,
+  onChange,
+}: {
+  value: UnderLevelBonusConfig | undefined;
+  onChange: (next: UnderLevelBonusConfig | undefined) => void;
+}) {
+  const enabled = !!value?.enabled;
+  const bonusPerLevel = value?.bonusPerLevel ?? 0.15;
+  const maxBonus = value?.maxBonus ?? 0.5;
+
+  const setEnabled = (on: boolean) => {
+    if (!on && !value) return;
+    onChange({ enabled: on, bonusPerLevel, maxBonus });
+  };
+
+  const patch = (next: Partial<UnderLevelBonusConfig>) => {
+    onChange({ enabled, bonusPerLevel, maxBonus, ...next });
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Toggle
+        checked={enabled}
+        onChange={setEnabled}
+        label="Enable under-level bonus"
+      />
+      {enabled && (
+        <div className="grid grid-cols-2 gap-2">
+          <IconField
+            label="Bonus / Level"
+            layout="column"
+            hint="0.15 = +15% per level above you"
+          >
+            <NumberInput
+              value={bonusPerLevel}
+              onCommit={(v) => patch({ bonusPerLevel: v ?? 0.15 })}
+              min={0}
+              step={0.05}
+              dense
+            />
+          </IconField>
+          <IconField
+            label="Max Bonus"
+            layout="column"
+            hint="0.5 = capped at +50%"
+          >
+            <NumberInput
+              value={maxBonus}
+              onCommit={(v) => patch({ maxBonus: v ?? 0.5 })}
+              min={0}
+              step={0.05}
+              dense
+            />
+          </IconField>
         </div>
       )}
     </div>

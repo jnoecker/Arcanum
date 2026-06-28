@@ -393,6 +393,14 @@ export interface DiminishingXpConfig {
   thresholds: DiminishingXpThreshold[];
 }
 
+export interface UnderLevelBonusConfig {
+  enabled: boolean;
+  /** Extra fraction of kill XP per level the mob is above the player (0.15 = +15%/level). */
+  bonusPerLevel: number;
+  /** Maximum total bonus fraction, regardless of how far above the player the mob is (0.5 = +50%). */
+  maxBonus: number;
+}
+
 export interface XpCurveConfig {
   baseXp: number;
   exponent: number;
@@ -401,6 +409,8 @@ export interface XpCurveConfig {
   defaultKillXp: number;
   /** Optional diminishing-returns curve when a player over-levels a mob. */
   diminishing?: DiminishingXpConfig;
+  /** Optional bonus XP when a player kills a mob above their own level. */
+  underLevelBonus?: UnderLevelBonusConfig;
 }
 
 export interface LevelRewardsConfig {

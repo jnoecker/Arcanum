@@ -574,6 +574,16 @@ function parseDiminishingXp(raw: unknown): AppConfig["progression"]["xp"]["dimin
   };
 }
 
+function parseUnderLevelBonus(raw: unknown): AppConfig["progression"]["xp"]["underLevelBonus"] {
+  if (raw == null) return undefined;
+  const s = (raw ?? {}) as Record<string, unknown>;
+  return {
+    enabled: asBool(s.enabled, false),
+    bonusPerLevel: asNumber(s.bonusPerLevel, 0.15),
+    maxBonus: asNumber(s.maxBonus, 0.5),
+  };
+}
+
 function parseProgressionConfig(raw: unknown): AppConfig["progression"] {
   const s = (raw ?? {}) as Record<string, unknown>;
   const xp = (s.xp ?? {}) as Record<string, unknown>;
@@ -587,6 +597,7 @@ function parseProgressionConfig(raw: unknown): AppConfig["progression"] {
       multiplier: asNumber(xp.multiplier, 1.0),
       defaultKillXp: asNumber(xp.defaultKillXp, 50),
       diminishing: parseDiminishingXp(xp.diminishing),
+      underLevelBonus: parseUnderLevelBonus(xp.underLevelBonus),
     },
     rewards: {
       hpScalingRate: asNumber(rewards.hpScalingRate, 1.1),

@@ -203,6 +203,11 @@ export const CASUAL_PRESET: TuningPreset = {
             { levelsBelow: 10, multiplier: 0.1 },
           ],
         },
+        underLevelBonus: {
+          enabled: true,
+          bonusPerLevel: 0.1,
+          maxBonus: 0.4,
+        },
       },
       rewards: {
         hpScalingRate: 1.3,
@@ -548,6 +553,11 @@ export const BALANCED_PRESET: TuningPreset = {
             { levelsBelow: 10, multiplier: 0.05 },
           ],
         },
+        underLevelBonus: {
+          enabled: true,
+          bonusPerLevel: 0.15,
+          maxBonus: 0.5,
+        },
       },
       rewards: {
         hpScalingRate: 1.3,
@@ -892,6 +902,11 @@ export const HARDCORE_PRESET: TuningPreset = {
             { levelsBelow: 10, multiplier: 0.0 },
           ],
         },
+        underLevelBonus: {
+          enabled: true,
+          bonusPerLevel: 0.25,
+          maxBonus: 1.0,
+        },
       },
       rewards: {
         hpScalingRate: 1.3,
@@ -1101,6 +1116,11 @@ export const SOLO_STORY_PRESET: TuningPreset = {
             { levelsBelow: 12, multiplier: 0.0 },
           ],
         },
+        underLevelBonus: {
+          enabled: true,
+          bonusPerLevel: 0.2,
+          maxBonus: 0.75,
+        },
       },
       rewards: { hpScalingRate: 1.097, manaScalingRate: 1.094, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 160, baseMana: 150 },
       quests: {
@@ -1183,6 +1203,11 @@ export const PVP_ARENA_PRESET: TuningPreset = {
             { levelsBelow: 8, multiplier: 0.0 },
           ],
         },
+        underLevelBonus: {
+          enabled: true,
+          bonusPerLevel: 0.15,
+          maxBonus: 0.5,
+        },
       },
       rewards: { hpScalingRate: 1.098, manaScalingRate: 1.095, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 135, baseMana: 125 },
       quests: {
@@ -1264,6 +1289,11 @@ export const LORE_EXPLORER_PRESET: TuningPreset = {
             { levelsBelow: 5, multiplier: 0.5 },
             { levelsBelow: 10, multiplier: 0.0 },
           ],
+        },
+        underLevelBonus: {
+          enabled: true,
+          bonusPerLevel: 0.15,
+          maxBonus: 0.5,
         },
       },
       rewards: { hpScalingRate: 1.097, manaScalingRate: 1.091, fullHealOnLevelUp: true, fullManaOnLevelUp: true, baseHp: 200, baseMana: 200 },

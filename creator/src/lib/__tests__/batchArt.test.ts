@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import type { WorldFile } from "@/types/world";
 import type { AudioTrackMeta } from "@/lib/audioLibrary";
-import { collectTargets, getTargetPrompt, getTargetContext, assetTypeForKind, applyImageToWorld } from "@/lib/batchArt";
+import type { ReferenceSubject } from "@/types/reference";
+import { collectTargets, getTargetPrompt, getTargetContext, assetTypeForKind, applyImageToWorld, buildBatchUserPrompt } from "@/lib/batchArt";
+import { buildResolver } from "@/lib/referenceTokens";
 
 function makeWorld(rooms: WorldFile["rooms"]): WorldFile {
   return { zone: "parlor_zone", startRoom: "parlor_a", rooms };
@@ -93,5 +95,53 @@ describe("applyImageToWorld", () => {
     const world = makeWorld({ parlor_a: { title: "Parlor A", description: "" } });
     expect(applyImageToWorld(world, "room", "ghost", "x.png")).toBe(world);
     expect(applyImageToWorld(world, "mob", "absent", "x.png")).toBe(world);
+  });
+});
+
+describe("buildBatchUserPrompt — reference expansion", () => {
+  const subject: ReferenceSubject = {
+    id: "s1",
+    token: "aineroia",
+    name: "Aineroia",
+    category: "character",
+    appearance: "a silver-haired sentinel in obsidian plate",
+  };
+  const resolver = buildResolver([subject]);
+
+  it("expands @tokens and appends the canonical appearance block", () => {
+    const prompt = buildBatchUserPrompt(
+      'Mob "Guard" (id: guard)\nDescription: a loyal servant of @aineroia',
+      "A loyal servant of @aineroia, painterly.",
+      resolver,
+    );
+    // Sigils stripped to the display name in both context and base prompt.
+    expect(prompt).toContain("a loyal servant of Aineroia");
+    expect(prompt).not.toContain("@aineroia");
+    // Canonical appearance injected once, deduped across context + base.
+    expect(prompt).toContain("Canonical appearance references");
+    expect(prompt).toContain("Aineroia: a silver-haired sentinel in obsidian plate");
+    expect(prompt.match(/silver-haired sentinel/g)).toHaveLength(1);
+  });
+
+  it("matches the @[Display Name] bracket form", () => {
+    const prompt = buildBatchUserPrompt("", "A portrait of @[Aineroia].", resolver);
+    expect(prompt).toContain("A portrait of Aineroia.");
+    expect(prompt).toContain("a silver-haired sentinel in obsidian plate");
+  });
+
+  it("leaves unregistered tokens' sigils out and adds no block", () => {
+    const prompt = buildBatchUserPrompt("Description: near @nowhere", "A scene near @nowhere.", resolver);
+    expect(prompt).toContain("near nowhere");
+    expect(prompt).not.toContain("Canonical appearance references");
+  });
+
+  it("reproduces the prior raw prompt when the resolver is empty", () => {
+    const empty = buildResolver([]);
+    const context = 'Mob "Guard" (id: guard)\nDescription: a loyal servant';
+    const base = "A loyal servant, painterly.";
+    expect(buildBatchUserPrompt(context, base, empty)).toBe(
+      `Generate an image prompt for this entity:\n${context}\n\nReference style template (adapt but prioritize the entity description above):\n${base}`,
+    );
+    expect(buildBatchUserPrompt("", base, empty)).toBe(base);
   });
 });

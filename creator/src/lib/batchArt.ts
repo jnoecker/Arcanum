@@ -24,6 +24,9 @@ import { ENTITY_DIMENSIONS, requestsTransparentBackground, resolveImageModel, mo
 import { generateAssetImage } from "@/lib/imageGen";
 import { removeBgFromFileAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import { AI_ENABLED } from "@/lib/featureFlags";
+import { applyReferences, buildReferenceBlock, expandReferences } from "@/lib/referenceTokens";
+import type { ReferenceSubject } from "@/types/reference";
+import { useReferenceStore } from "@/stores/referenceStore";
 
 export function assetTypeForKind(kind: string): string {
   if (kind === "room") return "background";
@@ -291,6 +294,42 @@ export function getTargetContext(
   return entityContext(kind, id, entity);
 }
 
+/**
+ * Assemble the LLM enhancement user-prompt for one batch target. Expands any
+ * `@token` references in the entity context and base prompt to their canonical
+ * subject, and appends a canonical-appearance block so referenced subjects
+ * render consistently — parity with the single-entity path (`EntityArtGenerator`).
+ * With an empty resolver this reproduces the prior raw-context prompt verbatim.
+ */
+export function buildBatchUserPrompt(
+  context: string,
+  basePrompt: string,
+  resolver: Map<string, ReferenceSubject>,
+): string {
+  const used: ReferenceSubject[] = [];
+  const collect = (subs: ReferenceSubject[]) => {
+    for (const s of subs) if (!used.some((u) => u.id === s.id)) used.push(s);
+  };
+
+  const parts: string[] = [];
+  if (context) {
+    const ctx = expandReferences(context, resolver);
+    collect(ctx.used);
+    const base = expandReferences(basePrompt, resolver);
+    collect(base.used);
+    parts.push(`Generate an image prompt for this entity:\n${ctx.text}`);
+    parts.push(`\nReference style template (adapt but prioritize the entity description above):\n${base.text}`);
+  } else {
+    const base = expandReferences(basePrompt, resolver);
+    collect(base.used);
+    parts.push(base.text);
+  }
+
+  const block = buildReferenceBlock(used);
+  if (block) parts.push(`\n${block}`);
+  return parts.join("\n");
+}
+
 export interface ArtGenerationCallbacks {
   onTargetUpdate: (idx: number, update: Partial<BatchTarget>) => void;
   /**
@@ -337,6 +376,7 @@ export async function runBatchArtGeneration(
   const model = resolveImageModel(imageProvider, configuredModel);
   const nativeTransparency = modelNativelyTransparent(imageProvider, model?.id);
   const styleSuffix = getStyleSuffix("worldbuilding");
+  const resolver = useReferenceStore.getState().resolver();
 
   const worker = async () => {
     while (queue.length > 0 && !abortRef.current) {
@@ -352,18 +392,18 @@ export async function runBatchArtGeneration(
         const context = getTargetContext(target, world);
         const batchAssetType = assetTypeForKind(target.kind);
 
-        let finalPrompt = basePrompt;
+        // Reference-expanded base prompt is the fallback when LLM enhancement
+        // is unavailable or fails — raw `@tokens` must never reach the model.
+        let finalPrompt = applyReferences(basePrompt, resolver).prompt;
         try {
           const systemPrompt = getEnhanceSystemPrompt(artStyle, batchAssetType, "worldbuilding", nativeTransparency);
-          const userPrompt = context
-            ? `Generate an image prompt for this entity:\n${context}\n\nReference style template (adapt but prioritize the entity description above):\n${basePrompt}`
-            : basePrompt;
+          const userPrompt = buildBatchUserPrompt(context, basePrompt, resolver);
           finalPrompt = await invoke<string>("llm_complete", {
             systemPrompt,
             userPrompt,
           });
         } catch {
-          // Fall back to base prompt
+          // Fall back to the reference-expanded base prompt
         }
 
         // Append style suffix to ensure consistent aesthetic (matches individual path)

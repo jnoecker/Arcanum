@@ -13,17 +13,19 @@ import {
   musicBoxKeepsakeContext,
 } from "@/lib/entityPrompts";
 import type { AudioTrackMeta } from "@/lib/audioLibrary";
+import { splitLyricsLines } from "@/lib/audioLibrary";
 import {
   getNegativePrompt,
   getEnhanceSystemPrompt,
   getStyleSuffix,
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
-import type { GeneratedImage } from "@/types/assets";
+import type { GeneratedImage, AssetEntry, AssetContext } from "@/types/assets";
 import { ENTITY_DIMENSIONS, requestsTransparentBackground, resolveImageModel, modelNativelyTransparent } from "@/types/assets";
 import { generateAssetImage } from "@/lib/imageGen";
 import { removeBgFromFileAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import { AI_ENABLED } from "@/lib/featureFlags";
+import { contentHash } from "@/lib/contentHash";
 import { applyReferences, buildReferenceBlock, expandReferences } from "@/lib/referenceTokens";
 import type { ReferenceSubject } from "@/types/reference";
 import { useReferenceStore } from "@/stores/referenceStore";
@@ -48,15 +50,60 @@ export interface BatchTarget {
   hasExisting: boolean;
   status: "pending" | "generating" | "done" | "error";
   error?: string;
+  /** True when the entity's render context changed since its art was last
+   *  generated (only ever set for targets that already have art and whose last
+   *  render stamped a source fingerprint — see {@link collectTargets}). */
+  descriptionChanged?: boolean;
   /** For `musicBoxKeepsake` targets: the song the lyric-sheet commemorates,
    *  resolved from the audio library at collect time (the prompt needs it, and
    *  an in-editor music box is a bare `{ file }` until save-time enrichment). */
-  song?: { title: string; artist?: string };
+  song?: { title: string; artist?: string; lyrics?: string[] };
+}
+
+/** The manifest context an asset is filed under for a given batch target. */
+export function batchAssetContext(kind: string, id: string, zoneId: string): AssetContext {
+  // Keepsakes share the per-room music-box editor's manifest identity so
+  // variants from either authoring path land in the same group.
+  if (kind === "musicBoxKeepsake") {
+    return { zone: zoneId, entity_type: "item", entity_id: `musicbox:${id}` };
+  }
+  return { zone: zoneId, entity_type: kind, entity_id: id };
+}
+
+export function variantGroupForContext(ctx: AssetContext): string {
+  return `${ctx.entity_type}:${ctx.zone}:${ctx.entity_id}`;
+}
+
+/**
+ * Fingerprint of the render context for a target — what the art was generated
+ * from. Stamped on each accepted asset and compared at collect time to detect
+ * description changes. Matches the single-entity path, which hashes the same
+ * `entityContext` string it feeds the LLM.
+ */
+export function getTargetSourceHash(target: BatchTarget, world: WorldFile): string {
+  return contentHash(getTargetContext(target, world));
+}
+
+/**
+ * The source fingerprint of the most recent render in a variant group, or
+ * undefined if none was stamped. Reads across the whole group (not just the
+ * active asset) so background-removed variants — which inherit the group but
+ * carry no fingerprint of their own — don't mask the original render's hash.
+ */
+function latestSourceHash(assets: AssetEntry[], variantGroup: string): string | undefined {
+  let best: AssetEntry | undefined;
+  for (const a of assets) {
+    if (a.variant_group !== variantGroup || !a.source_hash) continue;
+    if (!best || a.created_at > best.created_at) best = a;
+  }
+  return best?.source_hash;
 }
 
 export function collectTargets(
   world: WorldFile,
   audioMeta?: Map<string, AudioTrackMeta>,
+  assets: AssetEntry[] = [],
+  zoneId: string = world.zone,
 ): BatchTarget[] {
   const targets: BatchTarget[] = [];
 
@@ -79,6 +126,9 @@ export function collectTargets(
     const title = meta?.name ?? box.title ?? "";
     const songLabel = title.trim() || box.file;
     const hasImage = !!box.image;
+    // Mirror RoomPanel's keepsake context so the source fingerprint matches
+    // whichever path last rendered it.
+    const lyrics = meta?.lyrics ? splitLyricsLines(meta.lyrics) : box.lyrics;
     targets.push({
       kind: "musicBoxKeepsake",
       id,
@@ -86,7 +136,7 @@ export function collectTargets(
       checked: !hasImage,
       hasExisting: hasImage,
       status: "pending",
-      song: { title, artist: meta?.artist ?? box.artist },
+      song: { title, artist: meta?.artist ?? box.artist, lyrics },
     });
   }
 
@@ -162,6 +212,21 @@ export function collectTargets(
           hasExisting: hasImage,
           status: "pending",
         });
+      }
+    }
+  }
+
+  // Flag targets whose render context drifted from their last stamped render.
+  // Only entities with existing art and a stamped fingerprint can be "changed";
+  // pre-feature art carries no fingerprint and is treated as up to date.
+  if (assets.length > 0) {
+    for (const t of targets) {
+      if (!t.hasExisting) continue;
+      const stored = latestSourceHash(assets, variantGroupForContext(batchAssetContext(t.kind, t.id, zoneId)));
+      if (!stored) continue;
+      if (stored !== getTargetSourceHash(t, world)) {
+        t.descriptionChanged = true;
+        t.checked = true;
       }
     }
   }
@@ -277,7 +342,7 @@ export function getTargetContext(
     return roomContext(id, world.rooms[id]!);
   }
   if (kind === "musicBoxKeepsake") {
-    return musicBoxKeepsakeContext(target.song?.title ?? "", target.song?.artist);
+    return musicBoxKeepsakeContext(target.song?.title ?? "", target.song?.artist, target.song?.lyrics);
   }
   if (kind === "dungeon" && world.dungeon) {
     return dungeonContext(world.dungeon, world.zone);
@@ -347,6 +412,7 @@ export interface ArtGenerationCallbacks {
     context: { zone: string; entity_type: string; entity_id: string },
     variantGroup: string,
     isActive: boolean,
+    sourceHash: string,
   ) => Promise<void>;
 }
 
@@ -433,14 +499,8 @@ export async function runBatchArtGeneration(
 
         callbacks.onTargetUpdate(idx, { status: "done" });
 
-        // Keepsakes share the per-room music-box editor's manifest identity
-        // (entity_type "item", entity_id "musicbox:<roomId>") so variants from
-        // either authoring path land in the same group.
-        const batchContext =
-          target.kind === "musicBoxKeepsake"
-            ? { zone: zoneId, entity_type: "item", entity_id: `musicbox:${target.id}` }
-            : { zone: zoneId, entity_type: target.kind, entity_id: target.id };
-        const variantGroup = `${batchContext.entity_type}:${zoneId}:${batchContext.entity_id}`;
+        const batchContext = batchAssetContext(target.kind, target.id, zoneId);
+        const variantGroup = variantGroupForContext(batchContext);
         await callbacks
           .acceptAsset(
             image,
@@ -449,6 +509,7 @@ export async function runBatchArtGeneration(
             batchContext,
             variantGroup,
             true,
+            getTargetSourceHash(target, world),
           )
           .catch(() => {});
 

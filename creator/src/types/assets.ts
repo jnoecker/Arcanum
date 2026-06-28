@@ -31,6 +31,9 @@ export interface AssetEntry {
   artist: string;
   lyrics: string;
   duration_seconds: number;
+  /** Fingerprint of the entity render context this asset was generated from.
+   *  Empty/absent for art rendered before change-detection was introduced. */
+  source_hash?: string;
 }
 
 export interface AssetContext {

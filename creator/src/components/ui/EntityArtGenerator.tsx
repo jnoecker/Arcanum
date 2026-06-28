@@ -15,6 +15,7 @@ import { generateAssetImageWithRetry } from "@/lib/imageGen";
 import { useReferenceStore } from "@/stores/referenceStore";
 import { ReferenceMentionField } from "@/components/ui/ReferenceMentionField";
 import { applyReferences, buildReferenceBlock, buildResolver, expandReferences } from "@/lib/referenceTokens";
+import { contentHash } from "@/lib/contentHash";
 import type { ReferenceSubject } from "@/types/reference";
 import { AssetPickerModal } from "./AssetPickerModal";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
@@ -75,12 +76,13 @@ function autoAcceptImage(
   assetType: string | undefined,
   context: AssetContext | undefined,
   variantGroup: string,
+  sourceHash: string | undefined,
 ) {
   const fileName = img.file_path.split(/[\\/]/).pop() ?? img.hash;
   onAccept(fileName);
   if (assetType) {
     useAssetStore.getState().acceptAsset(
-      img, assetType, prompt ?? undefined, context, variantGroup, true,
+      img, assetType, prompt ?? undefined, context, variantGroup, true, true, sourceHash,
     ).catch(() => {});
   }
 }
@@ -170,6 +172,10 @@ export function EntityArtGenerator({
   // leaving these props stale in the click handler's closure.
   const entityContextRef = useRef(entityContext);
   entityContextRef.current = entityContext;
+  // Fingerprint the render context so batch art can later detect description
+  // changes against this asset's last render. Empty context → no fingerprint.
+  const sourceHashRef = useRef<string | undefined>(undefined);
+  sourceHashRef.current = entityContext ? contentHash(entityContext) : undefined;
   const framingHintRef = useRef(framingHint);
   framingHintRef.current = framingHint;
   const getPromptRef = useRef(getPrompt);
@@ -182,7 +188,7 @@ export function EntityArtGenerator({
       mountedRef.current = false;
       const img = pendingResultRef.current;
       if (!img) return;
-      autoAcceptImage(img, pendingPromptRef.current, onAcceptRef.current, assetTypeRef.current, contextRef.current, variantGroupRef.current);
+      autoAcceptImage(img, pendingPromptRef.current, onAcceptRef.current, assetTypeRef.current, contextRef.current, variantGroupRef.current, sourceHashRef.current);
     };
   }, []);
 
@@ -360,7 +366,7 @@ export function EntityArtGenerator({
         negativePrompt: getNegativePrompt(assetType),
       });
       if (!mountedRef.current) {
-        autoAcceptImage(image, finalPrompt, onAcceptRef.current, assetTypeRef.current, contextRef.current, variantGroupRef.current);
+        autoAcceptImage(image, finalPrompt, onAcceptRef.current, assetTypeRef.current, contextRef.current, variantGroupRef.current, sourceHashRef.current);
         return;
       }
       pendingResultRef.current = image;
@@ -445,7 +451,7 @@ export function EntityArtGenerator({
     const savedDataUrl = result.data_url;
     onAccept(fileName);
     if (assetType) {
-      await acceptAsset(result, assetType, lastEnhancedPrompt ?? undefined, context, variantGroup, true).catch(() => {});
+      await acceptAsset(result, assetType, lastEnhancedPrompt ?? undefined, context, variantGroup, true, true, sourceHashRef.current).catch(() => {});
     }
     setStage("idle");
     setResult(null);

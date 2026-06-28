@@ -40,6 +40,8 @@ interface BatchArtStore {
   selectAll: () => void;
   selectNone: () => void;
   selectMissing: () => void;
+  /** Select only targets whose render context changed since their last render. */
+  selectChanged: () => void;
   setConcurrency: (n: number) => void;
 
   /** Kick off generation for the checked targets. Runs in the background. */
@@ -66,8 +68,9 @@ export const useBatchArtStore = create<BatchArtStore>((set, get) => ({
 
     const zone = useZoneStore.getState().zones.get(zoneId);
     if (!zone) return;
-    const audioMeta = buildAudioMetaIndex(useAssetStore.getState().assets);
-    const targets = collectTargets(zone.data, audioMeta);
+    const assets = useAssetStore.getState().assets;
+    const audioMeta = buildAudioMetaIndex(assets);
+    const targets = collectTargets(zone.data, audioMeta, assets, zoneId);
     const concurrency = useAssetStore.getState().settings?.batch_concurrency ?? 5;
 
     set({
@@ -117,6 +120,18 @@ export const useBatchArtStore = create<BatchArtStore>((set, get) => ({
             job: {
               ...s.job,
               targets: s.job.targets.map((t) => ({ ...t, checked: !t.hasExisting })),
+            },
+          }
+        : s,
+    ),
+
+  selectChanged: () =>
+    set((s) =>
+      s.job && !s.job.running
+        ? {
+            job: {
+              ...s.job,
+              targets: s.job.targets.map((t) => ({ ...t, checked: !!t.descriptionChanged })),
             },
           }
         : s,
@@ -177,7 +192,7 @@ export const useBatchArtStore = create<BatchArtStore>((set, get) => ({
           set((s) => (s.job ? { job: { ...s.job, bgRemoval: { done, total } } } : s)),
         // reload=false: skip the per-image manifest reload (O(n²) on big zones —
         // it OOMs the WebView). The whole batch refreshes once on completion.
-        acceptAsset: (image, assetType, enhancedPrompt, context, variantGroup, isActive) =>
+        acceptAsset: (image, assetType, enhancedPrompt, context, variantGroup, isActive, sourceHash) =>
           asset.acceptAsset(
             image,
             assetType,
@@ -186,6 +201,7 @@ export const useBatchArtStore = create<BatchArtStore>((set, get) => ({
             variantGroup,
             isActive,
             false,
+            sourceHash,
           ),
       },
       settings?.auto_remove_bg,

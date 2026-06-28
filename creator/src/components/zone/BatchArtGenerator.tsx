@@ -86,6 +86,7 @@ function BatchArtPanel() {
   const selectAll = useBatchArtStore((s) => s.selectAll);
   const selectNone = useBatchArtStore((s) => s.selectNone);
   const selectMissing = useBatchArtStore((s) => s.selectMissing);
+  const selectChanged = useBatchArtStore((s) => s.selectChanged);
   const setConcurrency = useBatchArtStore((s) => s.setConcurrency);
   const start = useBatchArtStore((s) => s.start);
   const abort = useBatchArtStore((s) => s.abort);
@@ -93,6 +94,7 @@ function BatchArtPanel() {
   const { targets, running, bgRemoval, concurrency, zoneId } = job;
   const checkedTargets = targets.filter((t) => t.checked);
   const missingTargets = targets.filter((t) => !t.hasExisting);
+  const changedTargets = targets.filter((t) => t.descriptionChanged);
   const doneCount = targets.filter((t) => t.status === "done").length;
   const errorCount = targets.filter((t) => t.status === "error").length;
   const imageProvider = settings?.image_provider ?? "deepinfra";
@@ -159,6 +161,17 @@ function BatchArtPanel() {
                 {missingTargets.length < targets.length && (
                   <ActionButton onClick={selectMissing} variant="ghost" size="sm" className="min-h-9 px-3">
                     Missing only
+                  </ActionButton>
+                )}
+                {changedTargets.length > 0 && (
+                  <ActionButton
+                    onClick={selectChanged}
+                    variant="ghost"
+                    size="sm"
+                    className="min-h-9 px-3"
+                    title="Select entities whose description changed since their art was last generated"
+                  >
+                    Changed only ({changedTargets.length})
                   </ActionButton>
                 )}
               </div>
@@ -249,8 +262,14 @@ function BatchArtPanel() {
                 <span className="min-w-0 flex-1 truncate text-text-secondary">
                   {target.label}
                 </span>
-                {target.hasExisting && target.status === "pending" && (
-                  <span className="text-2xs text-status-success">has art</span>
+                {target.descriptionChanged && target.status === "pending" ? (
+                  <span className="text-2xs text-warm" title="Description changed since last render">
+                    description changed
+                  </span>
+                ) : (
+                  target.hasExisting && target.status === "pending" && (
+                    <span className="text-2xs text-status-success">has art</span>
+                  )
                 )}
                 {target.error && (
                   <span className="truncate text-2xs text-status-error" title={target.error}>

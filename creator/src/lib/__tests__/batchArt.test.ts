@@ -2,11 +2,44 @@ import { describe, it, expect } from "vitest";
 import type { WorldFile } from "@/types/world";
 import type { AudioTrackMeta } from "@/lib/audioLibrary";
 import type { ReferenceSubject } from "@/types/reference";
-import { collectTargets, getTargetPrompt, getTargetContext, assetTypeForKind, applyImageToWorld, buildBatchUserPrompt } from "@/lib/batchArt";
+import type { AssetEntry } from "@/types/assets";
+import { collectTargets, getTargetPrompt, getTargetContext, getTargetSourceHash, assetTypeForKind, applyImageToWorld, buildBatchUserPrompt } from "@/lib/batchArt";
 import { buildResolver } from "@/lib/referenceTokens";
 
 function makeWorld(rooms: WorldFile["rooms"]): WorldFile {
   return { zone: "parlor_zone", startRoom: "parlor_a", rooms };
+}
+
+function mobAsset(variantGroup: string, sourceHash: string): AssetEntry {
+  return {
+    id: "a1",
+    hash: "h1",
+    prompt: "",
+    enhanced_prompt: "",
+    model: "flux",
+    asset_type: "mob",
+    context: { zone: "parlor_zone", entity_type: "mob", entity_id: "goblin" },
+    created_at: "2026-01-01T00:00:00Z",
+    file_name: "h1.png",
+    width: 1024,
+    height: 1024,
+    sync_status: "local",
+    variant_group: variantGroup,
+    is_active: true,
+    display_name: "",
+    description: "",
+    artist: "",
+    lyrics: "",
+    duration_seconds: 0,
+    source_hash: sourceHash,
+  };
+}
+
+function worldWithGoblin(description: string): WorldFile {
+  return {
+    ...makeWorld({ parlor_a: { title: "Parlor A", description: "" } }),
+    mobs: { goblin: { name: "Goblin", description, image: "mobs/goblin.png" } as WorldFile["mobs"][string] },
+  };
 }
 
 const meta: Map<string, AudioTrackMeta> = new Map([
@@ -143,5 +176,45 @@ describe("buildBatchUserPrompt — reference expansion", () => {
       `Generate an image prompt for this entity:\n${context}\n\nReference style template (adapt but prioritize the entity description above):\n${base}`,
     );
     expect(buildBatchUserPrompt("", base, empty)).toBe(base);
+  });
+});
+
+describe("collectTargets — description change detection", () => {
+  const variantGroup = "mob:parlor_zone:goblin";
+
+  it("flags an entity whose context drifted from its last stamped render", () => {
+    const stale = worldWithGoblin("a small goblin");
+    const staleHash = getTargetSourceHash(collectTargets(stale).find((t) => t.kind === "mob")!, stale);
+    const world = worldWithGoblin("now a towering ogre");
+    const targets = collectTargets(world, undefined, [mobAsset(variantGroup, staleHash)]);
+    const goblin = targets.find((t) => t.kind === "mob")!;
+    expect(goblin.descriptionChanged).toBe(true);
+    // Changed entities are pre-selected so they surface on open.
+    expect(goblin.checked).toBe(true);
+  });
+
+  it("does not flag when the stored fingerprint matches the current context", () => {
+    const world = worldWithGoblin("a small goblin");
+    const currentHash = getTargetSourceHash(collectTargets(world).find((t) => t.kind === "mob")!, world);
+    const targets = collectTargets(world, undefined, [mobAsset(variantGroup, currentHash)]);
+    const goblin = targets.find((t) => t.kind === "mob")!;
+    expect(goblin.descriptionChanged).toBeFalsy();
+    // Existing art with no change stays unselected.
+    expect(goblin.checked).toBe(false);
+  });
+
+  it("treats pre-feature art (no stamped fingerprint) as up to date", () => {
+    const world = worldWithGoblin("a small goblin");
+    const targets = collectTargets(world, undefined, [mobAsset(variantGroup, "")]);
+    const goblin = targets.find((t) => t.kind === "mob")!;
+    expect(goblin.descriptionChanged).toBeFalsy();
+    expect(goblin.checked).toBe(false);
+  });
+
+  it("ignores fingerprints from a different variant group", () => {
+    const world = worldWithGoblin("a small goblin");
+    const targets = collectTargets(world, undefined, [mobAsset("mob:other_zone:goblin", "deadbeef")]);
+    const goblin = targets.find((t) => t.kind === "mob")!;
+    expect(goblin.descriptionChanged).toBeFalsy();
   });
 });

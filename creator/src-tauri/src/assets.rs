@@ -45,6 +45,11 @@ pub struct AssetEntry {
     pub lyrics: String,
     #[serde(default)]
     pub duration_seconds: f64,
+    /// Fingerprint of the entity render context this asset was generated from,
+    /// used to detect description changes since the last render. Empty for art
+    /// rendered before change-detection existed.
+    #[serde(default)]
+    pub source_hash: String,
 }
 
 fn default_sync_status() -> String {
@@ -127,6 +132,7 @@ pub async fn accept_asset(
     variant_group: Option<String>,
     is_active: Option<bool>,
     display_name: Option<String>,
+    source_hash: Option<String>,
 ) -> Result<AssetEntry, String> {
     let vg = variant_group.unwrap_or_default();
     let active = is_active.unwrap_or(!vg.is_empty());
@@ -151,6 +157,7 @@ pub async fn accept_asset(
         artist: String::new(),
         lyrics: String::new(),
         duration_seconds: 0.0,
+        source_hash: source_hash.unwrap_or_default(),
     };
 
     let _lock = MANIFEST_LOCK.lock().await;
@@ -487,6 +494,7 @@ pub async fn import_asset(
         artist: String::new(),
         lyrics: String::new(),
         duration_seconds,
+        source_hash: String::new(),
     };
 
     let _lock = MANIFEST_LOCK.lock().await;
@@ -705,6 +713,7 @@ pub async fn save_bytes_as_asset(
         artist: String::new(),
         lyrics: String::new(),
         duration_seconds: 0.0,
+        source_hash: String::new(),
     };
 
     manifest.assets.retain(|a| a.hash != entry.hash);
@@ -994,6 +1003,7 @@ pub async fn import_player_sprites(
             artist: String::new(),
             lyrics: String::new(),
             duration_seconds: 0.0,
+            source_hash: String::new(),
         };
 
         manifest.assets.push(entry);
@@ -1133,6 +1143,7 @@ pub async fn bulk_import_images(
             artist: String::new(),
             lyrics: String::new(),
             duration_seconds: 0.0,
+            source_hash: String::new(),
         };
 
         manifest.assets.push(asset_entry);
@@ -1234,6 +1245,7 @@ pub async fn flip_image(app: AppHandle, image_ref: String) -> Result<String, Str
             artist: String::new(),
             lyrics: String::new(),
             duration_seconds: 0.0,
+            source_hash: String::new(),
         };
 
         let vg = &entry.variant_group;

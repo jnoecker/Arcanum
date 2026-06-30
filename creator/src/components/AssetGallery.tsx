@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { useImageSrc, useImageSrcStatus } from "@/lib/useImageSrc";
+import { useMediaSrc } from "@/lib/useMediaSrc";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import type { AssetEntry, AssetType, SyncProgress, SyncScope } from "@/types/assets";
 import { Spinner } from "@/components/ui/FormWidgets";
@@ -41,23 +43,26 @@ function localAssetPath(assetsDir: string, asset: AssetEntry): string {
   return `${assetsDir}\\${subdir}\\${asset.file_name}`;
 }
 
-function LazyThumb({
-  asset,
-  onVisible,
-}: {
-  asset: AssetEntry;
-  onVisible: (entry: AssetEntry) => void;
-}) {
+const ThumbSpinner = () => (
+  <div className="flex h-full w-full items-center justify-center">
+    <div className="h-4 w-4 animate-spin rounded-full border border-border-default border-t-accent" />
+  </div>
+);
+
+/** Grid thumbnail for an image asset. Loads only once scrolled into view, and
+ *  via the shared image hook so it gets a downscaled (not full-resolution)
+ *  data URL out of the LRU-bounded, concurrency-capped cache. */
+function GalleryThumb({ asset }: { asset: AssetEntry }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-
+    if (!el || visible) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
-          onVisible(asset);
+          setVisible(true);
           observer.disconnect();
         }
       },
@@ -65,13 +70,45 @@ function LazyThumb({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [asset, onVisible]);
+  }, [visible]);
+
+  const { src } = useImageSrcStatus(visible ? asset.file_name : undefined, { maxDim: 320 });
 
   return (
-    <div ref={ref} className="flex h-full w-full items-center justify-center">
-      <div className="h-4 w-4 animate-spin rounded-full border border-border-default border-t-accent" />
+    <div ref={ref} className="h-full w-full">
+      {src ? (
+        <img src={src} alt={asset.prompt.slice(0, 60)} loading="lazy" className="h-full w-full object-cover" />
+      ) : (
+        <ThumbSpinner />
+      )}
     </div>
   );
+}
+
+/** Detail-pane preview for the selected asset. Full-resolution image via the
+ *  shared image hook; audio/video via the media hook, which streams from a
+ *  blob object URL it revokes on unmount. Both hooks free their memory when
+ *  this unmounts, so selecting through a library doesn't accumulate. */
+function GalleryDetailPreview({ asset }: { asset: AssetEntry }) {
+  const kind = mediaKindForAsset(asset);
+  const imageSrc = useImageSrc(kind === "image" ? asset.file_name : undefined);
+  const mediaSrc = useMediaSrc(kind === "image" ? undefined : asset.file_name);
+  const src = kind === "image" ? imageSrc : mediaSrc;
+
+  if (!src) {
+    return (
+      <div className="flex aspect-square items-center justify-center bg-bg-primary">
+        <div className="h-4 w-4 animate-spin rounded-full border border-border-default border-t-accent" />
+      </div>
+    );
+  }
+  if (kind === "audio") {
+    return <audio controls src={src} className="w-full" />;
+  }
+  if (kind === "video") {
+    return <video controls src={src} className="w-full rounded" />;
+  }
+  return <img src={src} alt="Selected asset" loading="lazy" className="w-full" />;
 }
 
 export function AssetGallery({ onClose }: { onClose: () => void }) {
@@ -97,7 +134,6 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   const [deleting, setDeleting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [removingBg, setRemovingBg] = useState(false);
-  const [previewCache, setPreviewCache] = useState<Record<string, string>>({});
   const [syncResult, setSyncResult] = useState<SyncProgress | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -167,26 +203,6 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
     () => assets.filter((asset) => asset.sync_status !== "synced" && shouldSyncAsset(asset, syncScope)).length,
     [assets, syncScope],
   );
-
-  const previewCacheRef = useRef(previewCache);
-  previewCacheRef.current = previewCache;
-
-  const loadPreview = useCallback(
-    (entry: AssetEntry) => {
-      if (previewCacheRef.current[entry.id] || !assetsDir) return;
-      const path = localAssetPath(assetsDir, entry);
-      invoke<string>("read_media_data_url", { path })
-        .then((dataUrl) => {
-          setPreviewCache((prev) => ({ ...prev, [entry.id]: dataUrl }));
-        })
-        .catch(() => {});
-    },
-    [assetsDir],
-  );
-
-  useEffect(() => {
-    if (selected) loadPreview(selected);
-  }, [loadPreview, selected]);
 
   const handleDelete = async (entry: AssetEntry) => {
     setDeleting(true);
@@ -273,16 +289,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   const renderThumb = (asset: AssetEntry) => {
     const kind = mediaKindForAsset(asset);
     if (kind === "image") {
-      return previewCache[asset.id] ? (
-        <img
-          src={previewCache[asset.id]}
-          alt={asset.prompt.slice(0, 60)}
-          loading="lazy"
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <LazyThumb asset={asset} onVisible={loadPreview} />
-      );
+      return <GalleryThumb asset={asset} />;
     }
 
     return (
@@ -293,25 +300,6 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     );
-  };
-
-  const renderDetailPreview = (asset: AssetEntry) => {
-    const preview = previewCache[asset.id];
-    const kind = mediaKindForAsset(asset);
-    if (!preview) {
-      return (
-        <div className="flex aspect-square items-center justify-center bg-bg-primary">
-          <div className="h-4 w-4 animate-spin rounded-full border border-border-default border-t-accent" />
-        </div>
-      );
-    }
-    if (kind === "audio") {
-      return <audio controls src={preview} className="w-full" />;
-    }
-    if (kind === "video") {
-      return <video controls src={preview} className="w-full rounded" />;
-    }
-    return <img src={preview} alt="Selected asset" loading="lazy" className="w-full" />;
   };
 
   return (
@@ -564,7 +552,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
             <div className="flex w-80 shrink-0 flex-col border-l border-border-default bg-bg-primary">
               <div className="shrink-0 border-b border-border-default p-3">
                 <div className="overflow-hidden rounded border border-border-default">
-                  {renderDetailPreview(selected)}
+                  <GalleryDetailPreview asset={selected} />
                 </div>
               </div>
 

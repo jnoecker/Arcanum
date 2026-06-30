@@ -86,6 +86,7 @@ macro_rules! base_handler {
             assets::get_assets_dir,
             assets::resolve_media_path,
             assets::read_media_data_url,
+            assets::read_media_bytes,
             assets::import_asset,
             assets::rename_asset,
             assets::update_asset_metadata,

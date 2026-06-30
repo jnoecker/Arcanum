@@ -63,28 +63,44 @@ const DIFFICULTY_OPTIONS = [
   ...QUEST_DIFFICULTIES.map((d) => ({ value: d, label: QUEST_DIFFICULTY_LABELS[d] })),
 ];
 
-export function QuestEditor({
-  questId,
-  world,
-  onWorldChange,
-  onDelete,
-}: QuestEditorProps) {
-  const { entity: quest, patch, handleDelete } = useEntityEditor<QuestFile>(
-    world,
-    questId,
-    (w) => w.quests?.[questId],
+export function QuestEditor(props: QuestEditorProps) {
+  const { entity, patch, handleDelete } = useEntityEditor<QuestFile>(
+    props.world,
+    props.questId,
+    (w) => w.quests?.[props.questId],
     updateQuest,
     deleteQuest,
-    onWorldChange,
-    onDelete,
+    props.onWorldChange,
+    props.onDelete,
   );
+  if (!entity) return null;
+  return (
+    <QuestEditorContent
+      {...props}
+      quest={entity}
+      patch={patch}
+      handleDelete={handleDelete}
+    />
+  );
+}
+
+interface QuestEditorContentProps extends QuestEditorProps {
+  quest: QuestFile;
+  patch: (p: Partial<QuestFile>) => void;
+  handleDelete: () => void;
+}
+
+function QuestEditorContent({
+  world,
+  quest,
+  patch,
+  handleDelete,
+}: QuestEditorContentProps) {
   const completionTypes = useConfigStore((s) => s.config?.questCompletionTypes);
   const completionOptions = useConfigOptions(completionTypes, FALLBACK_COMPLETION_OPTIONS);
 
   const objectiveTypes = useConfigStore((s) => s.config?.questObjectiveTypes);
   const objectiveTypeOptions = useConfigOptions(objectiveTypes, FALLBACK_OBJECTIVE_TYPES);
-
-  if (!quest) return null;
 
   const zoneMobs = Object.entries(world.mobs ?? {}).map(([id, m]) => ({
     value: id,

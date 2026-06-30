@@ -46,24 +46,45 @@ const ITEM_TABS: readonly { value: ItemTab; label: string }[] = [
   { value: "media", label: "Media" },
 ] as const;
 
-export function ItemEditor({
-  itemId,
-  zoneId,
-  world,
-  onWorldChange,
-  onDelete,
-  onDuplicate,
-}: ItemEditorProps) {
-  const [activeTab, setActiveTab] = useState<ItemTab>("item");
-  const { entity: item, patch, handleDelete, rooms } = useEntityEditor<ItemFile>(
-    world,
-    itemId,
-    (w) => w.items?.[itemId],
+export function ItemEditor(props: ItemEditorProps) {
+  const { entity, patch, handleDelete, rooms } = useEntityEditor<ItemFile>(
+    props.world,
+    props.itemId,
+    (w) => w.items?.[props.itemId],
     updateItem,
     deleteItem,
-    onWorldChange,
-    onDelete,
+    props.onWorldChange,
+    props.onDelete,
   );
+  if (!entity) return null;
+  return (
+    <ItemEditorContent
+      {...props}
+      item={entity}
+      patch={patch}
+      handleDelete={handleDelete}
+      rooms={rooms}
+    />
+  );
+}
+
+interface ItemEditorContentProps extends ItemEditorProps {
+  item: ItemFile;
+  patch: (p: Partial<ItemFile>) => void;
+  handleDelete: () => void;
+  rooms: { value: string; label: string }[];
+}
+
+function ItemEditorContent({
+  itemId,
+  zoneId,
+  onDuplicate,
+  item,
+  patch,
+  handleDelete,
+  rooms,
+}: ItemEditorContentProps) {
+  const [activeTab, setActiveTab] = useState<ItemTab>("item");
   const equipmentSlots = useConfigStore((s) => s.config?.equipmentSlots);
   const slotOptions = useConfigOptions(equipmentSlots, [
     { value: "head", label: "Head" },
@@ -132,8 +153,6 @@ export function ItemEditor({
       disableTertiary: item.disableTertiary,
     });
   }, [item, isAccessory]);
-
-  if (!item) return null;
 
   const stats = item.stats ?? {};
 

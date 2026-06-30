@@ -37,29 +37,45 @@ const FALLBACK_STATION_OPTIONS = [
   { value: "workbench", label: "Workbench" },
 ];
 
-export function RecipeEditor({
-  recipeId,
-  world,
-  onWorldChange,
-  onDelete,
-  zoneId,
-}: RecipeEditorProps) {
-  const { entity: recipe, patch, handleDelete } = useEntityEditor<RecipeFile>(
-    world,
-    recipeId,
-    (w) => w.recipes?.[recipeId],
+export function RecipeEditor(props: RecipeEditorProps) {
+  const { entity, patch, handleDelete } = useEntityEditor<RecipeFile>(
+    props.world,
+    props.recipeId,
+    (w) => w.recipes?.[props.recipeId],
     updateRecipe,
     deleteRecipe,
-    onWorldChange,
-    onDelete,
+    props.onWorldChange,
+    props.onDelete,
   );
+  if (!entity) return null;
+  return (
+    <RecipeEditorContent
+      {...props}
+      recipe={entity}
+      patch={patch}
+      handleDelete={handleDelete}
+    />
+  );
+}
+
+interface RecipeEditorContentProps extends RecipeEditorProps {
+  recipe: RecipeFile;
+  patch: (p: Partial<RecipeFile>) => void;
+  handleDelete: () => void;
+}
+
+function RecipeEditorContent({
+  recipeId,
+  zoneId,
+  recipe,
+  patch,
+  handleDelete,
+}: RecipeEditorContentProps) {
   const craftingSkills = useConfigStore((s) => s.config?.craftingSkills);
   const craftingSkillOptions = useConfigOptions(craftingSkills, FALLBACK_CRAFTING_SKILLS);
 
   const stationTypes = useConfigStore((s) => s.config?.craftingStationTypes);
   const stationOptions = useConfigOptions(stationTypes, FALLBACK_STATION_OPTIONS);
-
-  if (!recipe) return null;
 
   // ─── Material helpers ─────────────────────────────────────────
   const {

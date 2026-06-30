@@ -144,25 +144,47 @@ const MOB_TABS: readonly { value: MobTab; label: string }[] = [
   { value: "media", label: "Media" },
 ] as const;
 
-export function MobEditor({
+export function MobEditor(props: MobEditorProps) {
+  const { entity, patch, handleDelete, rooms } = useEntityEditor<MobFile>(
+    props.world,
+    props.mobId,
+    (w) => w.mobs?.[props.mobId],
+    updateMob,
+    deleteMob,
+    props.onWorldChange,
+    props.onDelete,
+  );
+  if (!entity) return null;
+  return (
+    <MobEditorContent
+      {...props}
+      mob={entity}
+      patch={patch}
+      handleDelete={handleDelete}
+      rooms={rooms}
+    />
+  );
+}
+
+interface MobEditorContentProps extends MobEditorProps {
+  mob: MobFile;
+  patch: (p: Partial<MobFile>) => void;
+  handleDelete: () => void;
+  rooms: { value: string; label: string }[];
+}
+
+function MobEditorContent({
   mobId,
   world,
   onWorldChange,
-  onDelete,
   onDuplicate,
   zoneId,
-}: MobEditorProps) {
+  mob,
+  patch,
+  handleDelete,
+  rooms,
+}: MobEditorContentProps) {
   const [activeTab, setActiveTab] = useState<MobTab>("mob");
-  const { entity: mob, patch, handleDelete, rooms } = useEntityEditor<MobFile>(
-    world,
-    mobId,
-    (w) => w.mobs?.[mobId],
-    updateMob,
-    deleteMob,
-    onWorldChange,
-    onDelete,
-  );
-  if (!mob) return null;
 
   const role: MobRole = mob.role ?? "combat";
   const isCombatant = role === "combat";

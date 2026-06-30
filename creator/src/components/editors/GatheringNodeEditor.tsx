@@ -35,24 +35,44 @@ const FALLBACK_GATHERING_SKILLS = [
   { value: "herbalism", label: "Herbalism" },
 ];
 
-export function GatheringNodeEditor({
-  nodeId,
-  world,
-  onWorldChange,
-  onDelete,
-  zoneId,
-}: GatheringNodeEditorProps) {
-  const { entity: node, patch, handleDelete, rooms } =
+export function GatheringNodeEditor(props: GatheringNodeEditorProps) {
+  const { entity, patch, handleDelete, rooms } =
     useEntityEditor<GatheringNodeFile>(
-      world,
-      nodeId,
-      (w) => w.gatheringNodes?.[nodeId],
+      props.world,
+      props.nodeId,
+      (w) => w.gatheringNodes?.[props.nodeId],
       updateGatheringNode,
       deleteGatheringNode,
-      onWorldChange,
-      onDelete,
+      props.onWorldChange,
+      props.onDelete,
     );
+  if (!entity) return null;
+  return (
+    <GatheringNodeEditorContent
+      {...props}
+      node={entity}
+      patch={patch}
+      handleDelete={handleDelete}
+      rooms={rooms}
+    />
+  );
+}
 
+interface GatheringNodeEditorContentProps extends GatheringNodeEditorProps {
+  node: GatheringNodeFile;
+  patch: (p: Partial<GatheringNodeFile>) => void;
+  handleDelete: () => void;
+  rooms: { value: string; label: string }[];
+}
+
+function GatheringNodeEditorContent({
+  nodeId,
+  zoneId,
+  node,
+  patch,
+  handleDelete,
+  rooms,
+}: GatheringNodeEditorContentProps) {
   const craftingSkills = useConfigStore((s) => s.config?.craftingSkills);
   const gatheringSkills = useMemo(() => {
     if (!craftingSkills) return undefined;
@@ -63,8 +83,6 @@ export function GatheringNodeEditor({
     return Object.keys(filtered).length > 0 ? filtered : undefined;
   }, [craftingSkills]);
   const gatheringSkillOptions = useConfigOptions(gatheringSkills, FALLBACK_GATHERING_SKILLS);
-
-  if (!node) return null;
 
   // ─── Yield helpers ────────────────────────────────────────────
   const {

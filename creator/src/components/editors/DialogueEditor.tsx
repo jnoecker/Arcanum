@@ -1,6 +1,7 @@
 import { memo, useCallback, useState } from "react";
 import type {
   WorldFile,
+  MobFile,
   DialogueNodeFile,
   DialogueChoiceFile,
 } from "@/types/world";
@@ -20,14 +21,22 @@ interface DialogueEditorProps {
   onWorldChange: (world: WorldFile) => void;
 }
 
-export function DialogueEditor({
+export function DialogueEditor(props: DialogueEditorProps) {
+  const mob = props.world.mobs?.[props.mobId];
+  if (!mob) return null;
+  return <DialogueEditorContent {...props} mob={mob} />;
+}
+
+interface DialogueEditorContentProps extends DialogueEditorProps {
+  mob: MobFile;
+}
+
+function DialogueEditorContent({
   mobId,
   world,
   onWorldChange,
-}: DialogueEditorProps) {
-  const mob = world.mobs?.[mobId];
-  if (!mob) return null;
-
+  mob,
+}: DialogueEditorContentProps) {
   const dialogue = mob.dialogue ?? {};
   const nodeIds = Object.keys(dialogue);
 

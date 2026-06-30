@@ -22,24 +22,44 @@ interface ShopEditorProps {
   zoneId?: string;
 }
 
-export function ShopEditor({
-  shopId,
-  world,
-  onWorldChange,
-  onDelete,
-  zoneId,
-}: ShopEditorProps) {
-  const { entity: shop, patch, handleDelete, rooms } = useEntityEditor<ShopFile>(
-    world,
-    shopId,
-    (w) => w.shops?.[shopId],
+export function ShopEditor(props: ShopEditorProps) {
+  const { entity, patch, handleDelete, rooms } = useEntityEditor<ShopFile>(
+    props.world,
+    props.shopId,
+    (w) => w.shops?.[props.shopId],
     updateShop,
     deleteShop,
-    onWorldChange,
-    onDelete,
+    props.onWorldChange,
+    props.onDelete,
   );
-  if (!shop) return null;
+  if (!entity) return null;
+  return (
+    <ShopEditorContent
+      {...props}
+      shop={entity}
+      patch={patch}
+      handleDelete={handleDelete}
+      rooms={rooms}
+    />
+  );
+}
 
+interface ShopEditorContentProps extends ShopEditorProps {
+  shop: ShopFile;
+  patch: (p: Partial<ShopFile>) => void;
+  handleDelete: () => void;
+  rooms: { value: string; label: string }[];
+}
+
+function ShopEditorContent({
+  shopId,
+  world,
+  zoneId,
+  shop,
+  patch,
+  handleDelete,
+  rooms,
+}: ShopEditorContentProps) {
   const zoneItems = Object.entries(world.items ?? {}).map(([id, item]) => ({
     value: id,
     label: `${item.displayName} (${id})`,

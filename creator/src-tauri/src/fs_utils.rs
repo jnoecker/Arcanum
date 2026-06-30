@@ -109,6 +109,24 @@ fn thumbnail_cache() -> &'static Mutex<HashMap<String, String>> {
     THUMBNAIL_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
+/// Bounds how many thumbnail decodes run concurrently. A zone load fires one
+/// IPC per visible room background + entity sprite all at once; without a cap
+/// every one of those spawns a CPU-heavy `image::load_from_memory` + resize +
+/// WebP encode on the blocking pool simultaneously, saturating every core and
+/// spiking memory (each decode transiently holds a full-resolution bitmap).
+/// Capping to roughly half the cores keeps the UI responsive while the queue
+/// drains.
+static DECODE_SEMAPHORE: OnceLock<tokio::sync::Semaphore> = OnceLock::new();
+
+fn decode_semaphore() -> &'static tokio::sync::Semaphore {
+    DECODE_SEMAPHORE.get_or_init(|| {
+        let cores = std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(4);
+        tokio::sync::Semaphore::new((cores / 2).max(2))
+    })
+}
+
 /// Generous upper bound; thumbnails are ~10–40 KB each, so a full cache is a
 /// few tens of MB. Cleared wholesale rather than LRU-evicted — re-encoding on
 /// the rare overflow is cheaper than tracking recency on every hit.
@@ -158,6 +176,14 @@ pub async fn read_image_thumbnail_data_url(path: String, max_dim: u32) -> Result
     {
         return Ok(hit.clone());
     }
+
+    // Gate the expensive decode behind the semaphore so a zone-load burst of
+    // requests drains a few at a time instead of all at once. Cache hits above
+    // return before reaching here, so warm images never wait on the queue.
+    let _permit = decode_semaphore()
+        .acquire()
+        .await
+        .map_err(|e| format!("Decode semaphore closed: {e}"))?;
 
     let bytes = tokio::fs::read(&path)
         .await

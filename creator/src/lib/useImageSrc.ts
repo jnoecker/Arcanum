@@ -23,8 +23,40 @@ const resolvedImageCache = new Map<string, string>();
 // never collide with a real full-size path key.
 const KEY_SEP = String.fromCharCode(0);
 
+// Full-resolution art is often multi-MB; without a bound the resolved cache
+// grows for every distinct image viewed in a session and never shrinks. Cap it
+// and evict least-recently-used entries (Map preserves insertion order, so a
+// delete+set on access moves an entry to the most-recent position).
+const MAX_RESOLVED_ENTRIES = 256;
+
 function cacheKey(path: string, maxDim?: number): string {
   return maxDim ? `${path}${KEY_SEP}${maxDim}` : path;
+}
+
+/** Record a resolved data URL, evicting the oldest entries past the cap. The
+ *  matching in-flight promise is dropped alongside each evicted entry so the
+ *  string it holds can be collected too — otherwise the promise cache would
+ *  keep it alive. */
+function rememberResolved(key: string, dataUrl: string): void {
+  resolvedImageCache.delete(key);
+  resolvedImageCache.set(key, dataUrl);
+  while (resolvedImageCache.size > MAX_RESOLVED_ENTRIES) {
+    const oldest = resolvedImageCache.keys().next().value;
+    if (oldest === undefined) break;
+    resolvedImageCache.delete(oldest);
+    imageDataUrlCache.delete(oldest);
+  }
+}
+
+/** Synchronous resolved-cache lookup that also marks the entry most-recently
+ *  used, so frequently-rendered images survive eviction. */
+function touchResolved(key: string): string | undefined {
+  const hit = resolvedImageCache.get(key);
+  if (hit !== undefined) {
+    resolvedImageCache.delete(key);
+    resolvedImageCache.set(key, hit);
+  }
+  return hit;
 }
 
 /**
@@ -70,7 +102,7 @@ function fetchImageDataUrl(path: string, maxDim?: number): Promise<string> {
   const promise = invokeImageIpc(path, maxDim);
   imageDataUrlCache.set(key, promise);
   promise.then(
-    (dataUrl) => resolvedImageCache.set(key, dataUrl),
+    (dataUrl) => rememberResolved(key, dataUrl),
     () => imageDataUrlCache.delete(key),
   );
   return promise;
@@ -78,7 +110,7 @@ function fetchImageDataUrl(path: string, maxDim?: number): Promise<string> {
 
 function lookupResolved(candidates: string[], maxDim?: number): string | null {
   for (const path of candidates) {
-    const hit = resolvedImageCache.get(cacheKey(path, maxDim));
+    const hit = touchResolved(cacheKey(path, maxDim));
     if (hit) return hit;
   }
   return null;

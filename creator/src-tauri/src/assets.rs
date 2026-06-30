@@ -399,6 +399,22 @@ pub async fn read_media_data_url(path: String) -> Result<String, String> {
     Ok(format!("data:{mime};base64,{b64}"))
 }
 
+/// Read a media file's raw bytes for playback in the webview.
+///
+/// Unlike `read_media_data_url`, this returns the bytes directly (as an
+/// `ArrayBuffer` on the JS side) rather than a base64 `data:` URL. The
+/// frontend wraps them in a `Blob` + object URL it can revoke deterministically
+/// when the player unmounts. `data:` URLs for audio/video are large and the
+/// WebView's media engine pins them for the session, so cycling through tracks
+/// in the Audio Studio leaks until OOM; object URLs free on revoke.
+#[tauri::command]
+pub async fn read_media_bytes(path: String) -> Result<tauri::ipc::Response, String> {
+    let bytes = tokio::fs::read(&path)
+        .await
+        .map_err(|e| format!("Failed to read file: {e}"))?;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
 /// Determine the storage subdirectory for an asset based on its extension.
 fn media_subdir(ext: &str) -> &'static str {
     match ext {

@@ -27,13 +27,47 @@ function cacheKey(path: string, maxDim?: number): string {
   return maxDim ? `${path}${KEY_SEP}${maxDim}` : path;
 }
 
+/**
+ * Bound how many image IPCs are in flight at once. A zone load mounts dozens of
+ * ReactFlow nodes that each request a background + entity sprites in the same
+ * tick; firing them all together floods the IPC channel and forces the backend
+ * to hold many full-resolution decodes (and their base64 blobs) in memory
+ * simultaneously. Draining a handful at a time keeps the app responsive without
+ * changing total work. The backend has its own decode semaphore as the
+ * authoritative guard; this just stops us from queuing a huge burst across IPC.
+ */
+const MAX_INFLIGHT_IMAGE_IPCS = 6;
+let inflightImageIpcs = 0;
+const imageIpcQueue: (() => void)[] = [];
+
+function runNextImageIpc(): void {
+  if (inflightImageIpcs >= MAX_INFLIGHT_IMAGE_IPCS) return;
+  const next = imageIpcQueue.shift();
+  if (!next) return;
+  inflightImageIpcs++;
+  next();
+}
+
+function invokeImageIpc(path: string, maxDim?: number): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    imageIpcQueue.push(() => {
+      const call = maxDim
+        ? invoke<string>("read_image_thumbnail_data_url", { path, maxDim })
+        : invoke<string>("read_image_data_url", { path });
+      call.then(resolve, reject).finally(() => {
+        inflightImageIpcs--;
+        runNextImageIpc();
+      });
+    });
+    runNextImageIpc();
+  });
+}
+
 function fetchImageDataUrl(path: string, maxDim?: number): Promise<string> {
   const key = cacheKey(path, maxDim);
   const cached = imageDataUrlCache.get(key);
   if (cached) return cached;
-  const promise = maxDim
-    ? invoke<string>("read_image_thumbnail_data_url", { path, maxDim })
-    : invoke<string>("read_image_data_url", { path });
+  const promise = invokeImageIpc(path, maxDim);
   imageDataUrlCache.set(key, promise);
   promise.then(
     (dataUrl) => resolvedImageCache.set(key, dataUrl),

@@ -230,6 +230,46 @@ pub async fn get_user_settings(app: &AppHandle) -> Result<Settings, String> {
 }
 
 /// Returns settings, automatically merged with project settings when a project is active.
+/// Merge project-level settings over user-level settings. API keys and hub
+/// config always come from `user`; art/R2/model/quality fields come from
+/// `ps`. Single source of truth for both `get_settings` and
+/// `get_merged_settings` so the two can't drift.
+fn merge_project(user: Settings, ps: crate::project_settings::ProjectSettings) -> Settings {
+    Settings {
+        deepinfra_api_key: user.deepinfra_api_key,
+        runware_api_key: user.runware_api_key,
+        anthropic_api_key: user.anthropic_api_key,
+        openrouter_api_key: user.openrouter_api_key,
+        openai_api_key: user.openai_api_key,
+        elevenlabs_api_key: user.elevenlabs_api_key,
+        voyage_api_key: user.voyage_api_key,
+        github_pat: user.github_pat,
+        hub_api_url: user.hub_api_url,
+        hub_api_key: user.hub_api_key,
+        use_hub_ai: user.use_hub_ai,
+        image_model: ps.image_model,
+        enhance_model: ps.enhance_model,
+        prompt_llm_provider: ps.prompt_llm_provider,
+        image_provider: ps.image_provider,
+        video_model: ps.video_model,
+        batch_concurrency: ps.batch_concurrency,
+        auto_enhance_prompts: ps.auto_enhance_prompts,
+        auto_remove_bg: ps.auto_remove_bg,
+        bg_removal_provider: ps.bg_removal_provider,
+        r2_account_id: ps.r2_account_id,
+        r2_access_key_id: ps.r2_access_key_id,
+        r2_secret_access_key: ps.r2_secret_access_key,
+        r2_bucket: ps.r2_bucket,
+        r2_custom_domain: ps.r2_custom_domain,
+        openai_image_quality: if ps.openai_image_quality.is_empty() {
+            default_openai_image_quality()
+        } else {
+            ps.openai_image_quality
+        },
+        openai_image_quality_overrides: ps.openai_image_quality_overrides,
+    }
+}
+
 /// All 24+ backend commands call this — they get the right credentials without changes.
 #[tauri::command]
 pub async fn get_settings(app: AppHandle) -> Result<Settings, String> {
@@ -237,39 +277,7 @@ pub async fn get_settings(app: AppHandle) -> Result<Settings, String> {
     let dir = ACTIVE_PROJECT_DIR.read().await;
     if let Some(project_dir) = dir.as_ref() {
         if let Ok(Some(ps)) = crate::project_settings::get_project_settings(project_dir.clone()).await {
-            return Ok(Settings {
-                deepinfra_api_key: user.deepinfra_api_key,
-                runware_api_key: user.runware_api_key,
-                anthropic_api_key: user.anthropic_api_key,
-                openrouter_api_key: user.openrouter_api_key,
-                openai_api_key: user.openai_api_key,
-                elevenlabs_api_key: user.elevenlabs_api_key,
-                voyage_api_key: user.voyage_api_key,
-                github_pat: user.github_pat,
-                hub_api_url: user.hub_api_url,
-                hub_api_key: user.hub_api_key,
-                use_hub_ai: user.use_hub_ai,
-                image_model: ps.image_model,
-                enhance_model: ps.enhance_model,
-                prompt_llm_provider: ps.prompt_llm_provider,
-                image_provider: ps.image_provider,
-                video_model: ps.video_model,
-                batch_concurrency: ps.batch_concurrency,
-                auto_enhance_prompts: ps.auto_enhance_prompts,
-                auto_remove_bg: ps.auto_remove_bg,
-                bg_removal_provider: ps.bg_removal_provider,
-                r2_account_id: ps.r2_account_id,
-                r2_access_key_id: ps.r2_access_key_id,
-                r2_secret_access_key: ps.r2_secret_access_key,
-                r2_bucket: ps.r2_bucket,
-                r2_custom_domain: ps.r2_custom_domain,
-                openai_image_quality: if ps.openai_image_quality.is_empty() {
-                    default_openai_image_quality()
-                } else {
-                    ps.openai_image_quality
-                },
-                openai_image_quality_overrides: ps.openai_image_quality_overrides,
-            });
+            return Ok(merge_project(user, ps));
         }
     }
     Ok(user)
@@ -306,41 +314,7 @@ pub async fn get_merged_settings(
         None
     };
     match project {
-        Some(ps) => Ok(Settings {
-            // API keys always from user
-            deepinfra_api_key: user.deepinfra_api_key,
-            runware_api_key: user.runware_api_key,
-            anthropic_api_key: user.anthropic_api_key,
-            openrouter_api_key: user.openrouter_api_key,
-            openai_api_key: user.openai_api_key,
-            elevenlabs_api_key: user.elevenlabs_api_key,
-            voyage_api_key: user.voyage_api_key,
-            github_pat: user.github_pat,
-            hub_api_url: user.hub_api_url,
-            hub_api_key: user.hub_api_key,
-            use_hub_ai: user.use_hub_ai,
-            // Everything else from project
-            image_model: ps.image_model,
-            enhance_model: ps.enhance_model,
-            prompt_llm_provider: ps.prompt_llm_provider,
-            image_provider: ps.image_provider,
-            video_model: ps.video_model,
-            batch_concurrency: ps.batch_concurrency,
-            auto_enhance_prompts: ps.auto_enhance_prompts,
-            auto_remove_bg: ps.auto_remove_bg,
-            bg_removal_provider: ps.bg_removal_provider,
-            r2_account_id: ps.r2_account_id,
-            r2_access_key_id: ps.r2_access_key_id,
-            r2_secret_access_key: ps.r2_secret_access_key,
-            r2_bucket: ps.r2_bucket,
-            r2_custom_domain: ps.r2_custom_domain,
-            openai_image_quality: if ps.openai_image_quality.is_empty() {
-                default_openai_image_quality()
-            } else {
-                ps.openai_image_quality
-            },
-            openai_image_quality_overrides: ps.openai_image_quality_overrides,
-        }),
+        Some(ps) => Ok(merge_project(user, ps)),
         None => Ok(user),
     }
 }

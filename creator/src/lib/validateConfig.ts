@@ -3,39 +3,11 @@ import { RACIAL_ABILITY_KINDS, RACIAL_ABILITY_TRIGGERS } from "@/types/config";
 import { missingRequiredGlobalAssets } from "./requiredGlobalAssets";
 import type { ValidationIssue } from "./validateZone";
 import { flattenEffect, incompatibleChildEffects } from "./abilityEffects";
-
-function normalizedLottery(config: AppConfig["lottery"]) {
-  if (!config) return undefined;
-  return {
-    enabled: config.enabled,
-    ticketCost: config.ticketCost,
-    drawingIntervalMs: config.drawingIntervalMs,
-    jackpotSeedGold: config.jackpotSeedGold ?? config.jackpotBase ?? 0,
-    jackpotPercentFromTickets: config.jackpotPercentFromTickets ?? 80,
-    maxTicketsPerPlayer: config.maxTicketsPerPlayer ?? 10,
-  };
-}
-
-function normalizedGambling(config: AppConfig["gambling"]) {
-  if (!config) return undefined;
-  return {
-    enabled: config.enabled,
-    diceMinBet: config.diceMinBet ?? config.minBet ?? 0,
-    diceMaxBet: config.diceMaxBet ?? config.maxBet ?? 0,
-    diceWinChance: config.diceWinChance ?? config.winChance ?? 0,
-    diceWinMultiplier: config.diceWinMultiplier ?? config.winMultiplier ?? 0,
-    cooldownMs: config.cooldownMs ?? 0,
-  };
-}
-
-function normalizedRespec(config: AppConfig["respec"]) {
-  if (!config) return undefined;
-  return {
-    enabled: config.enabled ?? true,
-    goldCost: config.goldCost,
-    cooldownMs: config.cooldownMs,
-  };
-}
+import {
+  normalizeLotteryConfig,
+  normalizeGamblingConfig,
+  normalizeRespecConfig,
+} from "./exportMud";
 
 /**
  * Validate an AppConfig for referential integrity and common mistakes.
@@ -1052,29 +1024,30 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
     }
   }
 
-  const lottery = normalizedLottery(config.lottery);
+  const lottery = normalizeLotteryConfig(config.lottery);
   if (lottery?.enabled) {
     if (lottery.ticketCost <= 0) issues.push({ severity: "error", entity: "lottery", message: "Ticket cost must be > 0" });
     if (lottery.drawingIntervalMs <= 0) issues.push({ severity: "error", entity: "lottery", message: "Drawing interval must be > 0" });
     if (lottery.jackpotSeedGold < 0) issues.push({ severity: "error", entity: "lottery", message: "Jackpot seed gold must be >= 0" });
-    if (lottery.jackpotPercentFromTickets < 0 || lottery.jackpotPercentFromTickets > 100) {
+    const jackpotPercent = lottery.jackpotPercentFromTickets ?? 80;
+    if (jackpotPercent < 0 || jackpotPercent > 100) {
       issues.push({ severity: "error", entity: "lottery", message: "jackpotPercentFromTickets must be in 0..100" });
     }
-    if (lottery.maxTicketsPerPlayer <= 0) {
+    if ((lottery.maxTicketsPerPlayer ?? 10) <= 0) {
       issues.push({ severity: "error", entity: "lottery", message: "maxTicketsPerPlayer must be > 0" });
     }
   }
 
-  const gambling = normalizedGambling(config.gambling);
+  const gambling = normalizeGamblingConfig(config.gambling);
   if (gambling?.enabled) {
     if (gambling.diceMinBet <= 0) issues.push({ severity: "error", entity: "gambling", message: "diceMinBet must be > 0" });
     if (gambling.diceMaxBet < gambling.diceMinBet) issues.push({ severity: "error", entity: "gambling", message: "diceMaxBet must be >= diceMinBet" });
     if (gambling.diceWinChance < 0 || gambling.diceWinChance > 1) issues.push({ severity: "error", entity: "gambling", message: "diceWinChance must be in 0.0..1.0" });
     if (gambling.diceWinMultiplier <= 0) issues.push({ severity: "error", entity: "gambling", message: "diceWinMultiplier must be > 0" });
-    if (gambling.cooldownMs < 0) issues.push({ severity: "error", entity: "gambling", message: "cooldownMs must be >= 0" });
+    if ((gambling.cooldownMs ?? 5_000) < 0) issues.push({ severity: "error", entity: "gambling", message: "cooldownMs must be >= 0" });
   }
 
-  const respec = normalizedRespec(config.respec);
+  const respec = normalizeRespecConfig(config.respec);
   if (respec) {
     if (respec.goldCost < 0) issues.push({ severity: "error", entity: "respec", message: "goldCost must be >= 0" });
     if (respec.cooldownMs < 0) issues.push({ severity: "error", entity: "respec", message: "cooldownMs must be >= 0" });

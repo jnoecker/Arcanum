@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import { invoke } from "@tauri-apps/api/core";
 import { useLoreStore, selectArticles } from "@/stores/loreStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -38,22 +39,16 @@ export function LoreChatPanel({ onClose }: LoreChatPanelProps) {
   const [busy, setBusy] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
   useEffect(() => {
-    restoreFocusRef.current = document.activeElement as HTMLElement | null;
     const t = window.setTimeout(() => inputRef.current?.focus(), 60);
-    return () => {
-      window.clearTimeout(t);
-      restoreFocusRef.current?.focus?.();
-    };
+    return () => window.clearTimeout(t);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -61,18 +56,9 @@ export function LoreChatPanel({ onClose }: LoreChatPanelProps) {
     window.setTimeout(() => onClose(), 180);
   }, [onClose]);
 
-  useEffect(() => {
-    const panel = panelRef.current;
-    if (!panel) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        handleClose();
-      }
-    };
-    panel.addEventListener("keydown", onKey);
-    return () => panel.removeEventListener("keydown", onKey);
-  }, [handleClose]);
+  // Full-screen dialog surface: traps Tab focus, closes on Escape (with the
+  // slide-out animation), and restores focus to the opener on unmount.
+  const panelRef = useFocusTrap<HTMLDivElement>(handleClose);
 
   useEffect(() => {
     const s = scrollRef.current;

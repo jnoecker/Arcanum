@@ -6,13 +6,22 @@ export type ArticleTemplate =
   | "location"
   | "organization"
   | "item"
-  | "species"
+  | "ancestry"
+  | "bestiary"
   | "event"
   | "language"
-  | "profession"
-  | "ability"
+  | "class"
+  | "occupation"
+  | "talent"
+  | "creature_power"
   | "freeform"
-  | "story";
+  | "story"
+  // Legacy template ids — kept so worlds published before the
+  // Species→Ancestry/Bestiary, Profession→Class/Occupation, and
+  // Ability→Talent/Creature-Power splits still render.
+  | "species"
+  | "profession"
+  | "ability";
 
 export interface ArticleRelation {
   targetId: string;

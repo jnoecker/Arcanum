@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 use std::io::Cursor;
 use std::path::PathBuf;
 use std::sync::LazyLock;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use tokio::sync::Mutex;
 
 const MANIFEST_FILE: &str = "manifest.json";
@@ -72,10 +72,7 @@ struct Manifest {
 }
 
 fn assets_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?;
+    let dir = crate::fs_utils::app_data_dir(app)?;
     Ok(dir.join("assets"))
 }
 

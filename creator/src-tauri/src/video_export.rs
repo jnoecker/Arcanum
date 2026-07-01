@@ -23,7 +23,7 @@ use std::path::PathBuf;
 
 use base64::Engine;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter};
 
 use crate::audio_mix::{self, AudioMixInput};
 use crate::video_encode::{
@@ -43,10 +43,7 @@ fn session_dir(app: &AppHandle, session_id: &str) -> Result<PathBuf, String> {
     if session_id.chars().any(|c| !c.is_ascii_alphanumeric() && c != '-' && c != '_') {
         return Err(format!("Invalid session_id '{session_id}' — alphanumeric + dash/underscore only"));
     }
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?
+    let dir = crate::fs_utils::app_data_dir(app)?
         .join("tmp")
         .join("video_export")
         .join(session_id);

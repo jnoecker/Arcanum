@@ -16,7 +16,7 @@
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -65,10 +65,7 @@ fn bin_filename() -> &'static str {
 }
 
 fn bundled_bin_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?
+    let dir = crate::fs_utils::app_data_dir(app)?
         .join("bin");
     Ok(dir)
 }

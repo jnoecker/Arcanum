@@ -16,7 +16,7 @@
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 use crate::settings;
 use crate::voices::VoiceSettings;
@@ -185,10 +185,7 @@ pub fn text_sha8(text: &str) -> String {
 }
 
 async fn voices_cache_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?
+    let dir = crate::fs_utils::app_data_dir(app)?
         .join("assets")
         .join("voices");
     tokio::fs::create_dir_all(&dir)
@@ -578,10 +575,7 @@ pub async fn elevenlabs_generate_sound_effect(
     hasher.update(&bytes);
     let hash = format!("{:x}", hasher.finalize());
 
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?
+    let dir = crate::fs_utils::app_data_dir(&app)?
         .join("assets")
         .join("audio");
     tokio::fs::create_dir_all(&dir)

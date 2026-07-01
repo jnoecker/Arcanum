@@ -30,7 +30,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter};
 
 use crate::assets::{self, AssetEntry};
 use crate::settings;
@@ -649,10 +649,7 @@ fn sha256_hex(data: &[u8]) -> String {
 }
 
 fn assets_base_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?;
+    let dir = crate::fs_utils::app_data_dir(app)?;
     Ok(dir.join("assets"))
 }
 

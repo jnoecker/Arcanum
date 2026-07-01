@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useLoreStore } from "@/stores/loreStore";
 import type { Article, ArticleTemplate, CalendarSystem, CalendarEra, TimelineEvent } from "@/types/lore";
-import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
+import { getTemplateSchema } from "@/lib/loreTemplates";
 import { tiptapToPlainText } from "@/lib/loreRelations";
 import { AI_ENABLED } from "@/lib/featureFlags";
 import { buildRagContext } from "@/lib/rag/loreContext";
@@ -158,7 +158,7 @@ export function buildWorldContext(): string {
   }
 
   for (const [template, list] of byTemplate) {
-    const schema = TEMPLATE_SCHEMAS[template];
+    const schema = getTemplateSchema(template, lore.customTemplates);
     const label = schema?.pluralLabel ?? template;
     const aiDesc = overrides[template]?.aiDescription ?? schema?.aiDescription;
 
@@ -264,7 +264,8 @@ export interface GenerateArticleOptions {
 
 export async function generateArticle(opts: GenerateArticleOptions): Promise<Article> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
-  const schema = TEMPLATE_SCHEMAS[opts.template];
+  const customTemplates = useLoreStore.getState().lore?.customTemplates;
+  const schema = getTemplateSchema(opts.template, customTemplates);
   const fieldDesc = schema?.fields.map((f) => `  "${f.key}": ${f.type}`).join(",\n") ?? "";
 
   const { context: worldContext, diagnostic } = await buildRagContext({
@@ -357,6 +358,7 @@ ${worldContext}`;
   const parsed = parseJsonResponse(result);
   const arr = Array.isArray(parsed) ? parsed : [parsed];
   const now = new Date().toISOString();
+  const customTemplates = useLoreStore.getState().lore?.customTemplates;
 
   return arr.map((item: Record<string, unknown>) => {
     const title = (item.title as string) ?? "Untitled";
@@ -364,7 +366,7 @@ ${worldContext}`;
     const template = (item.template as ArticleTemplate) ?? "freeform";
     return {
       id: `${id}_${Date.now().toString(36)}`,
-      template: TEMPLATE_SCHEMAS[template] ? template : "freeform",
+      template: getTemplateSchema(template, customTemplates) ? template : "freeform",
       title,
       fields: (item.fields as Record<string, unknown>) ?? {},
       content: (item.content as string) ?? "",

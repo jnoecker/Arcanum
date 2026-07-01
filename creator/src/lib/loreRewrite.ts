@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Article } from "@/types/lore";
-import { TEMPLATE_SCHEMAS } from "@/lib/loreTemplates";
+import { getTemplateSchema } from "@/lib/loreTemplates";
+import { useLoreStore } from "@/stores/loreStore";
 import { buildWorldContext } from "@/lib/loreGeneration";
 import { tiptapToPlainText, plainTextToTiptap } from "@/lib/loreRelations";
 import { getEffectiveSections } from "@/lib/loreSections";
@@ -41,7 +42,7 @@ export async function rewriteArticle(
   instructions: string,
 ): Promise<RewriteResult> {
   if (!AI_ENABLED) throw new Error("AI features are not available in Community Edition");
-  const schema = TEMPLATE_SCHEMAS[article.template];
+  const schema = getTemplateSchema(article.template, useLoreStore.getState().lore?.customTemplates);
   const { context: worldContext, diagnostic } = await buildRagContext({
     query: `${article.title}\n${instructions}`,
     excludeSourceIds: [article.id],

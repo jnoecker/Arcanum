@@ -1,7 +1,7 @@
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 use crate::{deepinfra::GeneratedImage, generation, settings};
 
@@ -550,10 +550,7 @@ pub async fn runware_generate_audio(
     hasher.update(&bytes);
     let hash = format!("{:x}", hasher.finalize());
 
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?
+    let dir = crate::fs_utils::app_data_dir(&app)?
         .join("assets")
         .join("audio");
     tokio::fs::create_dir_all(&dir)
@@ -686,10 +683,7 @@ pub async fn runware_generate_video(
             hasher.update(&bytes);
             let hash = format!("{:x}", hasher.finalize());
 
-            let dir = app
-                .path()
-                .app_data_dir()
-                .map_err(|e| format!("Failed to get app data dir: {e}"))?
+            let dir = crate::fs_utils::app_data_dir(&app)?
                 .join("assets")
                 .join("video");
             tokio::fs::create_dir_all(&dir)

@@ -1,9 +1,19 @@
 use base64::Engine;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock};
+use tauri::{AppHandle, Manager};
+
+/// Resolve the app's data directory, mapping Tauri's path error to the
+/// standard string used across the backend. Every module needs this before
+/// joining onto `assets/`, `settings.json`, etc.
+pub fn app_data_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {e}"))
+}
 
 /// Monotonic counter to guarantee temp-file uniqueness even when two atomic
 /// writes inside the same process race in the same millisecond.

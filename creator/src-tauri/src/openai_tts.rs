@@ -8,7 +8,7 @@
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 use crate::settings;
 
@@ -98,10 +98,7 @@ fn cache_hash(text: &str, voice: &str, model: &str, speed: Option<f32>) -> Strin
 }
 
 async fn narration_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?
+    let dir = crate::fs_utils::app_data_dir(app)?
         .join("assets")
         .join("narration");
     tokio::fs::create_dir_all(&dir)

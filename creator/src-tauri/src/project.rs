@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use tauri::Manager;
 use tokio::process::Command;
 
 #[derive(Serialize)]
@@ -143,10 +142,7 @@ pub struct MigrationReport {
 
 /// Build a map from content SHA-256 hash to the R2 filename (hash.ext).
 fn load_hash_map(app: &tauri::AppHandle) -> Result<HashMap<String, String>, String> {
-    let manifest_path = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?
+    let manifest_path = crate::fs_utils::app_data_dir(app)?
         .join("assets")
         .join("manifest.json");
 

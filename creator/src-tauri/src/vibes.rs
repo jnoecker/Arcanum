@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ZoneVibe {
@@ -9,10 +9,7 @@ struct ZoneVibe {
 }
 
 fn vibes_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data dir: {e}"))?;
+    let dir = crate::fs_utils::app_data_dir(app)?;
     Ok(dir.join("vibes"))
 }
 

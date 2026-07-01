@@ -618,6 +618,13 @@ fn emit_progress(app: &AppHandle, phase: &str, current: usize, total: usize, lab
 }
 
 fn is_valid_slug(slug: &str) -> bool {
+    // Reserved subdomains belong to the hub itself; the worker rejects them
+    // (hub-worker/src/util.ts::RESERVED_SUBDOMAINS). Mirror that here so a
+    // reserved slug fails before we attempt a publish.
+    const RESERVED: [&str; 8] = ["api", "admin", "www", "hub", "mail", "ftp", "ns1", "ns2"];
+    if RESERVED.contains(&slug) {
+        return false;
+    }
     let len = slug.len();
     if !(3..=32).contains(&len) {
         return false;

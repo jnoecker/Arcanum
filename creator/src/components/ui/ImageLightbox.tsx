@@ -1,5 +1,6 @@
 import "./EntityArtGenerator.css";
 import { useEffect, useRef, useState } from "react";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface ImageLightboxProps {
   src: string;
@@ -16,15 +17,19 @@ export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    closeBtnRef.current?.focus();
+  // Full-screen dialog: trap Tab focus, close on Escape, restore focus on unmount.
+  const rootRef = useFocusTrap<HTMLDivElement>(onClose);
 
+  // Prefer the Close button as the initial focus target (runs after the trap's
+  // first-focusable default).
+  useEffect(() => {
+    closeBtnRef.current?.focus();
+  }, []);
+
+  // Keyboard zoom shortcuts (Escape is handled by the focus trap).
+  useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      } else if (e.key === "0") {
+      if (e.key === "0") {
         setZoom(1);
         setPan({ x: 0, y: 0 });
       } else if (e.key === "+" || e.key === "=") {
@@ -34,11 +39,8 @@ export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
       }
     };
     window.addEventListener("keydown", handleKey);
-    return () => {
-      window.removeEventListener("keydown", handleKey);
-      previouslyFocused?.focus?.();
-    };
-  }, [onClose]);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -79,6 +81,7 @@ export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
 
   return (
     <div
+      ref={rootRef}
       className="art-lightbox"
       role="dialog"
       aria-modal="true"

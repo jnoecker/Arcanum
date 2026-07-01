@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
 import { SketchCanvas, type SketchSavedEntry } from "./SketchCanvas";
 import type { AssetContext } from "@/types/assets";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface Props {
   open: boolean;
@@ -27,17 +27,7 @@ export function SketchDialog({
   onClose,
   onSave,
 }: Props) {
-  const surfaceRef = useRef<HTMLDivElement | null>(null);
-  const stashedFocus = useRef<Element | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    stashedFocus.current = document.activeElement;
-    surfaceRef.current?.focus();
-    return () => {
-      (stashedFocus.current as HTMLElement | null)?.focus?.();
-    };
-  }, [open]);
+  const surfaceRef = useFocusTrap<HTMLDivElement>(open ? onClose : undefined);
 
   if (!open) return null;
 

@@ -30,7 +30,13 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: creator
-        run: bun install --frozen-lockfile
+        # `mkdir -p node_modules` works around an intermittent bun 1.3.14 bug
+        # where `bun install --frozen-lockfile` aborts with
+        # "ENOENT: could not open the node_modules directory" on a fresh
+        # checkout before it has created the directory itself.
+        run: |
+          mkdir -p node_modules
+          bun install --frozen-lockfile
 
       - name: TypeScript check
         working-directory: creator

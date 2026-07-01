@@ -2,6 +2,7 @@ import { memo, useState, useRef, useEffect } from "react";
 import { useAdminStore } from "@/stores/adminStore";
 import { ActionButton, Badge } from "@/components/ui/FormWidgets";
 import type { PlayerDetail } from "@/types/admin";
+import { Section } from "@/components/admin/AdminWidgets";
 
 const StatRow = memo(function StatRow({ label, value, valueClass }: { label: string; value: string | number; valueClass?: string }) {
   return (
@@ -44,15 +45,6 @@ const VitalBar = memo(function VitalBar({
           {current} / {max}
         </span>
       </div>
-    </div>
-  );
-});
-
-const Section = memo(function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-3xl border border-[var(--chrome-stroke)] bg-gradient-panel-light p-4 shadow-section">
-      <h4 className="mb-2 text-2xs uppercase tracking-wide-ui text-text-muted">{title}</h4>
-      {children}
     </div>
   );
 });

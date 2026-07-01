@@ -16,8 +16,12 @@ interface PublishHubDialogProps {
   onClose: () => void;
 }
 
-// Slug validation mirrors the Rust side (hub.rs::is_valid_slug).
+// Slug validation mirrors the Rust side (hub.rs::is_valid_slug) and the
+// hub worker (hub-worker/src/util.ts::RESERVED_SUBDOMAINS). Reserved
+// subdomains belong to the hub itself and the worker rejects them at
+// publish time — check here too so the user gets immediate feedback.
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
+const RESERVED_SLUGS = new Set(["api", "admin", "www", "hub", "mail", "ftp", "ns1", "ns2"]);
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -75,7 +79,8 @@ export function PublishHubDialog({ onClose }: PublishHubDialogProps) {
   }, []);
 
   const hubConfigured = !!(settings?.hub_api_url && settings?.hub_api_key);
-  const slugValid = SLUG_RE.test(slug);
+  const slugReserved = RESERVED_SLUGS.has(slug);
+  const slugValid = SLUG_RE.test(slug) && !slugReserved;
   const hasLore = articleCount > 0;
   const canPublish =
     !!project && hubConfigured && slugValid && hasLore && !running && !result;
@@ -195,7 +200,10 @@ export function PublishHubDialog({ onClose }: PublishHubDialogProps) {
           <p className="mt-1 text-2xs text-text-muted">
             Your world will live at{" "}
             <code className="font-mono text-accent/70">{slug || "<slug>"}.arcanum-hub.com</code>
-            {slug && !slugValid && (
+            {slug && slugReserved && (
+              <span className="ml-2 text-status-error">(reserved — pick a different name)</span>
+            )}
+            {slug && !slugReserved && !slugValid && (
               <span className="ml-2 text-status-error">(invalid — 3-32 chars, a-z0-9-)</span>
             )}
           </p>

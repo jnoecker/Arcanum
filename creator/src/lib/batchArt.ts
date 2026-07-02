@@ -17,6 +17,7 @@ import { splitLyricsLines } from "@/lib/audioLibrary";
 import {
   getNegativePrompt,
   getEnhanceSystemPrompt,
+  getPreamble,
   getStyleSuffix,
   type ArtStyle,
 } from "@/lib/arcanumPrompts";
@@ -442,6 +443,7 @@ export async function runBatchArtGeneration(
   const model = resolveImageModel(imageProvider, configuredModel);
   const nativeTransparency = modelNativelyTransparent(imageProvider, model?.id);
   const styleSuffix = getStyleSuffix("worldbuilding");
+  const stylePreamble = getPreamble(artStyle, "worldbuilding");
   const resolver = useReferenceStore.getState().resolver();
 
   const worker = async () => {
@@ -472,8 +474,13 @@ export async function runBatchArtGeneration(
           // Fall back to the reference-expanded base prompt
         }
 
-        // Append style suffix to ensure consistent aesthetic (matches individual path)
-        if (!finalPrompt.includes(styleSuffix.slice(0, 40))) {
+        // Append style suffix to ensure consistent aesthetic (matches the
+        // individual path). Un-enhanced fallback prompts already open with
+        // the style preamble, so they skip the suffix.
+        if (
+          !finalPrompt.includes(styleSuffix.slice(0, 40)) &&
+          !finalPrompt.includes(stylePreamble.slice(0, 40))
+        ) {
           finalPrompt = `${finalPrompt}\n\n${styleSuffix}`;
         }
 

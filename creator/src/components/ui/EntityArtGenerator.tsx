@@ -7,7 +7,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useLoreStore } from "@/stores/loreStore";
 import { useImageSrc, isLegacyImagePath, isR2HashPath } from "@/lib/useImageSrc";
-import { getEnhanceSystemPrompt, ART_STYLE_LABELS, getNegativePrompt, getStyleSuffix, type ArtStyle } from "@/lib/arcanumPrompts";
+import { getEnhanceSystemPrompt, ART_STYLE_LABELS, getNegativePrompt, getPreamble, getStyleSuffix, type ArtStyle } from "@/lib/arcanumPrompts";
 import type { ArtStyleSurface } from "@/lib/loreGeneration";
 import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, resolveImageModel, modelNativelyTransparent } from "@/types/assets";
 import type { AssetContext, AssetEntry, GeneratedImage } from "@/types/assets";
@@ -350,8 +350,14 @@ export function EntityArtGenerator({
         finalPrompt = expandLocal(promptToUse);
       }
 
+      // Un-enhanced fallback prompts already open with the style preamble —
+      // appending the suffix too would state the style twice.
       const styleSuffix = getStyleSuffix(surface);
-      if (!finalPrompt.includes(styleSuffix.slice(0, 40))) {
+      const stylePreamble = getPreamble(artStyle, surface);
+      if (
+        !finalPrompt.includes(styleSuffix.slice(0, 40)) &&
+        !finalPrompt.includes(stylePreamble.slice(0, 40))
+      ) {
         finalPrompt = `${finalPrompt}\n\n${styleSuffix}`;
       }
 

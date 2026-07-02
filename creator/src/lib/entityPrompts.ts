@@ -5,22 +5,8 @@ import {
   type ArtStyle,
   FORMAT_BY_TYPE,
   getPreamble,
-  getStyleSuffix,
-  type PromptPaletteOptions,
   withSpriteSafety,
 } from "./arcanumPrompts";
-
-/**
- * Vibe no longer affects entity prompts (kept as a no-op so the surrounding
- * call sites and their `vibe` parameters can be cleaned up in a later pass).
- */
-function withZoneVibe(inner: string, _zoneVibe: string | null | undefined): string {
-  return inner;
-}
-
-function paletteOpts(_zoneVibe: string | null | undefined): PromptPaletteOptions {
-  return {};
-}
 
 export type DefaultImageKind = "room" | "mob" | "item";
 
@@ -31,6 +17,14 @@ export type DefaultImageKind = "room" | "mob" | "item";
  * visible duplication.
  */
 export const EMPTY_SCENE_DIRECTIVE = `IMPORTANT — empty environment only: depict the space itself with NO people, NO characters, NO creatures, NO humanoids, NO NPCs, and NO figures of any kind. Any inhabitants mentioned above are atmospheric context only — do not draw them. Mobs and NPCs will be composited on top as separate sprites, so any figures in the background cause visible duplication. If a person or creature is central to the scene's identity, represent them indirectly through belongings, an empty seat, tools mid-use, footprints, or a trail of light — never the figure itself.`;
+
+// Compact constraint lines for the direct-to-image fallback prompts below.
+// Image models do well with just the art style and the entity's details, so
+// the direct prompts stay terse; the LLM enhancement contexts keep the full
+// EMPTY_SCENE_DIRECTIVE.
+const NO_TEXT_LINE = `NO readable text, words, or lettering in the image.`;
+
+const EMPTY_SCENE_LINE = `Empty scene — NO people, creatures, or figures of any kind; any inhabitants mentioned are context only and are composited separately as sprites.`;
 
 // ─── Context Builders ────────────────────────────────────────────
 // These build rich entity descriptions for the LLM to work with.
@@ -123,21 +117,11 @@ export function dungeonPrompt(dungeon: DungeonFile, style: ArtStyle = "gentle_ma
     ? `A dungeon called "${dungeon.name}": ${dungeon.description}.`
     : `A dungeon known as "${dungeon.name}".`;
 
-  if (style === "gentle_magic") {
-    return `${FORMAT_BY_TYPE.room}. ${preamble}
+  return `${FORMAT_BY_TYPE.room}. ${preamble}
 
-${setting} Rendered as a dreamlike dungeon threshold — soft lavender and pale blue ambient light pooling at the entrance, organic weathered stonework, drifting motes of warm gold, moss green and dusty rose accents on ancient carvings, atmospheric haze receding into deeper darkness, dramatic scale, painterly, luminous
+${setting} A dramatic establishing shot of its entrance or signature space.
 
-${EMPTY_SCENE_DIRECTIVE}
-
-${getStyleSuffix("worldbuilding")}`;
-  }
-
-  return `${preamble}
-
-${setting} Rendered as a baroque cosmic dungeon entrance — deep indigo shadows swallowing the far reaches, aurum-gold light pooling at the threshold archway, rococo scrollwork framing weathered stone, blue-violet atmospheric mist curling from within, painterly, luminous, wide establishing composition suitable for a dungeon title card
-
-${EMPTY_SCENE_DIRECTIVE}`;
+${EMPTY_SCENE_LINE} ${NO_TEXT_LINE}`;
 }
 
 /** Build a full prompt for a single dungeon room template. */
@@ -152,21 +136,11 @@ export function dungeonRoomTemplatePrompt(
     ? `A dungeon ${category} called "${title}": ${tpl.description}.`
     : `A dungeon ${category} known as "${title}".`;
 
-  if (style === "gentle_magic") {
-    return `${FORMAT_BY_TYPE.room}. ${preamble}
+  return `${FORMAT_BY_TYPE.room}. ${preamble}
 
-${setting} Rendered as a dreamlike dungeon space — soft lavender and pale blue ambient light, organic weathered stone, drifting motes of warm gold, moss green accents on old surfaces, atmospheric haze, painterly, luminous
+${setting}
 
-${EMPTY_SCENE_DIRECTIVE}
-
-${getStyleSuffix("worldbuilding")}`;
-  }
-
-  return `${preamble}
-
-${setting} Rendered as a baroque cosmic dungeon chamber — deep indigo shadows, aurum-gold light pooling at architectural details, rococo scrollwork framing stone, blue-violet atmospheric mist, painterly, luminous, wide composition suitable for a game room background
-
-${EMPTY_SCENE_DIRECTIVE}`;
+${EMPTY_SCENE_LINE} ${NO_TEXT_LINE}`;
 }
 
 /** Build a context description for a gathering node. */
@@ -209,21 +183,11 @@ export function housingRoomPrompt(_id: string, template: HousingTemplateDefiniti
     ? ` A ${template.station.toLowerCase()} crafting station is present.`
     : "";
 
-  if (style === "gentle_magic") {
-    return `${FORMAT_BY_TYPE.room}. ${preamble}
+  return `${FORMAT_BY_TYPE.room}. ${preamble}
 
-${setting}${station} Rendered as a warm and inviting personal dwelling — soft amber and golden lantern light pooling on wooden surfaces, gentle atmospheric haze, lived-in comfort with personal belongings and soft furnishings, moss green and dusty rose accents on worn wood and stone, floating motes of warm light, a sense of home and safety, painterly, luminous, breathable
+${setting}${station} A cozy, lived-in personal dwelling interior — a sense of home and safety.
 
-${EMPTY_SCENE_DIRECTIVE}
-
-${getStyleSuffix("worldbuilding")}`;
-  }
-
-  return `${preamble}
-
-${setting}${station} Rendered as a baroque personal chamber — warm aurum-gold light from ornate fixtures pooling on fine surfaces, rococo scrollwork framing doorways and furniture, deep indigo shadows in the corners giving depth, a sense of personal sanctuary and comfort, painterly, luminous, wide composition suitable for a game room background
-
-${EMPTY_SCENE_DIRECTIVE}`;
+${EMPTY_SCENE_LINE} ${NO_TEXT_LINE}`;
 }
 
 function guildHallRoomTitle(template: GuildHallRoomTemplate, id: string): string {
@@ -259,21 +223,11 @@ export function guildHallRoomPrompt(
     ? " Vault chests, ledger stands, and shared storage are visible."
     : "";
 
-  if (style === "gentle_magic") {
-    return `${FORMAT_BY_TYPE.room}. ${preamble}
+  return `${FORMAT_BY_TYPE.room}. ${preamble}
 
-${setting}${storage} Rendered as a shared guild chamber — soft amber and golden lantern light, banners and crests on the walls, long tables and benches scaled for many members, evidence of shared craft and ritual, wood and stone with warm metal accents, floating motes of warm light, a sense of fellowship and shared purpose, painterly, luminous, breathable
+${setting}${storage} A shared communal guild hall interior — banners and crests, long tables scaled for many members, a sense of fellowship.
 
-${EMPTY_SCENE_DIRECTIVE}
-
-${getStyleSuffix("worldbuilding")}`;
-  }
-
-  return `${preamble}
-
-${setting}${storage} Rendered as a baroque guild chamber — warm aurum-gold light from ornate sconces pooling on long communal tables, heraldic banners and rococo scrollwork on the walls, deep indigo shadows giving depth, a sense of shared ritual and fellowship, painterly, luminous, wide composition suitable for a game room background
-
-${EMPTY_SCENE_DIRECTIVE}`;
+${EMPTY_SCENE_LINE} ${NO_TEXT_LINE}`;
 }
 
 /** Dispatch to the right context builder by entity kind. */
@@ -317,19 +271,20 @@ export function defaultImageContext(kind: DefaultImageKind, world: WorldFile): s
 }
 
 // ─── Fallback Prompt Builders ────────────────────────────────────
-// These are the original direct-to-image prompts, kept as fallbacks
-// when no LLM is available. They include the style preamble + entity
-// details in a format that works directly with FLUX.
+// These are the direct-to-image prompts, used when no LLM is available
+// to enhance. Kept deliberately terse: format + art style preamble +
+// entity details + compact safety constraints. Image models handle this
+// well, and anything more (palette words, render directives) duplicates
+// the preamble and fights world-defined visual styles.
 
 /** Build a full prompt for a room image. */
 export function roomPrompt(
   _roomId: string,
   room: RoomFile,
   style: ArtStyle = "gentle_magic",
-  zoneVibe?: string | null,
+  _zoneVibe?: string | null,
 ): string {
-  const opts = paletteOpts(zoneVibe);
-  const preamble = getPreamble(style, "worldbuilding", opts);
+  const preamble = getPreamble(style, "worldbuilding");
   const setting = room.description
     ? `A place called "${room.title}": ${room.description}.`
     : `A chamber known as "${room.title}".`;
@@ -338,21 +293,11 @@ export function roomPrompt(
     ? ` A ${room.station.toLowerCase()} crafting station is present.`
     : "";
 
-  // Palette-rich body for the no-vibe case; composition-only body when a
-  // vibe owns palette so the hardcoded color words don't fight it.
-  const body = opts.paletteAuthority === "zone-vibe"
-    ? (style === "gentle_magic"
-        ? `${setting}${station} Rendered as a dreamlike interior space — gentle atmospheric haze, organic curves and lived-in details, painterly, luminous, breathable`
-        : `${setting}${station} Rendered as a baroque cosmic interior — rococo scrollwork framing the space, atmospheric mist, painterly, luminous, extremely detailed, wide composition suitable for a game room background`)
-    : (style === "gentle_magic"
-        ? `${setting}${station} Rendered as a dreamlike interior space — soft lavender and pale blue ambient light diffusing through gentle atmospheric haze, floating motes of warm light drifting lazily, organic curves and lived-in details, moss green and dusty rose accents on natural surfaces, soft gold highlights on magical elements, painterly, luminous, breathable`
-        : `${setting}${station} Rendered as a baroque cosmic interior — deep indigo shadows, aurum-gold light pooling at architectural details, rococo scrollwork framing the space, blue-violet atmospheric mist, painterly, luminous, extremely detailed, wide composition suitable for a game room background`);
+  return `${FORMAT_BY_TYPE.room}. ${preamble}
 
-  const inner = style === "gentle_magic"
-    ? `${FORMAT_BY_TYPE.room}. ${preamble}\n\n${body}\n\n${EMPTY_SCENE_DIRECTIVE}\n\n${getStyleSuffix("worldbuilding", opts)}`
-    : `${preamble}\n\n${body}\n\n${EMPTY_SCENE_DIRECTIVE}`;
+${setting}${station}
 
-  return withZoneVibe(inner, zoneVibe);
+${EMPTY_SCENE_LINE} ${NO_TEXT_LINE}`;
 }
 
 /** Build a full prompt for a mob portrait. */
@@ -360,61 +305,28 @@ export function mobPrompt(
   _mobId: string,
   mob: MobFile,
   style: ArtStyle = "gentle_magic",
-  zoneVibe?: string | null,
+  _zoneVibe?: string | null,
 ): string {
-  const opts = paletteOpts(zoneVibe);
-  const preamble = getPreamble(style, "worldbuilding", opts);
+  const preamble = getPreamble(style, "worldbuilding");
   const tier = mob.tier ?? "standard";
   const level = mob.level ?? 1;
   const mobDesc = mob.description ? ` ${mob.description}.` : "";
-  const hasVibe = opts.paletteAuthority === "zone-vibe";
-
-  if (style === "gentle_magic") {
-    // Drop the "soft organic forms / gentle curves / subtle magical glow"
-    // tier descriptors when the zone vibe owns palette — vibe should be
-    // free to call for sharp edges, harsh light, etc. without the prompt
-    // contradicting itself.
-    const tierDesc: Record<string, string> = hasVibe ? {
-      weak: "a small creature",
-      standard: "a formidable creature",
-      elite: "a powerful creature with visible magical aura",
-      boss: "an immense ancient being radiating overwhelming power",
-    } : {
-      weak: "a small, gentle creature",
-      standard: "a quietly formidable creature",
-      elite: "a powerful creature surrounded by softly swirling magical energy",
-      boss: "an immense ancient being radiating gentle but overwhelming power",
-    };
-    const desc = tierDesc[tier] ?? tierDesc.standard;
-    const tail = hasVibe
-      ? `Portrait composition, painterly, luminous`
-      : `Depicted with soft organic forms and gentle curves, subtle magical glow emanating naturally from within, painterly, luminous`;
-
-    const inner = `${FORMAT_BY_TYPE.mob}. ${preamble}
-
-Portrait of ${desc} known as "${mob.name}", level ${level}.${mobDesc} ${tail}
-
-${getStyleSuffix("worldbuilding", opts)}`;
-
-    return withSpriteSafety(withZoneVibe(inner, zoneVibe), "mob");
-  }
 
   const tierDesc: Record<string, string> = {
-    weak: "a minor, diminished creature",
+    weak: "a small creature",
     standard: "a formidable creature",
-    elite: "a powerful, commanding creature surrounded by crackling energy",
-    boss: "a vast, terrifying entity of immense power, dominating the composition",
+    elite: "a powerful creature with a visible magical aura",
+    boss: "an immense ancient being radiating overwhelming power",
   };
   const desc = tierDesc[tier] ?? tierDesc.standard;
-  const tail = hasVibe
-    ? `Painterly, luminous, centered composition`
-    : `Rendered with aurum-gold highlights on key features, painterly, luminous, centered composition`;
 
   const inner = `${FORMAT_BY_TYPE.mob}. ${preamble}
 
-Portrait of ${desc} known as "${mob.name}", level ${level}.${mobDesc} ${tail}`;
+Portrait of ${desc} known as "${mob.name}", level ${level}.${mobDesc}
 
-  return withSpriteSafety(withZoneVibe(inner, zoneVibe), "mob");
+${NO_TEXT_LINE}`;
+
+  return withSpriteSafety(inner, "mob");
 }
 
 /** Build a full prompt for an item image. */
@@ -422,11 +334,9 @@ export function itemPrompt(
   _itemId: string,
   item: ItemFile,
   style: ArtStyle = "gentle_magic",
-  zoneVibe?: string | null,
+  _zoneVibe?: string | null,
 ): string {
-  const opts = paletteOpts(zoneVibe);
-  const preamble = getPreamble(style, "worldbuilding", opts);
-  const hasVibe = opts.paletteAuthority === "zone-vibe";
+  const preamble = getPreamble(style, "worldbuilding");
   const slotDesc = item.slot
     ? ` worn in the ${item.slot.toLowerCase()} slot`
     : "";
@@ -436,44 +346,17 @@ export function itemPrompt(
 
   const isWeapon = item.damage && item.damage > 0;
   const isArmor = item.armor && item.armor > 0;
+  const typeHint = isWeapon
+    ? "a weapon"
+    : isArmor
+      ? "a piece of protective armor"
+      : "a magical artifact";
 
-  if (style === "gentle_magic") {
-    const typeHint = hasVibe
-      ? (isWeapon ? "a weapon" : isArmor ? "a piece of protective armor" : "a magical artifact")
-      : (isWeapon
-          ? "a weapon with a soft magical glow"
-          : isArmor
-            ? "protective armor with gentle enchantment traces"
-            : "a warmly glowing magical artifact");
-    const tail = hasVibe
-      ? `Still life composition, painterly`
-      : `Rendered as a gently luminous object resting on a soft surface, ambient lavender and pale blue light diffusing around it, subtle floating motes of warm gold, soft atmospheric haze, organic gentle forms, dreamlike quality, painterly`;
+  return `${FORMAT_BY_TYPE.item}. ${preamble}
 
-    const inner = `${FORMAT_BY_TYPE.item}. ${preamble}
+Still life of ${typeHint} called "${item.displayName}"${slotDesc}.${desc}
 
-Still life of ${typeHint} called "${item.displayName}"${slotDesc}.${desc} ${tail}
-
-${getStyleSuffix("worldbuilding", opts)}`;
-
-    return withZoneVibe(inner, zoneVibe);
-  }
-
-  const typeHint = hasVibe
-    ? (isWeapon ? "a weapon" : isArmor ? "a piece of protective armor" : "a luminous artifact")
-    : (isWeapon
-        ? "a weapon radiating aurum energy"
-        : isArmor
-          ? "protective armor traced with baroque scrollwork"
-          : "a luminous artifact");
-  const tail = hasVibe
-    ? `Centered still-life composition suitable for an inventory icon, painterly`
-    : `Rendered as a glowing object floating in deep cosmic indigo void, baroque energy threads curling around it, aurum-gold light emanating from its core, blue-violet ambient fill, ornate and detailed, painterly, centered composition suitable for an inventory icon`;
-
-  const inner = `${preamble}
-
-Still life of ${typeHint} called "${item.displayName}"${slotDesc}.${desc} ${tail}`;
-
-  return withZoneVibe(inner, zoneVibe);
+${NO_TEXT_LINE}`;
 }
 
 /** Build a context description for a music box's lyric-sheet keepsake. */
@@ -499,47 +382,29 @@ export function musicBoxKeepsakePrompt(
   title: string,
   artist?: string,
   style: ArtStyle = "gentle_magic",
-  zoneVibe?: string | null,
+  _zoneVibe?: string | null,
 ): string {
-  const opts = paletteOpts(zoneVibe);
-  const preamble = getPreamble(style, "worldbuilding", opts);
+  const preamble = getPreamble(style, "worldbuilding");
   const named = title.trim() ? `"${title.trim()}"` : "an old tune";
   const by = artist && artist.trim() ? ` by ${artist.trim()}` : "";
   const subject = `a single lyric sheet — a worn sheet of paper printed with the title and lyrics of the song ${named}${by}, the keepsake a player keeps after winding a music box`;
 
-  const tail =
-    style === "gentle_magic"
-      ? `Rendered as a gently luminous object resting on a soft surface, ambient lavender and pale blue light diffusing around it, subtle floating motes of warm gold, dreamlike quality, painterly, centered composition suitable for an inventory icon`
-      : `Rendered as a glowing object floating in deep cosmic indigo void, aurum-gold light emanating from its edges, blue-violet ambient fill, ornate and detailed, painterly, centered composition suitable for an inventory icon`;
+  return `${FORMAT_BY_TYPE.item}. ${preamble}
 
-  const inner = `${FORMAT_BY_TYPE.item}. ${preamble}
+Still life of ${subject}.
 
-Still life of ${subject}. ${tail}
-
-${getStyleSuffix("worldbuilding", opts)}`;
-
-  return withZoneVibe(inner, zoneVibe);
+${NO_TEXT_LINE}`;
 }
 
 /** Build a full prompt for a shop image. */
 export function shopPrompt(_shopId: string, shop: ShopFile, style: ArtStyle = "gentle_magic"): string {
   const preamble = getPreamble(style, "worldbuilding");
 
-  if (style === "gentle_magic") {
-    return `${FORMAT_BY_TYPE.room}. ${preamble}
+  return `${FORMAT_BY_TYPE.room}. ${preamble}
 
-A gentle magical marketplace interior called "${shop.name}" — cozy shelves and display cases holding softly glowing artifacts, warm ambient light filtering through atmospheric haze, floating motes of gold drifting between items, lavender and pale blue tones in the shadows, dusty rose accents on wooden surfaces, a sense of wonder and quiet abundance, organic curves and lived-in warmth, painterly, luminous
+A marketplace interior called "${shop.name}" — storefront, shelves, display cases, and wares.
 
-${EMPTY_SCENE_DIRECTIVE}
-
-${getStyleSuffix("worldbuilding")}`;
-  }
-
-  return `${preamble}
-
-An arcane marketplace interior called "${shop.name}" — baroque display cases of glowing energy holding luminous artifacts, aurum-gold light pooling on shelves traced with rococo scrollwork, deep indigo shadows between alcoves, blue-violet atmospheric mist, a sense of abundance and ancient commerce, painterly, luminous, wide composition
-
-${EMPTY_SCENE_DIRECTIVE}`;
+${EMPTY_SCENE_LINE} ${NO_TEXT_LINE}`;
 }
 
 /**
@@ -551,21 +416,12 @@ export function trainerPrompt(_mobId: string, mob: MobFile, style: ArtStyle = "g
   const preamble = getPreamble(style, "worldbuilding");
   const cls = getTrainerPrimaryClass(mob)?.toLowerCase() ?? "warrior";
 
-  if (style === "gentle_magic") {
-    return withSpriteSafety(
-      `${FORMAT_BY_TYPE.mob}. ${preamble}
-
-A gentle magical portrait of a ${cls} class trainer called "${mob.name}" — a wise mentor figure in soft flowing robes or battle-worn attire appropriate for a ${cls}, a sense of knowledge and patient guidance, painterly, luminous
-
-${getStyleSuffix("worldbuilding")}`,
-      "mob",
-    );
-  }
-
   return withSpriteSafety(
     `${FORMAT_BY_TYPE.mob}. ${preamble}
 
-An arcane portrait of a ${cls} class trainer called "${mob.name}" — a powerful mentor in baroque armor or robes befitting a ${cls}, a sense of mastery and ancient knowledge, painterly, luminous`,
+Portrait of a ${cls} class trainer called "${mob.name}" — a wise mentor figure in attire befitting a ${cls}.
+
+${NO_TEXT_LINE}`,
     "mob",
   );
 }
@@ -582,19 +438,11 @@ export function gatheringNodePrompt(
     ? ` Yields ${(node.yields ?? []).map((y) => y.itemId).filter(Boolean).join(", ")}.`
     : "";
 
-  if (style === "gentle_magic") {
-    return `${FORMAT_BY_TYPE.gathering_node}. ${preamble}
-
-A single interactable resource node called "${node.displayName}"${skillHint}.${yieldHint} Rendered as a small grounded sprite resting on a soft mossy patch — clearly readable as something a player would walk up to and gather from, source-ambiguous diffused light, faint floating motes of warm gold drifting upward, pale blue and lavender atmospheric haze, dusty rose and moss-green accents at the base, painterly, luminous, dreamlike, NO characters, NO hands, NO UI
-
-${getStyleSuffix("worldbuilding")}`;
-  }
-
   return `${FORMAT_BY_TYPE.gathering_node}. ${preamble}
 
-A single interactable resource node called "${node.displayName}"${skillHint}.${yieldHint} Rendered as a grounded sprite resting on dark cosmic-stone — warm aurum-gold light pooling on the harvestable surfaces with soft bloom, baroque energy filaments curling from the node like delicate scrollwork tendrils, deep cosmic indigo void surrounding it, blue-violet atmospheric mist drifting around the base, painterly oil technique, extremely detailed, NO characters, NO hands, NO UI
+A single interactable resource node called "${node.displayName}"${skillHint}.${yieldHint} Clearly readable as something a player would walk up to and gather from. NO characters, NO hands, NO UI.
 
-${getStyleSuffix("worldbuilding")}`;
+${NO_TEXT_LINE}`;
 }
 
 /** Dispatch to the right prompt builder by entity kind. */
@@ -617,20 +465,12 @@ export function entityPrompt(
     case "gatheringNode":
       return gatheringNodePrompt(id, entity as GatheringNodeFile, style);
     default: {
-      const opts = paletteOpts(zoneVibe);
-      const preamble = getPreamble(style, "worldbuilding", opts);
-      const hasVibe = opts.paletteAuthority === "zone-vibe";
-      const body = style === "gentle_magic"
-        ? (hasVibe
-            ? `Portrait of a ${kind} entity called "${id}", painterly, luminous`
-            : `Dreamlike portrait of a ${kind} entity called "${id}", rendered in soft magical style, lavender and pale blue tones, gentle ambient glow, floating motes of warm light, painterly, luminous`)
-        : (hasVibe
-            ? `Portrait of a ${kind} entity called "${id}", painterly, luminous`
-            : `Arcane portrait of a ${kind} entity called "${id}", rendered in baroque cosmic style, aurum-gold highlights, deep indigo background, painterly, luminous`);
-      const inner = style === "gentle_magic"
-        ? `${preamble}\n\n${body}\n\n${getStyleSuffix("worldbuilding", opts)}`
-        : `${preamble}\n\n${body}`;
-      return withZoneVibe(inner, zoneVibe);
+      const preamble = getPreamble(style, "worldbuilding");
+      return `${preamble}
+
+Portrait of a ${kind} entity called "${id}".
+
+${NO_TEXT_LINE}`;
     }
   }
 }
@@ -644,63 +484,27 @@ export function defaultImagePrompt(
   const preamble = getPreamble(style, "worldbuilding");
   const zoneSummary = buildZoneSummary(world);
 
-  if (style === "gentle_magic") {
-    switch (kind) {
-      case "room":
-        return `${FORMAT_BY_TYPE.room}. ${preamble}
-
-Fallback room illustration for ${world.zone}.
-${zoneSummary}
-
-Focus on an atmospheric establishing scene that can gracefully stand in for any unillustrated room in the zone. Painterly, luminous, softly enchanted, emotionally safe. No readable text.
-
-${EMPTY_SCENE_DIRECTIVE}
-
-${getStyleSuffix("worldbuilding")}`;
-      case "mob":
-        return `${FORMAT_BY_TYPE.mob}. ${preamble}
-
-Fallback mob portrait for ${world.zone}.
-${zoneSummary}
-
-Depict a generic inhabitant or creature archetype that feels native to the zone without representing any named NPC. The figure should feel characterful and approachable, with subtle magical details and a soft ambient glow.
-
-${getStyleSuffix("worldbuilding")}`;
-      case "item":
-        return `${FORMAT_BY_TYPE.item}. ${preamble}
-
-Fallback item icon for ${world.zone}.
-${zoneSummary}
-
-Depict a generic magical object or artifact that could plausibly belong anywhere in this zone. Keep the silhouette clear, the materials handcrafted, and the enchantment subtle but visible.
-
-${getStyleSuffix("worldbuilding")}`;
-    }
-  }
-
   switch (kind) {
     case "room":
-      return `${preamble}
+      return `${FORMAT_BY_TYPE.room}. ${preamble}
 
-Fallback room illustration for ${world.zone}.
+Fallback room illustration for ${world.zone} — an atmospheric establishing scene that can stand in for any unillustrated room in the zone.
 ${zoneSummary}
 
-Wide atmospheric environment art suitable for any room in the zone.
-
-${EMPTY_SCENE_DIRECTIVE}`;
+${EMPTY_SCENE_LINE} ${NO_TEXT_LINE}`;
     case "mob":
-      return `${preamble}
+      return `${FORMAT_BY_TYPE.mob}. ${preamble}
 
-Fallback creature portrait for ${world.zone}.
+Fallback mob portrait for ${world.zone} — a generic inhabitant or creature archetype native to the zone, not any named NPC.
 ${zoneSummary}
 
-Generic zone inhabitant portrait suitable for mobs without explicit art.`;
+${NO_TEXT_LINE}`;
     case "item":
-      return `${preamble}
+      return `${FORMAT_BY_TYPE.item}. ${preamble}
 
-Fallback item illustration for ${world.zone}.
+Fallback item icon for ${world.zone} — a generic magical object with a clear silhouette that could belong anywhere in the zone.
 ${zoneSummary}
 
-Generic zone-themed artifact icon suitable for items without explicit art.`;
+${NO_TEXT_LINE}`;
   }
 }

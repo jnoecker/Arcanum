@@ -5,6 +5,7 @@ import {
   type ArtStyle,
   FORMAT_BY_TYPE,
   getPreamble,
+  NO_TEXT_LINE,
   withSpriteSafety,
 } from "./arcanumPrompts";
 
@@ -18,12 +19,10 @@ export type DefaultImageKind = "room" | "mob" | "item";
  */
 export const EMPTY_SCENE_DIRECTIVE = `IMPORTANT — empty environment only: depict the space itself with NO people, NO characters, NO creatures, NO humanoids, NO NPCs, and NO figures of any kind. Any inhabitants mentioned above are atmospheric context only — do not draw them. Mobs and NPCs will be composited on top as separate sprites, so any figures in the background cause visible duplication. If a person or creature is central to the scene's identity, represent them indirectly through belongings, an empty seat, tools mid-use, footprints, or a trail of light — never the figure itself.`;
 
-// Compact constraint lines for the direct-to-image fallback prompts below.
-// Image models do well with just the art style and the entity's details, so
-// the direct prompts stay terse; the LLM enhancement contexts keep the full
-// EMPTY_SCENE_DIRECTIVE.
-const NO_TEXT_LINE = `NO readable text, words, or lettering in the image.`;
-
+// Compact empty-scene constraint for the direct-to-image fallback prompts
+// below. Image models do well with just the art style and the entity's
+// details, so the direct prompts stay terse; the LLM enhancement contexts
+// keep the full EMPTY_SCENE_DIRECTIVE.
 const EMPTY_SCENE_LINE = `Empty scene — NO people, creatures, or figures of any kind; any inhabitants mentioned are context only and are composited separately as sprites.`;
 
 // ─── Context Builders ────────────────────────────────────────────

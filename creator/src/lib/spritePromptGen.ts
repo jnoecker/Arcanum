@@ -1,9 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import {
+  ENHANCED_PROMPT_TAIL,
   getEnhanceSystemPrompt,
   getFormatForAssetType,
   getPreamble,
-  getStyleSuffix,
+  NO_TEXT_LINE,
   withSpriteSafety,
   type ArtStyle,
 } from "./arcanumPrompts";
@@ -163,9 +164,9 @@ export function spriteBasePrompt(
 
   const inner = `${getFormatForAssetType("player_sprite")}. ${preamble}${toneLine}
 
-A full-body standing figure of a ${spriteSubject(dimensions)}.${notesLine} Relaxed confident standing pose, entire figure visible head to toe, clear readable silhouette, painterly, luminous, extremely detailed${directiveBlock}
+A full-body standing figure of a ${spriteSubject(dimensions)}.${notesLine} Relaxed confident standing pose, entire figure visible head to toe, clear readable silhouette.${directiveBlock}
 
-${getStyleSuffix("worldbuilding")}`;
+${NO_TEXT_LINE}`;
 
   return withSpriteSafety(inner, "player_sprite", nativeTransparency);
 }
@@ -191,9 +192,10 @@ export async function buildEnhancedSpritePrompt(args: SpritePromptArgs): Promise
     const userPrompt = `Generate an image prompt for this entity:\n${context}\n\nReference style template (adapt but prioritize the entity description above):\n${base}`;
     let finalPrompt = await invoke<string>("llm_complete", { systemPrompt, userPrompt });
 
-    const styleSuffix = getStyleSuffix("worldbuilding");
-    if (!finalPrompt.includes(styleSuffix.slice(0, 40))) {
-      finalPrompt = `${finalPrompt}\n\n${styleSuffix}`;
+    // The enhancer already conforms the prompt to the style; only the
+    // compact medium + no-text constraints need to ride along verbatim.
+    if (!finalPrompt.includes("NO readable text")) {
+      finalPrompt = `${finalPrompt}\n\n${ENHANCED_PROMPT_TAIL}`;
     }
     return finalPrompt;
   } catch (error) {

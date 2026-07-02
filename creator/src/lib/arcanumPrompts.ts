@@ -25,37 +25,22 @@ export const ARCANUM_PREAMBLE = `Arcanum style (arcanum_v1): deep cosmic indigo 
 /**
  * Condensed Surreal Gentle Magic design system reference, derived from
  * the STYLE_GUIDE.md. Included in Claude system prompts so it can
- * actively shape prompts toward the aesthetic.
+ * actively shape prompts toward the aesthetic. Kept terse — this ships
+ * with every enhancement call, so every word here is a per-image cost.
  */
-export const STYLE_GUIDE_REFERENCE = `# Surreal Gentle Magic (surreal_softmagic_v1) — Design System Reference
+export const STYLE_GUIDE_REFERENCE = `# Surreal Gentle Magic (surreal_softmagic_v1) — Style Reference
 
-## Core Philosophy
-- Enchanted, not explosive — magic feels ambient and inevitable, never aggressive
-- Dreamlike, not chaotic — softness enables focus and contemplation
-- Softly luminous, never harsh — light is a character, not a weapon
-- Otherworldly, but emotionally safe — viewers feel welcomed, not threatened
-- KEY PRINCIPLE: Nothing feels industrial. Nothing feels sharp unless narratively intentional.
+Philosophy: enchanted not explosive, dreamlike not chaotic, softly luminous never harsh, otherworldly but emotionally safe. Nothing industrial, nothing sharp unless narratively intentional.
 
-## Shapes
-PREFERRED: Slight vertical elongation, gentle curves over hard angles, organic lived-in quality, micro-warping (nothing perfectly straight)
-FORBIDDEN: Harsh geometric symmetry, perfect 90° realism, brutalist silhouettes, mechanical rigidity
+Shapes: gentle curves over hard angles, slight vertical elongation, organic lived-in quality, micro-warping (nothing perfectly straight). Never harsh geometric symmetry, perfect 90° realism, brutalist silhouettes, or mechanical rigidity.
 
-## Color Palette
-Primary tones: Lavender #a897d2, Pale Blue #8caec9, Dusty Rose #b88faa, Moss Green #8da97b, Soft Gold #bea873
-Neutrals: Deep Mist #22293c (darkest), Soft Fog #6f7da1, Cloud #d8def1
-Rules: No neon, no saturated primaries, no pure black. Cool undertones dominate, warm accents (dusty rose, soft gold) balance. Contrast is moderate, never stark.
+Palette: Lavender #a897d2, Pale Blue #8caec9, Dusty Rose #b88faa, Moss Green #8da97b, Soft Gold #bea873 over neutrals Deep Mist #22293c, Soft Fog #6f7da1, Cloud #d8def1. No neon, no saturated primaries, no pure black; cool undertones dominate with warm accents; contrast moderate, never stark.
 
-## Light Behavior
-Light sources feel: AMBIENT (no clear source point), DIFFUSED (edges fade softly), SOURCE-AMBIGUOUS (viewer unsure where glow originates)
-Treatments: Ground-level glow (magical plants, glowing moss), halos around magical beings, soft bloom around windows and light sources, light threads connecting magical objects, atmospheric diffusion creating depth
-FORBIDDEN: Sharp rim lights, hard shadows, spotlight effects, high-contrast chiaroscuro
+Light: ambient, diffused, source-ambiguous. Ground-level glow, halos around magical beings, soft bloom at windows and light sources, atmospheric diffusion for depth. Never sharp rim lights, hard shadows, spotlights, or high-contrast chiaroscuro.
 
-## Text in Images
-AI image generators cannot reliably render readable text. NEVER include signs, labels, plaques, book titles, inscriptions, or any readable words in prompts. Instead replace them with: mysterious glowing runes, arcane glyphs, softly luminous symbols, ancient mystical script, or indecipherable magical sigils. This applies to ALL references to writing, signs, banners with text, scrolls, etc.
+Text: AI image generators cannot render readable text — replace ALL signs, labels, plaques, inscriptions, and writing with glowing runes, arcane glyphs, or indecipherable magical sigils.
 
-## Emotional Check
-Every image must feel: gentle, slow/breathable, enchanted but safe, welcoming.
-If it feels intense, loud, sharp, or industrial — it's wrong. Revise.`;
+Every image must feel gentle, breathable, enchanted but safe, welcoming.`;
 
 /** Gentle Magic style preamble — for MUD world assets */
 export const GENTLE_MAGIC_PREAMBLE = `Surreal Gentle Magic style (surreal_softmagic_v1): soft lavender and pale blue undertones, ambient diffused lighting with no harsh shadows or spotlighting, gentle atmospheric haze with floating motes of light, subtle magical glow integrated naturally into the environment, slightly elongated organic forms, dreamy breathable emotionally safe aesthetic, no neon colors, no high contrast, no harsh edges, painterly and luminous`;
@@ -116,9 +101,6 @@ export function buildZoneVibeBlock(_zoneVibe: string): string {
 export function buildZoneVibeReiteration(_zoneVibe: string): string {
   return "";
 }
-
-/** @deprecated Use getStyleSuffix() — kept for backward compatibility during migration */
-export const STYLE_SUFFIX = GENERIC_STYLE_FALLBACK;
 
 /** Format specification per entity type for image generation */
 export const FORMAT_BY_TYPE: Record<string, string> = {
@@ -262,42 +244,17 @@ export function getNegativePrompt(assetType?: string): string {
   return UNIVERSAL_NEGATIVE;
 }
 
-/** Appended verbatim to every gentle_magic prompt after LLM enhancement. */
-export const GENTLE_MAGIC_SUFFIX = `Rendered in the Surreal Gentle Magic style (surreal_softmagic_v1). Digital fantasy painting in the style of a dreamy storybook illustration — NOT a photograph, NOT a 3D render, NOT concept art. Visible painterly brushwork with soft textured rendering throughout.
+/** Compact no-text constraint shared by direct prompts and enhanced-prompt tails. */
+export const NO_TEXT_LINE = `NO readable text, words, or lettering in the image.`;
 
-Color and light:
-- Soft lavender and pale blue undertones suffusing every surface — cool undertones dominate, warm accents (dusty rose, soft gold) used sparingly for balance
-- Ambient diffused lighting with NO clear source point — light feels source-ambiguous and magical, never like realistic sunlight or artificial lamps
-- Gentle atmospheric haze with floating motes of light and faint magical particles drifting in the air
-- Soft bloom around windows and light sources, ground-level magical glow (glowing moss, luminous plants)
-
-Shape and form:
-- Gentle curves over hard angles — nothing perfectly straight, micro-warping on all edges
-- Slightly elongated organic forms (trees, towers, figures, architecture, furniture)
-- Organic lived-in quality — nothing feels industrial, nothing feels mechanical
-
-NO readable text, words, letters, or legible writing — replace all signs, plaques, and inscriptions with glowing runes or arcane glyphs.
-
-FORBIDDEN: photorealism, neon colors, high contrast, harsh edges, sharp geometric lines, perfect 90-degree angles, mechanical rigidity, brutalist silhouettes, harsh shadows, spotlight effects, rim lighting, chiaroscuro`;
-
-/** Appended verbatim to every arcanum prompt after LLM enhancement. */
-export const ARCANUM_SUFFIX = `Rendered in the Arcanum style (arcanum_v1). Digital fantasy painting with deep cosmic indigo and abyssal navy backgrounds, baroque rococo light scrollwork rendered as glowing energy threads. Visible painterly oil-painting texture throughout.
-
-Color and light:
-- Deep cosmic indigo (#080c1c to #1a2040) and abyssal navy as primary backgrounds
-- Warm aurum-gold (#c8972e, #e2bc6a) as the primary accent — concentrated light with 20-40px feathered bloom
-- Cool blue-violet atmospheric fill in shadows and ambient spaces — nebula-violet ambient wash
-- No harsh shadows, no spotlights — light dissolves gradually into darkness
-
-Shape and form:
-- Baroque C-curves and S-curves — borders and ornaments terminate in curls, never hard stops
-- Acanthus-leaf spirals, flowing filigree of light, fractaline structures
-- Objects float in cosmic void or sit within baroque frames that dissolve at edges
-- Cosmological scale — slow, vast, contemplative
-
-NO readable text, words, letters, runes, or glyphs — no watermarks, no logos, no signatures.
-
-FORBIDDEN: photorealism, neon colors, modern technology, flat design, cartoon, anime, studio lighting, stock photo aesthetic, harsh edges, brutalist shapes`;
+/**
+ * Compact tail appended to LLM-enhanced prompts. The enhancer's system
+ * prompt already embeds the full style (or world visual style) directive
+ * and demands conformance, so re-appending the style suffix to its output
+ * only stated the style twice — this keeps just the medium + no-text
+ * constraints the image model still needs verbatim.
+ */
+export const ENHANCED_PROMPT_TAIL = `Painterly digital fantasy illustration — NOT a photograph, NOT a 3D render. ${NO_TEXT_LINE}`;
 
 /**
  * Composition-only preamble used when a zone vibe owns the palette.
@@ -602,73 +559,35 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
 
 // ─── Enhance System Prompts ───────────────────────────────────────
 
-const ENHANCE_SYSTEM_PROMPT_ARCANUM = `You are a prompt engineer specializing in FLUX image generation models. Your task is to enhance user prompts for the Arcanum art style (arcanum_v1).
+/** Shared output-length rule for all enhancer system prompts. Enhanced
+ *  prompts are billed as image-model input tokens on every generation, so
+ *  the cap is a direct per-image cost control. */
+const ENHANCE_LENGTH_RULE = `Keep the finished prompt under 100 words — every phrase must add concrete visual information; no filler, no repeated style language.`;
 
-## The Arcanum Visual Language
+const ENHANCE_SYSTEM_PROMPT_ARCANUM = `You are a prompt engineer for AI image generation models. Enhance user prompts for the Arcanum art style (arcanum_v1) — vast, baroque, luminous, like looking into the architecture of creation.
 
-The Arcanum is the Creator's instrument — a cosmic machine used to shape worlds. Art should feel vast, baroque, and luminous, like looking into the architecture of creation itself.
+Palette: deep cosmic indigo (#080c1c) and abyssal navy (#0f1428) backgrounds, never pure black; warm aurum-gold (#c8972e, #e2bc6a) accents only where something is alive, active, or important; cool blue-violet nebula fill as the medium everything exists in. No neon, no harsh white.
+Shape: baroque/rococo scrollwork rendered as glowing energy threads, C- and S-curves terminating in curls, acanthus-leaf spirals, fractaline structures, decorative elements dissolving to transparency at their ends.
+Light: concentrated aurum glow pooling with soft feathered bloom; nebula-violet ambient fill; no hard shadows. Cosmological scale, painterly oil technique, extremely detailed. Wide compositions for environments, centered for items/icons, vertical for portraits.
+Never include: text, words, letters, runes, glyphs, watermarks, logos, modern technology, user interfaces, neon colors, harsh shadows, hard edges, flat design, cartoon, anime, photorealism, studio lighting, horror, gore.
 
-### Core Palette
-- **Backgrounds:** Deep cosmic indigo (#080c1c), abyssal navy (#0f1428) — never pure black
-- **Primary accent:** Warm aurum-gold (#c8972e) and pale aurum (#e2bc6a) — only where something is alive, active, or important
-- **Atmospheric fill:** Cool blue-violet and nebula-violet — the medium through which everything exists
-- **Forbidden:** Neon colors, hot pink, electric blue, lime green, harsh white backgrounds
+Entity portraits: when the prompt describes a specific character, creature, or NPC, depict them faithfully with literal anatomy and appearance — never reduced to abstract energy forms. Apply the Arcanum palette and lighting to their actual physical form; ornamentation frames the character, never replaces them.
 
-### Shape & Ornamentation
-- Baroque/rococo scrollwork rendered as glowing energy threads, not solid matter
-- C-curves and S-curves — borders and ornaments terminate in curls, never hard stops
-- Acanthus-leaf spirals, flowing filigree of light
-- Gradual dissolution — nothing abruptly ends, decorative elements fade to transparency at extremities
-- Sweeping spiral arms of light, fractaline crystalline structures
-
-### Light Behavior
-- **Concentrated Aurum:** Warm gold-amber light emanating from active/important elements. It pools and fades outward with a 20-40px feathered bloom.
-- **Nebula-violet ambient fill:** Cool blue-violet glow that fills darkness without illuminating it. Gives depth without competing with the Aurum.
-- No hard drop shadows — all shadows use deep indigo base and spread widely
-- Stars and pinpoint lights only in background art, not UI chrome
-
-### Composition Rules
-- Cosmological scale — always implied, even for small objects
-- Painterly oil technique, luminous, extremely detailed
-- Objects float in void or are framed by baroque energy architecture
-- Portraits use archetypal/symbolic forms rendered in flowing energy, not literal anatomy
-- Wide compositions for environments, centered compositions for items/icons, vertical for portraits
-
-### Absolute Negatives (never include)
-Text, words, letters, runes, glyphs, watermarks, logos, signatures, modern technology, computers, user interfaces, neon colors, harsh shadows, hard edges, flat design, cartoon, anime, photorealism, studio lighting, stock photo aesthetic, horror elements, gore
-
-### Entity Portraits (exception to abstract style)
-When the prompt describes a specific character, creature, or NPC, you MUST depict them faithfully based on their description. Use literal anatomy and appearance — do NOT reduce characters to abstract energy forms or symbolic shapes. A mob/NPC described as a woman should look like a woman. A goblin should look like a goblin. Apply the Arcanum palette and lighting to their actual physical form. Baroque ornamentation should frame or accent the character, not replace them.
-
-## Your Task
-
-When enhancing a prompt:
-1. Preserve the core subject/concept from the original prompt — especially the entity's identity and physical description
-2. If entity details are provided, faithfully depict the described character/creature with their actual appearance
-3. Add specific Arcanum palette colors (deep indigo, aurum-gold, blue-violet)
-4. Add baroque ornamentation details (scrollwork, energy threads, fractaline structures) as framing/accents
-5. Add light behavior (aurum pooling, nebula mist, soft bloom)
-6. Add composition and quality terms (painterly, luminous, extremely detailed)
-7. Ensure the prompt avoids all absolute negatives
-8. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting`;
+When enhancing:
+1. Preserve the core subject and any described physical details.
+2. Weave in Arcanum palette, ornamentation, and light behavior.
+3. ${ENHANCE_LENGTH_RULE}
+4. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting.`;
 
 const ENHANCE_SYSTEM_PROMPT_GENTLE_MAGIC = `You are an expert image prompt engineer for AI image generators. You work exclusively within the Surreal Gentle Magic design system.
 
 ${STYLE_GUIDE_REFERENCE}
 
-Given an entity from a fantasy MUD zone, write a single optimized image generation prompt. CRITICAL: You must actively transform the scene toward the Surreal Gentle Magic aesthetic. Even if the source description sounds modern, industrial, or mundane:
-- Replace harsh/artificial lighting with ambient magical glow and source-ambiguous diffused light
-- Replace straight geometric surfaces with gently curved, micro-warped organic forms
-- Replace industrial materials (metal panels, concrete, glass) with enchanted equivalents (weathered stone, living wood, crystalline surfaces)
-- Add subtle magical elements: floating motes, faint luminous particles, glowing vegetation, atmospheric haze
-- Ensure the palette stays within the approved tones (lavender, pale blue, dusty rose, moss green, soft gold on deep dark backgrounds)
-- Replace any references to readable text, signs, plaques, banners, or inscriptions with glowing runes, arcane glyphs, or mysterious luminous symbols — AI cannot render legible text
+Given an entity from a fantasy MUD zone, write a single optimized image generation prompt. Actively transform the scene toward the aesthetic, even if the source sounds modern, industrial, or mundane: replace harsh/artificial lighting with ambient source-ambiguous glow, straight geometric surfaces and industrial materials with gently curved organic or enchanted equivalents (weathered stone, living wood, crystal), and any readable text with glowing runes or arcane glyphs; add subtle magic — floating motes, luminous vegetation, atmospheric haze — and keep the approved palette. Every scene must feel like a softly luminous storybook illustration.
 
-Every scene must feel like a softly luminous storybook illustration — gentle, breathable, and quietly enchanted.
+Entity portraits: when the prompt describes a specific character, creature, or NPC, depict them faithfully with their actual physical appearance — never reduced to abstract forms. The dreamlike quality enhances the character, never replaces them.
 
-### Entity Portraits (exception to abstract style)
-When the prompt describes a specific character, creature, or NPC, you MUST depict them faithfully based on their description. Use their actual physical appearance — do NOT reduce characters to abstract forms. Apply the Gentle Magic palette and lighting to their actual physical form. The dreamlike quality should enhance the character, not replace them.
-
+${ENHANCE_LENGTH_RULE}
 Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting.`;
 
 const CUSTOM_ASSET_SYSTEM_PROMPT_GENTLE_MAGIC = `You are an expert image prompt engineer for AI image generators. You work exclusively within the Surreal Gentle Magic design system.
@@ -679,16 +598,12 @@ The user will provide a free-form description of an asset they want generated fo
 
 Rules:
 - Preserve the user's core subject, purpose, and mood
-- Replace harsh, industrial, or mundane details with soft magical equivalents when appropriate
-- Add subtle magical elements such as floating motes, faint luminous particles, atmospheric haze, glowing vegetation, or ambient bloom
-- Keep the palette within lavender, pale blue, dusty rose, moss green, and soft gold over deep misty neutrals
-- Replace any readable text, signage, labels, banners, inscriptions, or interface elements with glowing runes, arcane glyphs, or abstract magical symbols
+- Replace harsh, industrial, or mundane details with soft magical equivalents; add subtle magic (floating motes, atmospheric haze, glowing vegetation) within the approved palette
+- Replace any readable text, signage, labels, or inscriptions with glowing runes or arcane glyphs
 - Respect the requested format/composition exactly
+- ${ENHANCE_LENGTH_RULE}
 
 Output ONLY the finished prompt text — no explanation, no labels, no markdown.`;
-
-/** System prompt for the prompt enhancement LLM — kept for backward compat */
-export const ENHANCE_SYSTEM_PROMPT = ENHANCE_SYSTEM_PROMPT_ARCANUM;
 
 /** Per-class palette descriptors for ability and status effect icon generation,
  *  keyed by the built-in Ambon class name (lowercased for matching). */
@@ -739,31 +654,25 @@ ${EFFECT_COLOR_MODIFIERS}`;
 /** Full sprite safety block for BG-removal models (FLUX etc.) */
 const SPRITE_SAFETY_ENHANCER_BLOCK = `
 
-SPRITE SAFETY RULES (this asset will be algorithmically matted out of its background — these rules are non-negotiable and OVERRIDE any conflicting style guidance):
-- The background MUST be described as a flat uniform pale lavender (#d8d0e8) field, empty and featureless. Strip out any decorative frames, scrollwork, nebula, mist, motes, particles, ground planes, or sticker-sheet patterns the source prompt may describe.
-- Wings, tails, fins, membranes, cloaks, and all appendages must be described as FULLY OPAQUE solid shapes with clear outlines. Never translucent, gauzy, semi-transparent, dissolving into light, or trailing particles.
-- The full figure including every wing, horn, limb, and accessory must fit within the frame with clear padding on all sides. Never crop.
-- If the creature has paired features (two wings, two horns, two ears), explicitly state that BOTH are fully visible and anatomically attached.
-- The subject must be a single connected silhouette. No detached floating parts, no energy trails, no sparkle clouds that blend into the background.
-- If the original prompt describes a decorative cosmic/baroque/scrollwork background, REPLACE it with the plain lavender field. Do not soften these rules with "preferably" or "mostly" — state them as hard requirements.`;
+SPRITE SAFETY RULES (this asset will be algorithmically matted out of its background — non-negotiable, they OVERRIDE conflicting style guidance and the word cap; state them in the output compactly, as hard requirements, never softened with "preferably"):
+- The background is a flat uniform pale lavender (#d8d0e8) field, empty and featureless. Strip any decorative frames, scrollwork, nebula, mist, motes, particles, ground planes, or sticker-sheet patterns from the source prompt.
+- Wings, tails, fins, membranes, cloaks, and all appendages are FULLY OPAQUE solid shapes with clear outlines — never translucent, gauzy, dissolving into light, or trailing particles. Paired features (two wings, two horns, two ears) must BOTH be fully visible and anatomically attached.
+- The full figure fits within the frame with padding on all sides — never crop — as a single connected silhouette with no detached floating parts.`;
 
 /** Light framing block for native-transparency models (GPT Image, OpenAI) */
 const SPRITE_FRAMING_ENHANCER_BLOCK = `
 
-SPRITE FRAMING (this asset will be rendered on a transparent background):
-- The full figure including all appendages (wings, tails, horns, weapons, cloaks) must fit within the frame with padding on all sides. Never crop any part of the subject.
-- If the creature has paired features (two wings, two horns), both must be fully visible.
-- The subject should be a single connected figure with a clear silhouette.
-- Do NOT describe a specific background — the model will generate transparency automatically.`;
+SPRITE FRAMING (rendered on a transparent background):
+- The full figure including all appendages (wings, tails, horns, weapons, cloaks) fits within the frame with padding on all sides — never crop. Paired features (two wings, two horns) both fully visible.
+- A single connected figure with a clear silhouette.
+- Do NOT describe a background — the model generates transparency automatically.`;
 
 /** Room/location scene block — keeps the image confined to THIS room, not neighbors. */
 const ROOM_SCENE_ENHANCER_BLOCK = `
 
-ROOM SCENE RULES (this image depicts ONLY the current room):
-- Room descriptions in MUDs often mention what lies through the exits ("to the north a meadow rolls away", "you can hear the ocean to the east", "a door leads down into the cellar"). Treat those as navigation cues for the player, NOT as elements to render in the image.
-- Do not depict the meadow, ocean, cellar, neighboring chamber, distant tower, or any other location described as being beyond an exit, doorway, window, or pathway. The image is the interior/contents of THIS room, viewed from inside it.
-- Exits themselves may appear as architectural features (a doorway, an archway, a window, a path) but show only the threshold or near framing — do not extend the visible scene into the adjacent room or biome.
-- If the room description names another zone, landmark, or location for context ("the ancient capital of Vellis"), do not paint that landmark into the scene unless the room IS that landmark.`;
+ROOM SCENE RULES (depict ONLY the current room):
+- MUD room descriptions often mention what lies beyond the exits ("to the north a meadow rolls away", "a door leads down into the cellar"). Those are navigation cues — do NOT render the neighboring meadow, ocean, cellar, or chamber. Exits may appear as doorways, archways, windows, or paths, but show only the threshold, never the scene beyond it.
+- Do not paint named far-off zones or landmarks into the scene unless the room IS that landmark.`;
 
 /** Asset types that depict a room/location scene and need the "don't show neighbors" rule. */
 function isRoomScene(assetType: string | undefined): boolean {
@@ -793,17 +702,13 @@ export function getEnhanceSystemPrompt(style: ArtStyle, assetType?: string, surf
     return `You are an expert image prompt engineer for AI image generators.${toneBlock}${styleBlock}
 
 When enhancing a prompt:
-1. The article TITLE is the subject of the image. Build a single iconic portrait/illustration OF that subject in their characteristic form and setting. Use the appearance field, fields, and description as supporting visual context — they are NOT a list of scenes to choose from.
-2. Do not construct an action scene out of events recounted in the description. If the description says "X was tricked by Y, betrayed by Z, and killed by W", the image is still a portrait of X — not a fight scene with Y, Z, or W. The exception is when the article type is "event" or "story": there, the recounted moment IS the subject.
-3. Do not include other named characters, items, or locations as visual elements unless the subject's defining identity requires them (e.g. a smith and their forge, a king on their throne). Mentions of relationships, friendships, enemies, or plot events are background lore — leave them out of the visual.
-4. Faithfully depict the subject's described form: body, materials, scale, environment. If they are a liquid being, render them as a liquid being; if they travel through stone, place them in stone; if they have no humanoid form, do not give them one.
-5. The visual style governs aesthetic, palette, lighting, and rendering technique — NOT subject identity. Apply its colors, light behavior, and brushwork to whatever the subject actually is.
-6. Surface guidance and framing examples (e.g. "portraits in three-quarter view in cozy nooks") are defaults for generic subjects. If the subject's described form, environment, or scale conflicts with those examples, follow the subject.
-7. Do not invent a species, race, or category for the subject. If no species is given, describe only what the article states.
-8. Add composition and quality terms appropriate to the world's visual style.
-9. Replace any readable text, signs, or inscriptions with abstract symbols or glowing runes — AI cannot render legible text.
-10. Avoid: photorealism, modern technology, flat design, cartoon, anime.
-11. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting.${palettes}${spriteSafety}${roomScene}`;
+1. The article TITLE is the subject — build a single iconic portrait/illustration OF that subject in their characteristic form and setting. Appearance fields and description are supporting visual context, NOT scenes to choose from.
+2. Do not build an action scene out of events recounted in the description ("X was betrayed by Y and killed by W" still yields a portrait of X), and leave other named characters, items, relationships, and plot events out of the visual unless the subject's defining identity requires them (a smith and their forge). Exception: for "event" or "story" articles the recounted moment IS the subject.
+3. Depict the subject's described form faithfully — body, materials, scale, environment. Do not give non-humanoid subjects a humanoid form, and do not invent an unstated species, race, or category.
+4. The visual style governs palette, lighting, and rendering technique — NOT subject identity. Surface framing examples are defaults for generic subjects; when they conflict with the subject's form or scale, follow the subject.
+5. Replace any readable text, signs, or inscriptions with abstract symbols or glowing runes — AI cannot render legible text. Avoid photorealism, modern technology, flat design, cartoon, anime.
+6. ${ENHANCE_LENGTH_RULE}
+7. Output ONLY the enhanced prompt text — no explanation, no preamble, no formatting.${palettes}${spriteSafety}${roomScene}`;
   }
 
   // No world style defined — fall back to the legacy style-specific prompts
@@ -827,12 +732,10 @@ The user will provide a free-form description of an asset they want generated fo
 
 Rules:
 - Preserve the user's core subject, purpose, and mood
-- Add specific Arcanum palette colors (deep indigo, aurum-gold, blue-violet)
-- Add baroque ornamentation details (scrollwork, energy threads, fractaline structures) as framing/accents
-- Add light behavior (aurum pooling, nebula mist, soft bloom)
-- Add composition and quality terms (painterly, luminous, extremely detailed)
+- Weave in Arcanum palette (deep indigo, aurum-gold, blue-violet), baroque ornamentation as framing/accents, and light behavior (aurum pooling, nebula mist, soft bloom)
 - Replace any readable text, signage, labels, or inscriptions with glowing runes or arcane glyphs
 - Respect the requested format/composition exactly
+- ${ENHANCE_LENGTH_RULE}
 
 Output ONLY the finished prompt text — no explanation, no labels, no markdown.`;
 
@@ -855,6 +758,7 @@ Rules:
 - Enhance the description with compositional and quality details appropriate to the visual style
 - Replace any readable text, signage, labels, or inscriptions with abstract symbols or glowing runes
 - Respect the requested format/composition exactly
+- ${ENHANCE_LENGTH_RULE}
 
 Output ONLY the finished prompt text — no explanation, no labels, no markdown.`;
   }
@@ -875,13 +779,12 @@ export function buildCustomAssetPrompt(
 ): string {
   const formatSpec = getFormatForAssetType(assetType);
   const preamble = getPreamble(style, surface);
-  const suffix = getStyleSuffix(surface);
 
   const base = `${formatSpec}. ${preamble}
 
 User brief: ${description}
 
-${suffix}`;
+${NO_TEXT_LINE}`;
 
   return withSpriteSafety(base, assetType);
 }

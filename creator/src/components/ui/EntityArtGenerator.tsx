@@ -7,7 +7,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useLoreStore } from "@/stores/loreStore";
 import { useImageSrc, isLegacyImagePath, isR2HashPath } from "@/lib/useImageSrc";
-import { getEnhanceSystemPrompt, ART_STYLE_LABELS, getNegativePrompt, getPreamble, getStyleSuffix, type ArtStyle } from "@/lib/arcanumPrompts";
+import { getEnhanceSystemPrompt, ART_STYLE_LABELS, ENHANCED_PROMPT_TAIL, getNegativePrompt, getPreamble, getStyleSuffix, type ArtStyle } from "@/lib/arcanumPrompts";
 import type { ArtStyleSurface } from "@/lib/loreGeneration";
 import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, resolveImageModel, modelNativelyTransparent } from "@/types/assets";
 import type { AssetContext, AssetEntry, GeneratedImage } from "@/types/assets";
@@ -335,12 +335,15 @@ export function EntityArtGenerator({
         applyReferences(text, useReferenceStore.getState().resolver()).prompt;
 
       let finalPrompt = promptToUse;
+      let wasEnhanced = false;
       if (presetEnhanced || enhanced) {
         finalPrompt = expandLocal(promptToUse);
+        wasEnhanced = true;
         setLastEnhancedPrompt(finalPrompt);
       } else if (hasLlmKey) {
         try {
           finalPrompt = await enhancePromptWith(promptToUse, ec, fh);
+          wasEnhanced = true;
           setLastEnhancedPrompt(finalPrompt);
         } catch {
           // Fall back to the (reference-expanded) base prompt if the LLM fails.
@@ -350,15 +353,23 @@ export function EntityArtGenerator({
         finalPrompt = expandLocal(promptToUse);
       }
 
-      // Un-enhanced fallback prompts already open with the style preamble —
-      // appending the suffix too would state the style twice.
-      const styleSuffix = getStyleSuffix(surface);
-      const stylePreamble = getPreamble(artStyle, surface);
-      if (
-        !finalPrompt.includes(styleSuffix.slice(0, 40)) &&
-        !finalPrompt.includes(stylePreamble.slice(0, 40))
-      ) {
-        finalPrompt = `${finalPrompt}\n\n${styleSuffix}`;
+      if (wasEnhanced) {
+        // The enhancer already conforms the prompt to the style; only the
+        // compact medium + no-text constraints need to ride along verbatim.
+        if (!finalPrompt.includes("NO readable text")) {
+          finalPrompt = `${finalPrompt}\n\n${ENHANCED_PROMPT_TAIL}`;
+        }
+      } else {
+        // Un-enhanced fallback prompts already open with the style preamble —
+        // appending the suffix too would state the style twice.
+        const styleSuffix = getStyleSuffix(surface);
+        const stylePreamble = getPreamble(artStyle, surface);
+        if (
+          !finalPrompt.includes(styleSuffix.slice(0, 40)) &&
+          !finalPrompt.includes(stylePreamble.slice(0, 40))
+        ) {
+          finalPrompt = `${finalPrompt}\n\n${styleSuffix}`;
+        }
       }
 
       const image = await generateAssetImageWithRetry({

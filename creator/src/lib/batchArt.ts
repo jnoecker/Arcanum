@@ -15,6 +15,7 @@ import {
 import type { AudioTrackMeta } from "@/lib/audioLibrary";
 import { splitLyricsLines } from "@/lib/audioLibrary";
 import {
+  ENHANCED_PROMPT_TAIL,
   getNegativePrompt,
   getEnhanceSystemPrompt,
   getPreamble,
@@ -463,6 +464,7 @@ export async function runBatchArtGeneration(
         // Reference-expanded base prompt is the fallback when LLM enhancement
         // is unavailable or fails — raw `@tokens` must never reach the model.
         let finalPrompt = applyReferences(basePrompt, resolver).prompt;
+        let wasEnhanced = false;
         try {
           const systemPrompt = getEnhanceSystemPrompt(artStyle, batchAssetType, "worldbuilding", nativeTransparency);
           const userPrompt = buildBatchUserPrompt(context, basePrompt, resolver);
@@ -470,14 +472,20 @@ export async function runBatchArtGeneration(
             systemPrompt,
             userPrompt,
           });
+          wasEnhanced = true;
         } catch {
           // Fall back to the reference-expanded base prompt
         }
 
-        // Append style suffix to ensure consistent aesthetic (matches the
-        // individual path). Un-enhanced fallback prompts already open with
-        // the style preamble, so they skip the suffix.
-        if (
+        // Matches the individual path (EntityArtGenerator): enhanced prompts
+        // already conform to the style and get only the compact tail;
+        // un-enhanced fallback prompts already open with the style preamble
+        // and skip the suffix.
+        if (wasEnhanced) {
+          if (!finalPrompt.includes("NO readable text")) {
+            finalPrompt = `${finalPrompt}\n\n${ENHANCED_PROMPT_TAIL}`;
+          }
+        } else if (
           !finalPrompt.includes(styleSuffix.slice(0, 40)) &&
           !finalPrompt.includes(stylePreamble.slice(0, 40))
         ) {

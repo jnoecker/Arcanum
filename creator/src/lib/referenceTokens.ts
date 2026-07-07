@@ -171,36 +171,65 @@ export function applyReferences(
   return { prompt, used, unknown };
 }
 
-// ─── WorldFile description traversal ─────────────────────────────────
-// Token persistence is scoped to the entity descriptions that drive art
-// generation: rooms, mobs, and items.
+// ─── WorldFile token-slot traversal ──────────────────────────────────
+// Token persistence is scoped to the entity fields that drive art
+// generation: the descriptions and names/titles of rooms, mobs, and items.
+// Description slots keep the bare `<kind>/<entityId>` key so annotation
+// files written before name support round-trip unchanged.
 
-export interface DescriptionSlot {
-  /** Stable per-entity key: `<kind>/<entityId>`. */
+export interface TokenSlot {
+  /** Stable key: `<kind>/<entityId>` (description) or `<kind>/<entityId>/name`. */
   key: string;
   text: string;
 }
 
-/** Collect the description of every art-bearing entity in a world. */
-export function collectDescriptions(world: WorldFile): DescriptionSlot[] {
-  const slots: DescriptionSlot[] = [];
+/** Collect every token-bearing field of every art-bearing entity in a world. */
+export function collectTokenSlots(world: WorldFile): TokenSlot[] {
+  const slots: TokenSlot[] = [];
   for (const [id, room] of Object.entries(world.rooms ?? {})) {
     if (typeof room.description === "string") slots.push({ key: `room/${id}`, text: room.description });
+    if (typeof room.title === "string") slots.push({ key: `room/${id}/name`, text: room.title });
   }
   for (const [id, mob] of Object.entries(world.mobs ?? {})) {
     if (typeof mob.description === "string") slots.push({ key: `mob/${id}`, text: mob.description });
+    if (typeof mob.name === "string") slots.push({ key: `mob/${id}/name`, text: mob.name });
   }
   for (const [id, item] of Object.entries(world.items ?? {})) {
     if (typeof item.description === "string") slots.push({ key: `item/${id}`, text: item.description });
+    if (typeof item.displayName === "string") slots.push({ key: `item/${id}/name`, text: item.displayName });
   }
   return slots;
 }
 
+function mapEntitySlots<T>(
+  kind: string,
+  id: string,
+  entity: T,
+  descField: keyof T & string,
+  nameField: keyof T & string,
+  fn: (key: string, text: string) => string,
+  descFallback: string | undefined,
+): T {
+  let next = entity;
+  const desc = entity[descField] as unknown;
+  const descText = typeof desc === "string" ? desc : descFallback;
+  if (typeof descText === "string") {
+    const updated = fn(`${kind}/${id}`, descText);
+    if (updated !== desc) next = { ...next, [descField]: updated } as T;
+  }
+  const name = entity[nameField] as unknown;
+  if (typeof name === "string") {
+    const updated = fn(`${kind}/${id}/name`, name);
+    if (updated !== name) next = { ...next, [nameField]: updated } as T;
+  }
+  return next;
+}
+
 /**
- * Return a shallow-cloned world with every art-bearing description rewritten
- * by `fn`. Only the entities whose description changes are reallocated.
+ * Return a shallow-cloned world with every art-bearing description and
+ * name/title rewritten by `fn`. Only the entities that change are reallocated.
  */
-export function mapDescriptions(
+export function mapTokenSlots(
   world: WorldFile,
   fn: (key: string, text: string) => string,
 ): WorldFile {
@@ -210,13 +239,9 @@ export function mapDescriptions(
   let roomsChanged = false;
   const nextRooms: Record<string, RoomFile> = {};
   for (const [id, room] of Object.entries(rooms)) {
-    const updated = fn(`room/${id}`, room.description ?? "");
-    if (updated !== room.description) {
-      nextRooms[id] = { ...room, description: updated };
-      roomsChanged = true;
-    } else {
-      nextRooms[id] = room;
-    }
+    const updated = mapEntitySlots("room", id, room, "description", "title", fn, "");
+    nextRooms[id] = updated;
+    if (updated !== room) roomsChanged = true;
   }
   if (roomsChanged) next.rooms = nextRooms;
 
@@ -224,17 +249,9 @@ export function mapDescriptions(
     let changed = false;
     const nextMobs: Record<string, MobFile> = {};
     for (const [id, mob] of Object.entries(world.mobs)) {
-      if (typeof mob.description !== "string") {
-        nextMobs[id] = mob;
-        continue;
-      }
-      const updated = fn(`mob/${id}`, mob.description);
-      if (updated !== mob.description) {
-        nextMobs[id] = { ...mob, description: updated };
-        changed = true;
-      } else {
-        nextMobs[id] = mob;
-      }
+      const updated = mapEntitySlots("mob", id, mob, "description", "name", fn, undefined);
+      nextMobs[id] = updated;
+      if (updated !== mob) changed = true;
     }
     if (changed) next.mobs = nextMobs;
   }
@@ -243,17 +260,9 @@ export function mapDescriptions(
     let changed = false;
     const nextItems: Record<string, ItemFile> = {};
     for (const [id, item] of Object.entries(world.items)) {
-      if (typeof item.description !== "string") {
-        nextItems[id] = item;
-        continue;
-      }
-      const updated = fn(`item/${id}`, item.description);
-      if (updated !== item.description) {
-        nextItems[id] = { ...item, description: updated };
-        changed = true;
-      } else {
-        nextItems[id] = item;
-      }
+      const updated = mapEntitySlots("item", id, item, "description", "displayName", fn, undefined);
+      nextItems[id] = updated;
+      if (updated !== item) changed = true;
     }
     if (changed) next.items = nextItems;
   }

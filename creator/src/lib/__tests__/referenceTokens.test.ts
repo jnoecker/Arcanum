@@ -3,12 +3,12 @@ import {
   applyReferences,
   buildReferenceBlock,
   buildResolver,
-  collectDescriptions,
+  collectTokenSlots,
   detectMention,
   expandReferences,
   extractTokens,
   hasTokens,
-  mapDescriptions,
+  mapTokenSlots,
   slugifyToken,
   stripSigils,
 } from "@/lib/referenceTokens";
@@ -159,7 +159,7 @@ describe("detectMention (autocomplete)", () => {
   });
 });
 
-describe("world description traversal", () => {
+describe("world token-slot traversal", () => {
   const world = {
     zone: "test",
     rooms: {
@@ -174,18 +174,43 @@ describe("world description traversal", () => {
     },
   } as unknown as WorldFile;
 
-  it("collects every art-bearing description", () => {
-    const keys = collectDescriptions(world).map((s) => s.key).sort();
-    expect(keys).toEqual(["item/i1", "mob/m1", "room/r1", "room/r2"]);
+  it("collects every art-bearing description and name", () => {
+    const keys = collectTokenSlots(world).map((s) => s.key).sort();
+    expect(keys).toEqual([
+      "item/i1",
+      "item/i1/name",
+      "mob/m1",
+      "mob/m1/name",
+      "room/r1",
+      "room/r1/name",
+      "room/r2",
+      "room/r2/name",
+    ]);
   });
 
   it("maps descriptions and only reallocates changed entities", () => {
     const known = new Set(["aineroia", "archae", "crimson court"]);
-    const stripped = mapDescriptions(world, (_k, text) => stripSigils(text, known));
+    const stripped = mapTokenSlots(world, (_k, text) => stripSigils(text, known));
     expect(stripped.rooms.r1.description).toBe("A beautiful Aineroia stands here");
     expect(stripped.items!.i1.description).toBe("bears the Crimson Court crest");
     // Unchanged room keeps its identity.
     expect(stripped.rooms.r2).toBe(world.rooms.r2);
+  });
+
+  it("maps name fields under their own slot keys", () => {
+    const tokenWorld = {
+      zone: "test",
+      rooms: { r1: { title: "Throne of @Aineroia", description: "grand" } },
+      mobs: { m1: { name: "Herald of the @[Crimson Court]", description: "regal", spawns: [] } },
+      items: { i1: { displayName: "Banner of @archae", description: "woven" } },
+    } as unknown as WorldFile;
+    const known = new Set(["aineroia", "archae", "crimson court"]);
+    const stripped = mapTokenSlots(tokenWorld, (_k, text) => stripSigils(text, known));
+    expect(stripped.rooms.r1.title).toBe("Throne of Aineroia");
+    expect(stripped.mobs!.m1.name).toBe("Herald of the Crimson Court");
+    expect(stripped.items!.i1.displayName).toBe("Banner of archae");
+    // Descriptions without tokens keep their text.
+    expect(stripped.rooms.r1.description).toBe("grand");
   });
 
   it("round-trips: strip then re-detect matches", () => {

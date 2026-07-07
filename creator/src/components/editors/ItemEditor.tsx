@@ -226,9 +226,11 @@ function ItemEditorContent({
     <>
       <EntityHeader type="Item">
         <FieldRow label="Display Name">
-          <TextInput
+          <ReferenceMentionField
             value={item.displayName}
             onCommit={(v) => patch({ displayName: v })}
+            ariaLabel="item display name"
+            placeholder="Display name — type @ to reference a canonical subject"
           />
         </FieldRow>
         <FieldRow label="Description">

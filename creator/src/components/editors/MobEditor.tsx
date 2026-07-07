@@ -445,7 +445,12 @@ function MobEditorContent({
   return (
     <>
       <EntityHeader type="Mob">
-        <TextInput value={mob.name} onCommit={(v) => patch({ name: v })} />
+        <ReferenceMentionField
+          value={mob.name}
+          onCommit={(v) => patch({ name: v })}
+          ariaLabel="mob name"
+          placeholder="Mob name — type @ to reference a canonical subject"
+        />
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
             <ReferenceMentionField

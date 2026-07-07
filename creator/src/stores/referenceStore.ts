@@ -10,9 +10,9 @@ import type { Project } from "@/types/project";
 import type { WorldFile } from "@/types/world";
 import {
   buildResolver,
-  collectDescriptions,
+  collectTokenSlots,
   hasTokens,
-  mapDescriptions,
+  mapTokenSlots,
   refKey,
   slugifyToken,
   stripSigils,
@@ -42,7 +42,7 @@ async function writeJson(dir: string, file: string, value: unknown): Promise<voi
 interface ReferenceStore {
   projectDir: string | null;
   subjects: ReferenceSubject[];
-  /** `<zoneId>/<kind>/<entityId>` → tokenized description. */
+  /** `<zoneId>/<kind>/<entityId>[/name]` → tokenized description or name. */
   annotations: Record<string, string>;
   loaded: boolean;
 
@@ -60,9 +60,9 @@ interface ReferenceStore {
 
   /** Re-apply stored `@token` annotations onto a freshly-loaded world. */
   applyAnnotations: (zoneId: string, world: WorldFile) => WorldFile;
-  /** Strip reference sigils from a world's descriptions for the game YAML. */
+  /** Strip reference sigils from a world's descriptions and names for the game YAML. */
   stripWorld: (world: WorldFile) => WorldFile;
-  /** Record token-bearing descriptions for a zone and persist. */
+  /** Record token-bearing descriptions and names for a zone and persist. */
   captureAnnotations: (zoneId: string, world: WorldFile) => Promise<void>;
 }
 
@@ -131,10 +131,10 @@ export const useReferenceStore = create<ReferenceStore>((set, get) => ({
   applyAnnotations: (zoneId, world) => {
     const { annotations } = get();
     const known = get().knownKeys();
-    return mapDescriptions(world, (key, text) => {
+    return mapTokenSlots(world, (key, text) => {
       const annotated = annotations[`${zoneId}/${key}`];
       // Only re-apply when the clean form still matches the YAML — otherwise
-      // the description was edited out of band and the YAML wins.
+      // the field was edited out of band and the YAML wins.
       if (annotated && stripSigils(annotated, known) === text) return annotated;
       return text;
     });
@@ -142,7 +142,7 @@ export const useReferenceStore = create<ReferenceStore>((set, get) => ({
 
   stripWorld: (world) => {
     const known = get().knownKeys();
-    return mapDescriptions(world, (_key, text) => stripSigils(text, known));
+    return mapTokenSlots(world, (_key, text) => stripSigils(text, known));
   },
 
   captureAnnotations: async (zoneId, world) => {
@@ -152,7 +152,7 @@ export const useReferenceStore = create<ReferenceStore>((set, get) => ({
     for (const [k, v] of Object.entries(get().annotations)) {
       if (!k.startsWith(prefix)) next[k] = v;
     }
-    for (const slot of collectDescriptions(world)) {
+    for (const slot of collectTokenSlots(world)) {
       if (hasTokens(slot.text)) next[`${zoneId}/${slot.key}`] = slot.text;
     }
     set({ annotations: next });

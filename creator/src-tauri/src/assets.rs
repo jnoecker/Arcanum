@@ -437,11 +437,6 @@ pub async fn import_asset(
         .await
         .map_err(|e| format!("Failed to read source file: {e}"))?;
 
-    // Content-addressed hash
-    let mut hasher = Sha256::new();
-    hasher.update(&bytes);
-    let hash = format!("{:x}", hasher.finalize());
-
     // Determine extension — prefer magic bytes, fall back to source extension
     let detected = detect_extension(&bytes);
     let ext = if detected == "bin" {
@@ -449,6 +444,14 @@ pub async fn import_asset(
     } else {
         detected
     };
+
+    // Cap oversized images to the runtime profile before hashing so the
+    // content-addressed name reflects the bytes actually stored.
+    let bytes = crate::generation::cap_image_bytes(&asset_type, ext, &bytes);
+
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+    let hash = format!("{:x}", hasher.finalize());
     let file_name = format!("{hash}.{ext}");
 
     // Read dimensions from image header (0x0 for non-image files)
@@ -457,7 +460,7 @@ pub async fn import_asset(
         Err(_) => (0, 0),
     };
 
-    // Copy to assets/<subdir>
+    // Write to assets/<subdir>
     let subdir = media_subdir(ext);
     let dest_dir = assets_dir(&app)?.join(subdir);
     tokio::fs::create_dir_all(&dest_dir)
@@ -466,9 +469,9 @@ pub async fn import_asset(
 
     let dest = dest_dir.join(&file_name);
     if !dest.exists() {
-        tokio::fs::copy(&source_path, &dest)
+        tokio::fs::write(&dest, &bytes)
             .await
-            .map_err(|e| format!("Failed to copy file: {e}"))?;
+            .map_err(|e| format!("Failed to write file: {e}"))?;
     }
 
     // Extract original filename for the prompt field
@@ -661,12 +664,16 @@ pub async fn save_bytes_as_asset(
         .decode(&bytes_b64)
         .map_err(|e| format!("Failed to decode base64: {e}"))?;
 
+    let detected = detect_extension(&bytes);
+    let ext = if detected == "bin" { "png" } else { detected };
+
+    // Cap oversized images to the runtime profile before hashing so the
+    // content-addressed name reflects the bytes actually stored.
+    let bytes = crate::generation::cap_image_bytes(&asset_type, ext, &bytes);
+
     let mut hasher = Sha256::new();
     hasher.update(&bytes);
     let hash = format!("{:x}", hasher.finalize());
-
-    let detected = detect_extension(&bytes);
-    let ext = if detected == "bin" { "png" } else { detected };
     let file_name = format!("{hash}.{ext}");
 
     let (width, height) = match imagesize::blob_size(&bytes) {
@@ -1097,6 +1104,17 @@ pub async fn bulk_import_images(
             }
         };
 
+        let detected = detect_extension(&bytes);
+        let file_ext = if detected == "bin" {
+            extension_from_path(&fname).unwrap_or("png")
+        } else {
+            detected
+        };
+
+        // Cap oversized images to the runtime profile before hashing so the
+        // content-addressed name reflects the bytes actually stored.
+        let bytes = crate::generation::cap_image_bytes(&asset_type, file_ext, &bytes);
+
         let mut hasher = Sha256::new();
         hasher.update(&bytes);
         let hash = format!("{:x}", hasher.finalize());
@@ -1111,12 +1129,6 @@ pub async fn bulk_import_images(
             continue;
         }
 
-        let detected = detect_extension(&bytes);
-        let file_ext = if detected == "bin" {
-            extension_from_path(&fname).unwrap_or("png")
-        } else {
-            detected
-        };
         let file_name = format!("{hash}.{file_ext}");
 
         let (width, height) = match imagesize::blob_size(&bytes) {
@@ -1126,8 +1138,8 @@ pub async fn bulk_import_images(
 
         let dest = images_dir.join(&file_name);
         if !dest.exists() {
-            if let Err(e) = std::fs::copy(&path, &dest) {
-                result.errors.push(format!("Failed to copy {fname}: {e}"));
+            if let Err(e) = std::fs::write(&dest, &bytes) {
+                result.errors.push(format!("Failed to write {fname}: {e}"));
                 continue;
             }
         }

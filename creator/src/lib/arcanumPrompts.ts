@@ -562,7 +562,7 @@ export const ASSET_TEMPLATES: Record<AssetType, { label: string; templates: Reco
 /** Shared output-length rule for all enhancer system prompts. Enhanced
  *  prompts are billed as image-model input tokens on every generation, so
  *  the cap is a direct per-image cost control. */
-const ENHANCE_LENGTH_RULE = `Keep the finished prompt under 100 words — every phrase must add concrete visual information; no filler, no repeated style language.`;
+const ENHANCE_LENGTH_RULE = `Keep the finished prompt under 150 words — every phrase must add concrete visual information; no filler, no repeated style language.`;
 
 const ENHANCE_SYSTEM_PROMPT_ARCANUM = `You are a prompt engineer for AI image generation models. Enhance user prompts for the Arcanum art style (arcanum_v1) — vast, baroque, luminous, like looking into the architecture of creation.
 

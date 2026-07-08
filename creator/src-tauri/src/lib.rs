@@ -108,6 +108,7 @@ macro_rules! base_handler {
             asset_migration::cancel_asset_migration,
             r2::import_from_r2,
             r2::sync_assets,
+            r2::cancel_r2_sync,
             r2::get_sync_status,
             r2::resolve_asset_url,
             r2::delete_from_r2,

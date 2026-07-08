@@ -2,7 +2,8 @@ use chrono::Utc;
 use hmac::{Hmac, Mac};
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
-use tauri::AppHandle;
+use std::sync::Arc;
+use tauri::{AppHandle, Emitter};
 
 use crate::assets::{self, AssetEntry};
 use crate::settings;
@@ -32,7 +33,61 @@ pub struct SyncProgress {
     pub uploaded: usize,
     pub skipped: usize,
     pub failed: usize,
+    #[serde(default)]
+    pub cancelled: bool,
     pub errors: Vec<String>,
+}
+
+const SYNC_CANCEL_SESSION: &str = "r2-sync";
+/// Uploads are network-bound (HEAD + PUT round trips); a fixed pool keeps
+/// them overlapped without saturating the connection.
+const SYNC_CONCURRENCY: usize = 12;
+/// Flush sync statuses to the manifest every N completions — one manifest
+/// rewrite per batch instead of per asset (O(n²) on large libraries).
+const SYNC_COMMIT_INTERVAL: usize = 250;
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SyncProgressEvent {
+    current: usize,
+    total: usize,
+    uploaded: usize,
+    skipped: usize,
+    failed: usize,
+}
+
+fn emit_sync_progress(app: &AppHandle, progress: &SyncProgress, current: usize) {
+    let _ = app.emit(
+        "r2-sync-progress",
+        SyncProgressEvent {
+            current,
+            total: progress.total,
+            uploaded: progress.uploaded,
+            skipped: progress.skipped,
+            failed: progress.failed,
+        },
+    );
+}
+
+#[derive(Clone)]
+struct SyncJob {
+    id: String,
+    file_name: String,
+    asset_type: String,
+    width: u32,
+    height: u32,
+}
+
+struct R2Creds {
+    account_id: String,
+    bucket: String,
+    access_key: String,
+    secret_key: String,
+}
+
+enum SyncOutcome {
+    Uploaded,
+    AlreadyRemote,
 }
 
 /// One dialogue clip to publish. The cached MP3 lives at
@@ -465,89 +520,184 @@ pub async fn sync_assets(
 
     // A forced run re-uploads already-synced assets too, so a Cache-Control
     // backfill reaches everything — not just the not-yet-synced tail.
-    let unsynced: Vec<&AssetEntry> = assets
+    let jobs: Vec<SyncJob> = assets
         .iter()
         .filter(|a| (force || a.sync_status != "synced") && should_sync_asset(a, &sync_scope, &active_set))
+        .map(|a| SyncJob {
+            id: a.id.clone(),
+            file_name: a.file_name.clone(),
+            asset_type: a.asset_type.clone(),
+            width: a.width,
+            height: a.height,
+        })
         .collect();
-    let base_dir = assets_base_dir(&app)?;
-    let client = crate::http::shared_client();
+    let base_dir = Arc::new(assets_base_dir(&app)?);
+    let creds = Arc::new(R2Creds {
+        account_id: s.r2_account_id.clone(),
+        bucket: s.r2_bucket.clone(),
+        access_key: s.r2_access_key_id.clone(),
+        secret_key: s.r2_secret_access_key.clone(),
+    });
 
+    let total = jobs.len();
     let mut progress = SyncProgress {
-        total: unsynced.len(),
+        total,
         uploaded: 0,
         skipped: 0,
         failed: 0,
+        cancelled: false,
         errors: Vec::new(),
     };
+    if total == 0 {
+        return Ok(progress);
+    }
 
-    for asset in &unsynced {
-        let object_key = &asset.file_name;
+    let cancel_flag = crate::cancellation::register(SYNC_CANCEL_SESSION.to_string());
+    let mut join_set: tokio::task::JoinSet<(usize, Result<SyncOutcome, String>)> =
+        tokio::task::JoinSet::new();
+    let mut next = 0usize;
+    let mut done = 0usize;
+    let mut pending_synced: Vec<String> = Vec::new();
+    emit_sync_progress(&app, &progress, 0);
 
-        // Check if already exists in R2 (dedup by content hash). A forced run
-        // skips the probe and always re-PUTs so existing objects pick up the
-        // current Cache-Control header.
-        if !force {
-            match object_exists(&client, &s.r2_account_id, &s.r2_bucket, &s.r2_access_key_id, &s.r2_secret_access_key, object_key).await {
-                Ok(true) => {
-                    // Already in R2, just mark as synced
-                    assets::update_sync_status(app.clone(), &asset.id, "synced").await?;
-                    progress.skipped += 1;
-                    continue;
+    loop {
+        while next < total
+            && join_set.len() < SYNC_CONCURRENCY
+            && !crate::cancellation::is_cancelled(&cancel_flag)
+        {
+            let idx = next;
+            let job = jobs[idx].clone();
+            let creds = creds.clone();
+            let base_dir = base_dir.clone();
+            join_set.spawn(async move { (idx, sync_one(job, creds, base_dir, force).await) });
+            next += 1;
+        }
+        let Some(joined) = join_set.join_next().await else {
+            break;
+        };
+        done += 1;
+        match joined {
+            Err(e) => {
+                progress.failed += 1;
+                progress.errors.push(format!("sync task failed: {e}"));
+            }
+            Ok((idx, Err(e))) => {
+                progress.failed += 1;
+                progress.errors.push(format!("{}: {e}", jobs[idx].file_name));
+            }
+            Ok((idx, Ok(outcome))) => {
+                match outcome {
+                    SyncOutcome::Uploaded => progress.uploaded += 1,
+                    SyncOutcome::AlreadyRemote => progress.skipped += 1,
                 }
-                Ok(false) => {}
-                Err(e) => {
-                    progress.failed += 1;
-                    progress.errors.push(format!("{}: {e}", asset.file_name));
-                    continue;
-                }
+                pending_synced.push(jobs[idx].id.clone());
             }
         }
-
-        // Read local file
-        let file_path = match find_asset_file(&base_dir, &asset.file_name) {
-            Some(p) => p,
-            None => {
-                progress.failed += 1;
-                progress.errors.push(format!("{}: File not found in asset dirs", asset.file_name));
-                continue;
-            }
-        };
-        let body = match tokio::fs::read(&file_path).await {
-            Ok(b) => b,
-            Err(e) => {
-                progress.failed += 1;
-                progress.errors.push(format!("{}: Failed to read file: {e}", asset.file_name));
-                continue;
-            }
-        };
-        let body = optimized_runtime_image_bytes(&asset.asset_type, &asset.file_name, object_key, &body);
-
-        let content_type = detect_content_type(&asset.file_name);
-
-        // Upload
-        match upload_object(
-            &client,
-            &s.r2_account_id,
-            &s.r2_bucket,
-            &s.r2_access_key_id,
-            &s.r2_secret_access_key,
-            object_key,
-            body,
-            content_type,
-            CACHE_IMMUTABLE,
-        ).await {
-            Ok(()) => {
-                assets::update_sync_status(app.clone(), &asset.id, "synced").await?;
-                progress.uploaded += 1;
-            }
-            Err(e) => {
-                progress.failed += 1;
-                progress.errors.push(format!("{}: {e}", asset.file_name));
+        emit_sync_progress(&app, &progress, done);
+        // Flush statuses periodically so an interrupted run keeps most of its
+        // progress; anything lost in the tail gets re-probed (HEAD) and
+        // skipped without re-upload on the next sync.
+        if pending_synced.len() >= SYNC_COMMIT_INTERVAL {
+            if let Err(e) = assets::update_sync_statuses(&app, &pending_synced, "synced").await {
+                progress.errors.push(format!("status checkpoint failed: {e}"));
+            } else {
+                pending_synced.clear();
             }
         }
     }
+    progress.cancelled = crate::cancellation::is_cancelled(&cancel_flag) && next < total;
+    crate::cancellation::unregister(SYNC_CANCEL_SESSION);
+
+    if let Err(e) = assets::update_sync_statuses(&app, &pending_synced, "synced").await {
+        progress.errors.push(format!("status save failed: {e}"));
+    }
+    emit_sync_progress(&app, &progress, done);
 
     Ok(progress)
+}
+
+/// Request cancellation of a running R2 sync. In-flight uploads drain, the
+/// completed subset's sync statuses are saved, then `sync_assets` returns
+/// with `cancelled: true`.
+#[tauri::command]
+pub async fn cancel_r2_sync() -> Result<bool, String> {
+    Ok(crate::cancellation::cancel(SYNC_CANCEL_SESSION))
+}
+
+/// One asset's upload: optional existence probe, read, optional downscale to
+/// the runtime profile, PUT. Runs concurrently with other jobs; everything it
+/// touches is owned or `'static`.
+async fn sync_one(
+    job: SyncJob,
+    creds: Arc<R2Creds>,
+    base_dir: Arc<PathBuf>,
+    force: bool,
+) -> Result<SyncOutcome, String> {
+    let client = crate::http::shared_client();
+    let object_key = &job.file_name;
+
+    // Dedup by content hash. A forced run skips the probe and always re-PUTs
+    // so existing objects pick up the current Cache-Control header.
+    if !force
+        && object_exists(
+            client,
+            &creds.account_id,
+            &creds.bucket,
+            &creds.access_key,
+            &creds.secret_key,
+            object_key,
+        )
+        .await?
+    {
+        return Ok(SyncOutcome::AlreadyRemote);
+    }
+
+    let file_path = find_asset_file(&base_dir, &job.file_name)
+        .ok_or_else(|| "File not found in asset dirs".to_string())?;
+    let body = tokio::fs::read(&file_path)
+        .await
+        .map_err(|e| format!("Failed to read file: {e}"))?;
+
+    // Skip the decode/re-encode when the stored dimensions already fit the
+    // runtime profile (everything ingested or migrated since the caps landed)
+    // — it's pure CPU for a byte-identical-ish result. Unknown dimensions
+    // (legacy 0×0 entries) still go through the optimizer.
+    let already_fits = match crate::image_profiles::runtime_image_profile(&job.asset_type) {
+        None => true,
+        Some(profile) => {
+            job.width > 0
+                && job.height > 0
+                && job.width <= profile.max_width
+                && job.height <= profile.max_height
+        }
+    };
+    let body = if already_fits {
+        body
+    } else {
+        let asset_type = job.asset_type.clone();
+        let source_name = job.file_name.clone();
+        let key = object_key.clone();
+        tokio::task::spawn_blocking(move || {
+            optimized_runtime_image_bytes(&asset_type, &source_name, &key, &body)
+        })
+        .await
+        .map_err(|e| format!("optimize task join failed: {e}"))?
+    };
+
+    let content_type = detect_content_type(&job.file_name);
+    upload_object(
+        client,
+        &creds.account_id,
+        &creds.bucket,
+        &creds.access_key,
+        &creds.secret_key,
+        object_key,
+        body,
+        content_type,
+        CACHE_IMMUTABLE,
+    )
+    .await?;
+    Ok(SyncOutcome::Uploaded)
 }
 
 #[tauri::command]
@@ -560,6 +710,7 @@ pub async fn get_sync_status(app: AppHandle) -> Result<SyncProgress, String> {
         uploaded: synced,
         skipped: 0,
         failed: unsynced,
+        cancelled: false,
         errors: Vec::new(),
     })
 }
@@ -645,6 +796,7 @@ pub async fn deploy_sprites_to_r2(
         uploaded: 0,
         skipped: 0,
         failed: 0,
+        cancelled: false,
         errors: Vec::new(),
     };
 
@@ -782,6 +934,7 @@ pub async fn deploy_global_assets_to_r2(
         uploaded: 0,
         skipped: 0,
         failed: 0,
+        cancelled: false,
         errors: Vec::new(),
     };
 
@@ -1023,6 +1176,7 @@ pub async fn deploy_zones_to_r2(
         uploaded: 0,
         skipped: 0,
         failed: 0,
+        cancelled: false,
         errors: Vec::new(),
     };
 
@@ -1108,6 +1262,7 @@ pub async fn deploy_voices_to_r2(
         uploaded: 0,
         skipped: 0,
         failed: 0,
+        cancelled: false,
         errors: Vec::new(),
     };
 

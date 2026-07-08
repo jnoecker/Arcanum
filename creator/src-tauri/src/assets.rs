@@ -319,14 +319,31 @@ pub async fn resolve_media_path(app: AppHandle, file_name: String) -> Result<Str
     Err(format!("Asset file not found: {file_name}"))
 }
 
-/// Update the sync_status of an asset by ID. Called from r2 module.
-pub async fn update_sync_status(app: AppHandle, id: &str, status: &str) -> Result<(), String> {
+/// Set the sync_status of a batch of assets in one manifest read/write —
+/// a per-asset rewrite is O(n²) across a large sync. Called from r2 module.
+pub async fn update_sync_statuses(
+    app: &AppHandle,
+    ids: &[String],
+    status: &str,
+) -> Result<(), String> {
+    if ids.is_empty() {
+        return Ok(());
+    }
+    let id_set: std::collections::HashSet<&str> = ids.iter().map(|s| s.as_str()).collect();
     let _lock = MANIFEST_LOCK.lock().await;
     let mut manifest = load_manifest(&app).await?;
-    if let Some(entry) = manifest.assets.iter_mut().find(|a| a.id == id) {
-        entry.sync_status = status.to_string();
+    let mut changed = false;
+    for entry in manifest.assets.iter_mut() {
+        if id_set.contains(entry.id.as_str()) && entry.sync_status != status {
+            entry.sync_status = status.to_string();
+            changed = true;
+        }
     }
-    save_manifest(&app, &manifest).await
+    if changed {
+        save_manifest(&app, &manifest).await
+    } else {
+        Ok(())
+    }
 }
 
 fn detect_extension(bytes: &[u8]) -> &'static str {

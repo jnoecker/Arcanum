@@ -106,7 +106,8 @@ All public functions exposed to the frontend are `#[tauri::command]` and return 
 - `fs_utils.rs` — shared filesystem helpers
 - `http.rs` — shared HTTP client utilities
 - `assets.rs` — asset manifest (JSON) with content-addressed SHA-256 storage
-- `generation.rs` — image generation utilities (dimension capping to 1024px, format inference, resize pipeline, per-asset-type runtime image profiles shared with the R2 optimizer and ingest paths)
+- `generation.rs` — image generation utilities (dimension capping to 1024px, format inference, resize pipeline)
+- `image_profiles.rs` — per-asset-type runtime image profiles + downscale helpers, shared by the ingest paths and the R2 optimizer. Always compiled (not behind the `ai` feature) because `assets.rs` and `r2.rs` use it in the Community Edition build
 - `deepinfra.rs` — DeepInfra API client (FLUX image generation)
 - `runware.rs` — Runware API client (alternative image provider)
 - `openai_images.rs` — OpenAI GPT Image provider
@@ -290,7 +291,7 @@ Images are served to the frontend as base64 data URLs via the `read_image_data_u
 - **Showcase data flow** — "Publish Lore" in Toolbar → `exportShowcaseData()` → `deploy_showcase_to_r2` (self-hosted) or `publish_to_hub` (hub mode). The showcase SPA fetches this at runtime. No rebuild required for content updates.
 - **Showcase images** — Article/map images reference R2 URLs via `imageBaseUrl` from creator settings (`r2_custom_domain`). Images must be synced to R2 before they appear on the showcase.
 - **Lore undo/redo** — All lore mutations must call `snapshotLore(s)` inside their `set()` callback. Missing it means the operation can't be undone. The zone store uses a different pattern (zundo middleware).
-- **Generation dimensions** — Image generation APIs receive dimensions capped at 1024px via `generation::cap_generation_dims`. The backend resizes to the final target after generation. Don't request >1024px from FLUX models. Stored images are additionally capped to the per-asset-type runtime profile (`generation::runtime_image_profile`, the same table the R2 upload optimizer uses) at generation and import time — the asset store keeps what the runtime serves (e.g. 256px icons, 512×768 portraits), not the raw generation resolution. Types without a profile store at full requested size.
+- **Generation dimensions** — Image generation APIs receive dimensions capped at 1024px via `generation::cap_generation_dims`. The backend resizes to the final target after generation. Don't request >1024px from FLUX models. Stored images are additionally capped to the per-asset-type runtime profile (`image_profiles::runtime_image_profile`, the same table the R2 upload optimizer uses) at generation and import time — the asset store keeps what the runtime serves (e.g. 256px icons, 512×768 portraits), not the raw generation resolution. Types without a profile store at full requested size.
 - **Command palette** — Ctrl+K opens the global command palette, not a sidebar search. The old sidebar search focus handler was removed.
 - **Article gallery** — Articles have both `image?: string` (primary) and `gallery?: string[]` (additional). Export resolves both to `imageUrl` and `galleryUrls` in `ShowcaseData`.
 - **Vision API** — `llm_complete_with_vision` requires an Anthropic API key (or hub mode with credit on the hub's Anthropic account). Used for map analysis. The data URL must be a valid `data:image/...;base64,...` format.

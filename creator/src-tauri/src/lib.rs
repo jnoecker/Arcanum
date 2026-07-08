@@ -22,6 +22,7 @@ mod git;
 mod generation;
 mod http;
 mod hub;
+mod image_profiles;
 #[cfg(feature = "ai")]
 mod hub_ai;
 #[cfg(feature = "ai")]

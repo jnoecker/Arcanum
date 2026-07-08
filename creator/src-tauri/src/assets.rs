@@ -447,7 +447,7 @@ pub async fn import_asset(
 
     // Cap oversized images to the runtime profile before hashing so the
     // content-addressed name reflects the bytes actually stored.
-    let bytes = crate::generation::cap_image_bytes(&asset_type, ext, &bytes);
+    let bytes = crate::image_profiles::cap_image_bytes(&asset_type, ext, &bytes);
 
     let mut hasher = Sha256::new();
     hasher.update(&bytes);
@@ -669,7 +669,7 @@ pub async fn save_bytes_as_asset(
 
     // Cap oversized images to the runtime profile before hashing so the
     // content-addressed name reflects the bytes actually stored.
-    let bytes = crate::generation::cap_image_bytes(&asset_type, ext, &bytes);
+    let bytes = crate::image_profiles::cap_image_bytes(&asset_type, ext, &bytes);
 
     let mut hasher = Sha256::new();
     hasher.update(&bytes);
@@ -1113,7 +1113,7 @@ pub async fn bulk_import_images(
 
         // Cap oversized images to the runtime profile before hashing so the
         // content-addressed name reflects the bytes actually stored.
-        let bytes = crate::generation::cap_image_bytes(&asset_type, file_ext, &bytes);
+        let bytes = crate::image_profiles::cap_image_bytes(&asset_type, file_ext, &bytes);
 
         let mut hasher = Sha256::new();
         hasher.update(&bytes);

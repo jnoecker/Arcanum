@@ -271,7 +271,7 @@ fn optimized_runtime_image_bytes(
     let Some(target_ext) = target_ext else {
         return bytes.to_vec();
     };
-    crate::generation::cap_image_bytes(asset_type, &target_ext, bytes)
+    crate::image_profiles::cap_image_bytes(asset_type, &target_ext, bytes)
 }
 
 /// Check if an object already exists in R2.

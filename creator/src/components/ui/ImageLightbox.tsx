@@ -1,14 +1,23 @@
 import "./EntityArtGenerator.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface ImageLightboxProps {
   src: string;
   onClose: () => void;
+  /** Extra buttons rendered in the HUD, before the Close button. */
+  actions?: ReactNode;
+  /** Short status text rendered in the HUD (e.g. a "3 / 7" counter). */
+  caption?: ReactNode;
+  /** When provided, shows a ◀ chevron and binds ArrowLeft. */
+  onPrev?: () => void;
+  /** When provided, shows a ▶ chevron and binds ArrowRight. */
+  onNext?: () => void;
 }
 
 /** Click-to-zoom modal with scroll-zoom and drag-pan. Click outside or Esc closes. */
-export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
+export function ImageLightbox({ src, onClose, actions, caption, onPrev, onNext }: ImageLightboxProps) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
@@ -26,7 +35,19 @@ export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
     closeBtnRef.current?.focus();
   }, []);
 
-  // Keyboard zoom shortcuts (Escape is handled by the focus trap).
+  // Reset the view when navigating between images.
+  useEffect(() => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, [src]);
+
+  // Keep the latest nav callbacks readable from the stable key handler.
+  const onPrevRef = useRef(onPrev);
+  const onNextRef = useRef(onNext);
+  onPrevRef.current = onPrev;
+  onNextRef.current = onNext;
+
+  // Keyboard zoom + navigation shortcuts (Escape is handled by the focus trap).
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "0") {
@@ -36,6 +57,10 @@ export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
         setZoom((z) => Math.min(8, z * 1.2));
       } else if (e.key === "-" || e.key === "_") {
         setZoom((z) => Math.max(0.5, z / 1.2));
+      } else if (e.key === "ArrowLeft") {
+        onPrevRef.current?.();
+      } else if (e.key === "ArrowRight") {
+        onNextRef.current?.();
       }
     };
     window.addEventListener("keydown", handleKey);
@@ -79,7 +104,9 @@ export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
   };
   const onMouseLeave = () => setDragging(false);
 
-  return (
+  // Portal to <body>: ancestor stacking contexts (app shell chrome, panel
+  // columns) otherwise paint the sidebar and toolbar above this overlay.
+  return createPortal(
     <div
       ref={rootRef}
       className="art-lightbox"
@@ -106,7 +133,29 @@ export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
           }}
         />
       </div>
+      {onPrev && (
+        <button
+          className="art-lightbox__nav art-lightbox__nav--prev"
+          onClick={(e) => { e.stopPropagation(); onPrev(); }}
+          title="Previous (←)"
+          aria-label="Previous image"
+        >
+          ‹
+        </button>
+      )}
+      {onNext && (
+        <button
+          className="art-lightbox__nav art-lightbox__nav--next"
+          onClick={(e) => { e.stopPropagation(); onNext(); }}
+          title="Next (→)"
+          aria-label="Next image"
+        >
+          ›
+        </button>
+      )}
       <div className="art-lightbox__hud" onClick={(e) => e.stopPropagation()}>
+        {caption && <span className="art-lightbox__caption">{caption}</span>}
+        {actions}
         <button
           className="art-lightbox__btn"
           onClick={() => setZoom((z) => Math.max(0.5, z / 1.2))}
@@ -138,6 +187,7 @@ export function ImageLightbox({ src, onClose }: ImageLightboxProps) {
           Close · Esc
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

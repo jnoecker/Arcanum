@@ -13,6 +13,7 @@ import {
 import { resolveImageModel, type AssetEntry } from "@/types/assets";
 import { generateAssetImage } from "@/lib/imageGen";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
+import { VariantLightbox } from "@/components/ui/VariantLightbox";
 
 type PortraitKind = "race" | "class";
 type PortraitKey = `${PortraitKind}:${string}`;
@@ -88,6 +89,7 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
   const [promptDraft, setPromptDraft] = useState("");
   const [template, setTemplate] = useState<PortraitPromptTemplate | null>(null);
   const [variants, setVariants] = useState<AssetEntry[]>([]);
+  const [variantPreview, setVariantPreview] = useState<number | null>(null);
   const [previewEntry, setPreviewEntry] = useState<AssetEntry | null>(null);
   const [generatingTemplate, setGeneratingTemplate] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
@@ -418,8 +420,8 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
                     <div className="mt-3">
                       <div className="mb-1.5 text-2xs uppercase tracking-ui text-text-muted">Variants</div>
                       <div className="flex gap-2 overflow-x-auto pb-1">
-                        {variants.map((entry) => (
-                          <VariantCard key={entry.id} entry={entry} assetsDir={assetsDir} onClick={() => handleVariantSelect(entry)} />
+                        {variants.map((entry, i) => (
+                          <VariantCard key={entry.id} entry={entry} assetsDir={assetsDir} onClick={() => setVariantPreview(i)} />
                         ))}
                       </div>
                     </div>
@@ -479,6 +481,16 @@ export function PortraitStudio({ selectedZoneId }: { selectedZoneId: string | nu
             </div>
           </div>
         </div>
+      )}
+
+      {variantPreview !== null && (
+        <VariantLightbox
+          variants={variants}
+          initialIndex={variantPreview}
+          assetsDir={assetsDir}
+          onSetPrimary={handleVariantSelect}
+          onClose={() => setVariantPreview(null)}
+        />
       )}
     </section>
   );

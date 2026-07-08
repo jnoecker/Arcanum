@@ -1049,6 +1049,64 @@
   padding: 0 6px;
 }
 
+.art-lightbox__caption {
+  padding: 0 8px;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.art-lightbox__btn--primary {
+  color: var(--color-accent);
+  border-color: var(--border-accent-subtle);
+}
+
+.art-lightbox__btn--primary:disabled {
+  color: var(--color-warm-pale);
+  border-color: transparent;
+  background: rgb(var(--accent-rgb) / 0.10);
+  cursor: default;
+}
+
+.art-lightbox__nav {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--chrome-stroke-strong);
+  border-radius: 16px;
+  background: rgb(var(--bg-rgb) / 0.82);
+  backdrop-filter: blur(10px);
+  color: var(--color-text-secondary);
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 160ms var(--ease-cosmic), border-color 160ms var(--ease-cosmic), background 160ms var(--ease-cosmic);
+}
+
+.art-lightbox__nav:hover {
+  color: var(--color-warm-pale);
+  border-color: var(--border-accent-subtle);
+  background: rgb(var(--accent-rgb) / 0.12);
+}
+
+.art-lightbox__nav--prev {
+  left: 20px;
+}
+
+.art-lightbox__nav--next {
+  right: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .art-lightbox {
+    animation: none;
+  }
+}
+
 /* Compact faction-emblem forge used inside the fixed Allegiances workbench. */
 .faction-emblem-generator .art-panel,
 .faction-emblem-generator .art-panel__hero-col,

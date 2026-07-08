@@ -16,6 +16,7 @@ import {
 import { resolveImageModel, type AssetEntry, type AssetType } from "@/types/assets";
 import { generateAssetImage } from "@/lib/imageGen";
 import { InlineError, Spinner } from "@/components/ui/FormWidgets";
+import { VariantLightbox } from "@/components/ui/VariantLightbox";
 
 const CUSTOM_ASSET_TYPES: AssetType[] = [
   "background",
@@ -114,6 +115,7 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
   const [globalAssetKey, setGlobalAssetKey] = useState("");
   const [promptDraft, setPromptDraft] = useState("");
   const [variants, setVariants] = useState<AssetEntry[]>([]);
+  const [variantPreview, setVariantPreview] = useState<number | null>(null);
   const [previewEntry, setPreviewEntry] = useState<AssetEntry | null>(null);
   const [promptGeneratedByLlm, setPromptGeneratedByLlm] = useState(false);
   const [generatingPrompt, setGeneratingPrompt] = useState(false);
@@ -510,14 +512,24 @@ export function CustomAssetStudio({ selectedZoneId }: { selectedZoneId: string |
             <div className="mt-4">
               <div className="mb-2 text-2xs uppercase tracking-ui text-text-muted">Variant strip</div>
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {variants.map((entry) => (
-                  <VariantCard key={entry.id} entry={entry} assetsDir={assetsDir} onClick={() => handleVariantSelect(entry)} />
+                {variants.map((entry, i) => (
+                  <VariantCard key={entry.id} entry={entry} assetsDir={assetsDir} onClick={() => setVariantPreview(i)} />
                 ))}
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {variantPreview !== null && (
+        <VariantLightbox
+          variants={variants}
+          initialIndex={variantPreview}
+          assetsDir={assetsDir}
+          onSetPrimary={handleVariantSelect}
+          onClose={() => setVariantPreview(null)}
+        />
+      )}
     </section>
   );
 }

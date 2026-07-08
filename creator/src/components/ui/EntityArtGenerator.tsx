@@ -22,6 +22,7 @@ import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
 import { InlineError } from "./FormWidgets";
 import { SketchDialog } from "./SketchDialog";
 import { ImageLightbox } from "./ImageLightbox";
+import { VariantLightbox } from "./VariantLightbox";
 
 type Stage = "idle" | "generating" | "preview";
 
@@ -153,6 +154,7 @@ export function EntityArtGenerator({
   const [showSketch, setShowSketch] = useState(false);
   const [variants, setVariants] = useState<AssetEntry[]>([]);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [variantPreview, setVariantPreview] = useState<number | null>(null);
 
   // Refs to track pending results across unmount — auto-accept if user navigates away
   const pendingResultRef = useRef<GeneratedImage | null>(null);
@@ -567,7 +569,7 @@ export function EntityArtGenerator({
               variants={variants}
               currentImage={currentImage}
               assetsDir={assetsDir}
-              onSelect={handleSelectVariant}
+              onPreview={setVariantPreview}
               onReroll={AI_ENABLED && hasApiKey ? handleGenerate : undefined}
               rerollDisabled={removingBg}
             />
@@ -855,6 +857,17 @@ export function EntityArtGenerator({
       {lightbox && (
         <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />
       )}
+
+      {variantPreview !== null && (
+        <VariantLightbox
+          variants={variants}
+          initialIndex={variantPreview}
+          assetsDir={assetsDir}
+          isPrimary={(v) => v.is_active || v.file_name === currentImage}
+          onSetPrimary={handleSelectVariant}
+          onClose={() => setVariantPreview(null)}
+        />
+      )}
     </section>
   );
 }
@@ -985,14 +998,14 @@ function VariantsRail({
   variants,
   currentImage,
   assetsDir,
-  onSelect,
+  onPreview,
   onReroll,
   rerollDisabled,
 }: {
   variants: AssetEntry[];
   currentImage?: string;
   assetsDir: string;
-  onSelect: (entry: AssetEntry) => void;
+  onPreview: (index: number) => void;
   onReroll?: () => void;
   rerollDisabled?: boolean;
 }) {
@@ -1003,13 +1016,13 @@ function VariantsRail({
         <span className="art-rail__count">{variants.length}</span>
       </div>
       <div className="art-rail__strip">
-        {variants.map((v) => (
+        {variants.map((v, i) => (
           <VariantThumb
             key={v.id}
             entry={v}
             assetsDir={assetsDir}
             isPrimary={v.is_active || v.file_name === currentImage}
-            onClick={() => onSelect(v)}
+            onClick={() => onPreview(i)}
           />
         ))}
         {onReroll && (
@@ -1047,7 +1060,7 @@ function VariantThumb({
       className="art-thumb"
       data-primary={isPrimary}
       onClick={onClick}
-      title={isPrimary ? "Primary" : "Set as primary"}
+      title={isPrimary ? "Primary — click to preview" : "Preview"}
     >
       {src ? (
         <img src={src} alt="" loading="lazy" />
@@ -1056,7 +1069,7 @@ function VariantThumb({
       )}
       {isPrimary && <span className="art-thumb__star">✦</span>}
       {!isPrimary && (
-        <div className="art-thumb__hover">Set primary</div>
+        <div className="art-thumb__hover">Preview</div>
       )}
     </button>
   );

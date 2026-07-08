@@ -195,6 +195,8 @@ export interface MigrationReport {
   bytesAfter: number;
   estimated: boolean;
   referencesUpdated: number;
+  cancelled: boolean;
+  remaining: number;
   errors: string[];
 }
 

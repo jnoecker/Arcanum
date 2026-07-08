@@ -147,6 +147,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [checkingMigration, setCheckingMigration] = useState(false);
   const [migrating, setMigrating] = useState(false);
+  const [stoppingMigration, setStoppingMigration] = useState(false);
   const [migrationPlan, setMigrationPlan] = useState<MigrationReport | null>(null);
   const [migrationProgress, setMigrationProgress] = useState<MigrationProgress | null>(null);
   const [migrationResult, setMigrationResult] = useState<MigrationReport | null>(null);
@@ -169,6 +170,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
     }
     setCheckingMigration(true);
     setMigrationResult(null);
+    setMigrationProgress(null);
     try {
       const plan = await invoke<MigrationReport>("migrate_assets_to_profiles", { dryRun: true });
       if (plan.affected === 0) {
@@ -180,12 +182,19 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
       useToastStore.getState().show(`Optimize check failed: ${err instanceof Error ? err.message : String(err)}`, 4000);
     } finally {
       setCheckingMigration(false);
+      setMigrationProgress(null);
     }
+  };
+
+  const handleOptimizeStop = () => {
+    setStoppingMigration(true);
+    invoke("cancel_asset_migration").catch(() => {});
   };
 
   const handleOptimizeRun = async () => {
     setMigrationPlan(null);
     setMigrating(true);
+    setStoppingMigration(false);
     setMigrationProgress(null);
     try {
       const result = await invoke<MigrationReport>("migrate_assets_to_profiles", { dryRun: false });
@@ -199,6 +208,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
       useToastStore.getState().show(`Optimize failed: ${err instanceof Error ? err.message : String(err)}`, 5000);
     } finally {
       setMigrating(false);
+      setStoppingMigration(false);
       setMigrationProgress(null);
     }
   };
@@ -422,7 +432,12 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
               className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1.5 text-2xs font-medium text-text-secondary transition-colors hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
             >
               {checkingMigration ? (
-                <span className="flex items-center gap-1.5"><Spinner />Checking</span>
+                <span className="flex items-center gap-1.5">
+                  <Spinner />
+                  {migrationProgress?.stage === "scanning" && migrationProgress.total > 0
+                    ? `Scanning ${Math.round((migrationProgress.current / migrationProgress.total) * 100)}%`
+                    : "Checking"}
+                </span>
               ) : migrating ? (
                 <span className="flex items-center gap-1.5"><Spinner />Optimizing</span>
               ) : (
@@ -457,18 +472,31 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
               </>
             )}
             {migrating && (
-              <span className="flex items-center gap-1.5 text-text-secondary">
-                <Spinner />
-                {migrationProgress?.stage === "rewriting"
-                  ? "Updating project references…"
-                  : migrationProgress
-                    ? `Re-encoding ${Math.min(migrationProgress.current + 1, migrationProgress.total)} of ${migrationProgress.total}…`
-                    : "Optimizing…"}
-              </span>
+              <>
+                <span className="flex items-center gap-1.5 text-text-secondary">
+                  <Spinner />
+                  {migrationProgress?.stage === "rewriting"
+                    ? "Updating project references…"
+                    : migrationProgress?.stage === "encoding"
+                      ? `Re-encoding ${Math.min(migrationProgress.current + 1, migrationProgress.total)} of ${migrationProgress.total}…`
+                      : "Optimizing…"}
+                </span>
+                <button
+                  onClick={handleOptimizeStop}
+                  disabled={stoppingMigration}
+                  title="Finish the images already optimized, then stop — run again later to continue"
+                  className="rounded-full border border-[var(--chrome-stroke)] px-3 py-1 text-text-muted transition-colors hover:text-text-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {stoppingMigration ? "Stopping…" : "Stop"}
+                </button>
+              </>
             )}
             {migrationResult && !migrating && (
               <span className="text-text-secondary">
-                Optimized {migrationResult.affected} images — {formatMB(migrationResult.bytesBefore)} → {formatMB(migrationResult.bytesAfter)}, {migrationResult.referencesUpdated} project {migrationResult.referencesUpdated === 1 ? "file" : "files"} updated. Reload the project to refresh open editors.
+                {migrationResult.cancelled
+                  ? `Stopped early — ${migrationResult.affected - migrationResult.remaining} of ${migrationResult.affected} images optimized, ${migrationResult.remaining} remaining (run Optimize Library again to continue). `
+                  : `Optimized ${migrationResult.affected} images — `}
+                {formatMB(migrationResult.bytesBefore)} → {formatMB(migrationResult.bytesAfter)}, {migrationResult.referencesUpdated} project {migrationResult.referencesUpdated === 1 ? "file" : "files"} updated. Reload the project to refresh open editors.
                 {migrationResult.errors.length > 0 && (
                   <span className="text-status-error"> {migrationResult.errors.length} failed — see console.</span>
                 )}

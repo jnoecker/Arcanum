@@ -1,26 +1,28 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
-import { invoke } from "@tauri-apps/api/core";
 import { useAssetStore } from "@/stores/assetStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { useImageSrc, useImageSrcStatus } from "@/lib/useImageSrc";
+import { ImageLightbox } from "./ImageLightbox";
 import type { AssetEntry } from "@/types/assets";
 
-function LazyThumb({
-  asset,
-  onVisible,
-}: {
-  asset: AssetEntry;
-  onVisible: (entry: AssetEntry) => void;
-}) {
+// Matches GalleryThumb's maxDim so the picker and gallery share cache entries.
+const THUMB_MAX_DIM = 320;
+
+/** Grid thumbnail that loads only once scrolled into view, via the shared
+ *  image hook so it gets a downscaled data URL out of the LRU-bounded,
+ *  concurrency-capped cache instead of a full-resolution IPC read. */
+function PickerThumb({ asset }: { asset: AssetEntry }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || visible) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
-          onVisible(asset);
+          setVisible(true);
           observer.disconnect();
         }
       },
@@ -28,13 +30,39 @@ function LazyThumb({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [asset, onVisible]);
+  }, [visible]);
+
+  const { src } = useImageSrcStatus(visible ? asset.file_name : undefined, {
+    maxDim: THUMB_MAX_DIM,
+  });
 
   return (
-    <div ref={ref} className="flex h-full w-full items-center justify-center">
-      <div className="h-4 w-4 rounded-full border border-border-default border-t-accent animate-spin" />
+    <div ref={ref} className="h-full w-full">
+      {src ? (
+        <img src={src} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center">
+          <div className="h-4 w-4 rounded-full border border-border-default border-t-accent animate-spin" />
+        </div>
+      )}
     </div>
   );
+}
+
+/** Full-resolution lightbox preview. Shows the already-cached thumbnail while
+ *  the full image loads, then sharpens in place. */
+function PickerLightbox({
+  asset,
+  onClose,
+}: {
+  asset: AssetEntry;
+  onClose: () => void;
+}) {
+  const thumb = useImageSrc(asset.file_name, { maxDim: THUMB_MAX_DIM });
+  const full = useImageSrc(asset.file_name);
+  const src = full ?? thumb;
+  if (!src) return null;
+  return <ImageLightbox src={src} onClose={onClose} />;
 }
 
 export type AssetPickerMediaKind = "image" | "audio" | "video";
@@ -67,11 +95,10 @@ export function AssetPickerModal({
   initialFilter,
 }: AssetPickerModalProps) {
   const assets = useAssetStore((s) => s.assets);
-  const assetsDir = useAssetStore((s) => s.assetsDir);
   const loadAssets = useAssetStore((s) => s.loadAssets);
 
   const [filter, setFilter] = useState<string>(initialFilter ?? "all");
-  const [imageCache, setImageCache] = useState<Record<string, string>>({});
+  const [preview, setPreview] = useState<AssetEntry | null>(null);
   const trapRef = useFocusTrap<HTMLDivElement>(onClose);
   const kindLabels = MEDIA_KIND_LABELS[mediaKind];
   const extensionPattern = MEDIA_KIND_EXTENSIONS[mediaKind];
@@ -103,19 +130,6 @@ export function AssetPickerModal({
       b.created_at.localeCompare(a.created_at),
     );
   }, [assets, filter, extensionPattern]);
-
-  const loadImage = useCallback(
-    (entry: AssetEntry) => {
-      if (imageCache[entry.id]) return;
-      const path = `${assetsDir}\\images\\${entry.file_name}`;
-      invoke<string>("read_image_data_url", { path })
-        .then((dataUrl) => {
-          setImageCache((prev) => ({ ...prev, [entry.id]: dataUrl }));
-        })
-        .catch(() => {});
-    },
-    [assetsDir, imageCache],
-  );
 
   return createPortal(
     <div
@@ -184,48 +198,62 @@ export function AssetPickerModal({
           ) : (
             <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 lg:grid-cols-6">
               {sorted.map((asset) => (
-                <button
+                <div
                   key={asset.id}
-                  onClick={() => {
-                    onSelect(asset.file_name);
-                    onClose();
-                  }}
-                  className="group overflow-hidden rounded-lg border border-border-default transition-[border-color,box-shadow] hover:border-accent hover:shadow-[var(--glow-aurum)]"
-                  title={`${asset.asset_type} — ${asset.file_name}`}
+                  className="group relative overflow-hidden rounded-lg border border-border-default transition-[border-color,box-shadow] hover:border-accent hover:shadow-[var(--glow-aurum)] focus-within:border-accent"
                 >
-                  <div className="aspect-square bg-bg-primary">
-                    {mediaKind === "image" ? (
-                      imageCache[asset.id] ? (
-                        <img
-                          src={imageCache[asset.id]}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
+                  <button
+                    onClick={() => {
+                      onSelect(asset.file_name);
+                      onClose();
+                    }}
+                    className="block w-full"
+                    title={`${asset.asset_type} — ${asset.file_name}`}
+                  >
+                    <div className="aspect-square bg-bg-primary">
+                      {mediaKind === "image" ? (
+                        <PickerThumb asset={asset} />
                       ) : (
-                        <LazyThumb asset={asset} onVisible={loadImage} />
-                      )
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-2xl text-text-muted" aria-label={mediaKind === "audio" ? "Audio file" : "Video file"}>
-                        {mediaKind === "audio" ? "♪" : "▶"}
-                      </div>
-                    )}
-                  </div>
-                  <div className="px-1.5 py-1">
-                    <p className="truncate text-3xs text-text-muted">
-                      {asset.asset_type.replace(/_/g, " ")}
-                    </p>
-                    {mediaKind !== "image" && (
-                      <p className="truncate text-3xs text-text-secondary" title={asset.file_name}>
-                        {asset.file_name}
+                        <div className="flex h-full w-full items-center justify-center text-2xl text-text-muted" aria-label={mediaKind === "audio" ? "Audio file" : "Video file"}>
+                          {mediaKind === "audio" ? "♪" : "▶"}
+                        </div>
+                      )}
+                    </div>
+                    <div className="px-1.5 py-1">
+                      <p className="truncate text-3xs text-text-muted">
+                        {asset.asset_type.replace(/_/g, " ")}
                       </p>
-                    )}
-                  </div>
-                </button>
+                      {mediaKind !== "image" && (
+                        <p className="truncate text-3xs text-text-secondary" title={asset.file_name}>
+                          {asset.file_name}
+                        </p>
+                      )}
+                    </div>
+                  </button>
+                  {mediaKind === "image" && (
+                    <button
+                      onClick={() => setPreview(asset)}
+                      aria-label="Preview at full size"
+                      title="Preview at full size"
+                      className="absolute right-1 top-1 rounded bg-bg-primary/80 p-1 text-text-muted opacity-0 transition-opacity hover:text-accent focus-visible:opacity-100 group-hover:opacity-100"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7" />
+                        <line x1="21" y1="21" x2="16" y2="16" />
+                        <line x1="11" y1="8" x2="11" y2="14" />
+                        <line x1="8" y1="11" x2="14" y2="11" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           )}
         </div>
       </div>
+      {preview && (
+        <PickerLightbox asset={preview} onClose={() => setPreview(null)} />
+      )}
     </div>,
     document.body,
   );

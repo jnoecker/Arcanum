@@ -274,6 +274,18 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     }
   }, [zoneState, selectedEntity]);
 
+  // Mirror the current selection so the sidebar can highlight it
+  useEffect(() => {
+    const setActiveSelection = useProjectStore.getState().setActiveSelection;
+    if (selectedEntity) {
+      setActiveSelection({ zoneId, entityKind: selectedEntity.kind, entityId: selectedEntity.id });
+    } else if (selectedRoomId) {
+      setActiveSelection({ zoneId, roomId: selectedRoomId });
+    } else {
+      setActiveSelection({ zoneId });
+    }
+  }, [zoneId, selectedRoomId, selectedEntity]);
+
   // Consume pending navigation from sidebar
   const pendingNavigation = useProjectStore((s) => s.pendingNavigation);
   const consumeNavigation = useProjectStore((s) => s.consumeNavigation);

@@ -26,6 +26,15 @@ export interface PendingNavigation {
   view?: string;
 }
 
+/** What the active zone editor currently has selected, mirrored so the
+ *  sidebar can highlight it. Only meaningful while that zone's tab is active. */
+export interface ActiveSelection {
+  zoneId: string;
+  roomId?: string;
+  entityKind?: string;
+  entityId?: string;
+}
+
 interface ProjectStore {
   project: Project | null;
   tabs: Tab[];
@@ -33,6 +42,7 @@ interface ProjectStore {
   adminSubView: AdminSubView;
   adminContentSubView: AdminContentSubView;
   pendingNavigation: PendingNavigation | null;
+  activeSelection: ActiveSelection | null;
   /** Global flag to show the MUD import wizard. Palette & sidebar both toggle this. */
   showMudImport: boolean;
   /** Global flag to show the zone YAML import dialog. */
@@ -59,6 +69,7 @@ interface ProjectStore {
   setAdminContentSubView: (subView: AdminContentSubView) => void;
   navigateTo: (nav: PendingNavigation) => void;
   consumeNavigation: () => PendingNavigation | null;
+  setActiveSelection: (selection: ActiveSelection | null) => void;
   setShowMudImport: (show: boolean) => void;
   setShowImportZone: (show: boolean) => void;
   /** Show the top-level world map (clears any open island detail). */
@@ -95,6 +106,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   adminSubView: "overview",
   adminContentSubView: "abilities",
   pendingNavigation: null,
+  activeSelection: null,
   showMudImport: false,
   showImportZone: false,
   mapView: "world",
@@ -115,6 +127,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       adminSubView: "overview",
       adminContentSubView: "abilities",
       mapView: "world",
+      activeSelection: null,
     });
     // Tell the Rust backend which project is active so get_settings
     // automatically merges project-level settings (R2 credentials, etc.)
@@ -126,7 +139,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     clearRoomDataCache();
     clearLayoutCache();
     invoke("set_active_project_dir", { projectDir: null }).catch(() => {});
-    set({ project: null, tabs: [], activeTabId: null, mapView: "world" });
+    set({ project: null, tabs: [], activeTabId: null, mapView: "world", activeSelection: null });
   },
 
   openTab: (tab) => {
@@ -174,6 +187,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     if (nav) set({ pendingNavigation: null });
     return nav;
   },
+  setActiveSelection: (activeSelection) => set({ activeSelection }),
   setShowMudImport: (showMudImport) => set({ showMudImport }),
   setShowImportZone: (showImportZone) => set({ showImportZone }),
 

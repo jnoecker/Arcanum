@@ -66,10 +66,24 @@ pub struct AssetContext {
     pub entity_id: String,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct Manifest {
     pub(crate) assets: Vec<AssetEntry>,
 }
+
+/// Parsed-manifest cache. Large libraries make the manifest file multi-MB, and
+/// nearly every asset command starts with a full read+parse of it; caching the
+/// parsed form turns those into a stat + clone. Validated against (path, mtime,
+/// len) so external writes — git checkout, snapshot restore, hand edits — are
+/// still picked up.
+struct CachedManifest {
+    path: PathBuf,
+    mtime: Option<std::time::SystemTime>,
+    len: u64,
+    manifest: Manifest,
+}
+
+static MANIFEST_CACHE: LazyLock<Mutex<Option<CachedManifest>>> = LazyLock::new(|| Mutex::new(None));
 
 pub(crate) fn assets_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = crate::fs_utils::app_data_dir(app)?;
@@ -94,13 +108,35 @@ async fn manifest_path(app: &AppHandle) -> Result<PathBuf, String> {
 
 pub(crate) async fn load_manifest(app: &AppHandle) -> Result<Manifest, String> {
     let path = manifest_path(app).await?;
-    if !path.exists() {
+    let Ok(meta) = tokio::fs::metadata(&path).await else {
         return Ok(Manifest::default());
+    };
+    let mtime = meta.modified().ok();
+    let len = meta.len();
+
+    {
+        let cache = MANIFEST_CACHE.lock().await;
+        if let Some(c) = cache.as_ref() {
+            if c.path == path && c.mtime == mtime && c.len == len {
+                return Ok(c.manifest.clone());
+            }
+        }
     }
+
     let data = tokio::fs::read_to_string(&path)
         .await
         .map_err(|e| format!("Failed to read manifest: {e}"))?;
-    serde_json::from_str(&data).map_err(|e| format!("Failed to parse manifest: {e}"))
+    let manifest: Manifest =
+        serde_json::from_str(&data).map_err(|e| format!("Failed to parse manifest: {e}"))?;
+
+    let mut cache = MANIFEST_CACHE.lock().await;
+    *cache = Some(CachedManifest {
+        path,
+        mtime,
+        len,
+        manifest: manifest.clone(),
+    });
+    Ok(manifest)
 }
 
 pub(crate) async fn save_manifest(app: &AppHandle, manifest: &Manifest) -> Result<(), String> {
@@ -110,7 +146,19 @@ pub(crate) async fn save_manifest(app: &AppHandle, manifest: &Manifest) -> Resul
             .await
             .map_err(|e| format!("Failed to create assets dir: {e}"))?;
     }
-    crate::fs_utils::write_json_file(&path, manifest, "manifest").await
+    crate::fs_utils::write_json_file(&path, manifest, "manifest").await?;
+
+    // Stat after the write so the cached (mtime, len) matches what a later
+    // load_manifest sees; a failed stat degrades to a cache miss, never staleness.
+    let meta = tokio::fs::metadata(&path).await.ok();
+    let mut cache = MANIFEST_CACHE.lock().await;
+    *cache = Some(CachedManifest {
+        mtime: meta.as_ref().and_then(|m| m.modified().ok()),
+        len: meta.map(|m| m.len()).unwrap_or(0),
+        path,
+        manifest: manifest.clone(),
+    });
+    Ok(())
 }
 
 #[tauri::command]

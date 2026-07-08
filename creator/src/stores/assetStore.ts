@@ -225,7 +225,14 @@ export const useAssetStore = create<AssetState>((set, get) => ({
 
   setActiveVariant: async (variantGroup, assetId) => {
     await invoke("set_active_variant", { variantGroup, assetId });
-    await get().loadAssets();
+    // The outcome is fully known here, so flip the flags locally instead of
+    // re-marshalling the entire AssetEntry[] over IPC (O(library) per click).
+    // Untouched entries keep their identity so memoized rows skip re-rendering.
+    set((state) => ({
+      assets: state.assets.map((a) =>
+        a.variant_group === variantGroup ? { ...a, is_active: a.id === assetId } : a,
+      ),
+    }));
   },
 
   listVariants: async (variantGroup) => {

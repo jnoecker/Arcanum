@@ -1,13 +1,18 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
+import { useConfigStore } from "@/stores/configStore";
+import { useLoreStore } from "@/stores/loreStore";
+import { useStoryStore } from "@/stores/storyStore";
 import { useToastStore } from "@/stores/toastStore";
+import { useZoneStore } from "@/stores/zoneStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
-import { useImageSrc, useImageSrcStatus } from "@/lib/useImageSrc";
+import { clearImageCache, useImageSrc, useImageSrcStatus } from "@/lib/useImageSrc";
 import { useMediaSrc } from "@/lib/useMediaSrc";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
-import type { AssetEntry, AssetType, SyncProgress, SyncScope } from "@/types/assets";
+import type { AssetEntry, AssetType, MigrationProgress, MigrationReport, SyncProgress, SyncScope } from "@/types/assets";
 import { Spinner } from "@/components/ui/FormWidgets";
 
 type SortKey = "newest" | "oldest" | "type";
@@ -35,6 +40,10 @@ function shouldShowInCuratedView(asset: AssetEntry): boolean {
 
 function shouldSyncAsset(asset: AssetEntry, scope: SyncScope): boolean {
   return scope === "all" || shouldShowInCuratedView(asset);
+}
+
+function formatMB(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function localAssetPath(assetsDir: string, asset: AssetEntry): string {
@@ -136,6 +145,63 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   const [removingBg, setRemovingBg] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncProgress | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [checkingMigration, setCheckingMigration] = useState(false);
+  const [migrating, setMigrating] = useState(false);
+  const [migrationPlan, setMigrationPlan] = useState<MigrationReport | null>(null);
+  const [migrationProgress, setMigrationProgress] = useState<MigrationProgress | null>(null);
+  const [migrationResult, setMigrationResult] = useState<MigrationReport | null>(null);
+
+  useEffect(() => {
+    const unlisten = listen<MigrationProgress>("asset-migration-progress", (event) => {
+      setMigrationProgress(event.payload);
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
+
+  const handleOptimizeCheck = async () => {
+    const zonesDirty = Array.from(useZoneStore.getState().zones.values()).some((z) => z.dirty);
+    const storiesDirty = Object.values(useStoryStore.getState().dirty).some(Boolean);
+    if (zonesDirty || storiesDirty || useConfigStore.getState().dirty || useLoreStore.getState().dirty) {
+      useToastStore.getState().show("Save all changes first — optimizing rewrites project files", 4000);
+      return;
+    }
+    setCheckingMigration(true);
+    setMigrationResult(null);
+    try {
+      const plan = await invoke<MigrationReport>("migrate_assets_to_profiles", { dryRun: true });
+      if (plan.affected === 0) {
+        useToastStore.getState().show("Library already optimized — every image fits its serving size", 3000);
+      } else {
+        setMigrationPlan(plan);
+      }
+    } catch (err) {
+      useToastStore.getState().show(`Optimize check failed: ${err instanceof Error ? err.message : String(err)}`, 4000);
+    } finally {
+      setCheckingMigration(false);
+    }
+  };
+
+  const handleOptimizeRun = async () => {
+    setMigrationPlan(null);
+    setMigrating(true);
+    setMigrationProgress(null);
+    try {
+      const result = await invoke<MigrationReport>("migrate_assets_to_profiles", { dryRun: false });
+      if (result.errors.length > 0) {
+        console.error("Asset migration errors:", result.errors);
+      }
+      setMigrationResult(result);
+      clearImageCache();
+      await loadAssets();
+    } catch (err) {
+      useToastStore.getState().show(`Optimize failed: ${err instanceof Error ? err.message : String(err)}`, 5000);
+    } finally {
+      setMigrating(false);
+      setMigrationProgress(null);
+    }
+  };
 
   const copyText = (field: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -349,11 +415,67 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                 )}
               </>
             )}
+            <button
+              onClick={handleOptimizeCheck}
+              disabled={checkingMigration || migrating}
+              title="Downscale stored images to the size the game actually serves"
+              className="rounded-full border border-[var(--chrome-stroke)] bg-[var(--chrome-fill)] px-3 py-1.5 text-2xs font-medium text-text-secondary transition-colors hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {checkingMigration ? (
+                <span className="flex items-center gap-1.5"><Spinner />Checking</span>
+              ) : migrating ? (
+                <span className="flex items-center gap-1.5"><Spinner />Optimizing</span>
+              ) : (
+                "Optimize Library"
+              )}
+            </button>
           </div>
           <button aria-label="Close" onClick={onClose} className="text-xs text-text-muted hover:text-text-primary">
             &times;
           </button>
         </div>
+
+        {(migrationPlan || migrating || migrationResult) && (
+          <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border-default bg-bg-primary/40 px-5 py-2 text-2xs">
+            {migrationPlan && !migrating && (
+              <>
+                <span className="text-text-secondary">
+                  {migrationPlan.affected} of {migrationPlan.totalAssets} images exceed their serving size — {formatMB(migrationPlan.bytesBefore)} → ~{formatMB(migrationPlan.bytesAfter)}. A project snapshot is taken first; filenames change and every zone, lore, and story reference is updated. Downscaled images can't be restored to full size.
+                </span>
+                <button
+                  onClick={handleOptimizeRun}
+                  className="rounded-full border border-[var(--chrome-stroke)] bg-accent/15 px-3 py-1 font-medium text-accent transition-colors hover:bg-accent/25"
+                >
+                  Optimize {migrationPlan.affected} images
+                </button>
+                <button
+                  onClick={() => setMigrationPlan(null)}
+                  className="rounded-full px-3 py-1 text-text-muted transition-colors hover:text-text-secondary"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+            {migrating && (
+              <span className="flex items-center gap-1.5 text-text-secondary">
+                <Spinner />
+                {migrationProgress?.stage === "rewriting"
+                  ? "Updating project references…"
+                  : migrationProgress
+                    ? `Re-encoding ${Math.min(migrationProgress.current + 1, migrationProgress.total)} of ${migrationProgress.total}…`
+                    : "Optimizing…"}
+              </span>
+            )}
+            {migrationResult && !migrating && (
+              <span className="text-text-secondary">
+                Optimized {migrationResult.affected} images — {formatMB(migrationResult.bytesBefore)} → {formatMB(migrationResult.bytesAfter)}, {migrationResult.referencesUpdated} project {migrationResult.referencesUpdated === 1 ? "file" : "files"} updated. Reload the project to refresh open editors.
+                {migrationResult.errors.length > 0 && (
+                  <span className="text-status-error"> {migrationResult.errors.length} failed — see console.</span>
+                )}
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="flex min-h-[120px] max-h-[40vh] shrink flex-col gap-3 overflow-y-auto border-b border-border-default px-5 py-3">
           <div className="flex flex-wrap items-center justify-between gap-3">

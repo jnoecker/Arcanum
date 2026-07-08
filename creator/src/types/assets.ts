@@ -187,6 +187,24 @@ export interface SyncProgress {
   errors: string[];
 }
 
+/** Mirrors the Rust MigrationReport struct */
+export interface MigrationReport {
+  totalAssets: number;
+  affected: number;
+  bytesBefore: number;
+  bytesAfter: number;
+  estimated: boolean;
+  referencesUpdated: number;
+  errors: string[];
+}
+
+/** Payload of the `asset-migration-progress` event */
+export interface MigrationProgress {
+  stage: string;
+  current: number;
+  total: number;
+}
+
 export interface ExportResult {
   total: number;
   copied: number;

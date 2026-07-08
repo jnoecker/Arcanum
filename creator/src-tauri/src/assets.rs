@@ -12,7 +12,7 @@ use tokio::sync::Mutex;
 const MANIFEST_FILE: &str = "manifest.json";
 
 /// Global mutex to prevent concurrent manifest read-modify-write corruption.
-static MANIFEST_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+pub(crate) static MANIFEST_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AssetEntry {
@@ -67,11 +67,11 @@ pub struct AssetContext {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-struct Manifest {
-    assets: Vec<AssetEntry>,
+pub(crate) struct Manifest {
+    pub(crate) assets: Vec<AssetEntry>,
 }
 
-fn assets_dir(app: &AppHandle) -> Result<PathBuf, String> {
+pub(crate) fn assets_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = crate::fs_utils::app_data_dir(app)?;
     Ok(dir.join("assets"))
 }
@@ -92,7 +92,7 @@ async fn manifest_path(app: &AppHandle) -> Result<PathBuf, String> {
     global_manifest_path(app)
 }
 
-async fn load_manifest(app: &AppHandle) -> Result<Manifest, String> {
+pub(crate) async fn load_manifest(app: &AppHandle) -> Result<Manifest, String> {
     let path = manifest_path(app).await?;
     if !path.exists() {
         return Ok(Manifest::default());
@@ -103,7 +103,7 @@ async fn load_manifest(app: &AppHandle) -> Result<Manifest, String> {
     serde_json::from_str(&data).map_err(|e| format!("Failed to parse manifest: {e}"))
 }
 
-async fn save_manifest(app: &AppHandle, manifest: &Manifest) -> Result<(), String> {
+pub(crate) async fn save_manifest(app: &AppHandle, manifest: &Manifest) -> Result<(), String> {
     let path = manifest_path(app).await?;
     if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent)

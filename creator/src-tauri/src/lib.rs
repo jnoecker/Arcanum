@@ -105,6 +105,7 @@ macro_rules! base_handler {
             assets::expand_base_sprites,
             assets::flip_image,
             asset_migration::migrate_assets_to_profiles,
+            asset_migration::cancel_asset_migration,
             r2::import_from_r2,
             r2::sync_assets,
             r2::get_sync_status,

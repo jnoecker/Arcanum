@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useAssetStore } from "@/stores/assetStore";
 import { useImageSrc } from "@/lib/useImageSrc";
+import { VariantLightbox } from "@/components/ui/VariantLightbox";
 import type { WorldFile } from "@/types/world";
 import type { AssetEntry } from "@/types/assets";
 import { MISC_NO_IMAGE } from "@/assets/ui";
@@ -271,6 +272,7 @@ function PreviewPanel({
   const assetsDir = useAssetStore((s) => s.assetsDir);
   const assetCount = useAssetStore((s) => s.assets.length);
   const [variants, setVariants] = useState<AssetEntry[]>([]);
+  const [variantPreview, setVariantPreview] = useState<number | null>(null);
 
   const loadVariants = useCallback(async () => {
     try {
@@ -364,17 +366,27 @@ function PreviewPanel({
               {variants.length} variant{variants.length !== 1 ? "s" : ""}
             </span>
             <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-              {variants.map((v) => (
+              {variants.map((v, i) => (
                 <VariantThumb
                   key={v.id}
                   entry={v}
                   assetsDir={assetsDir}
-                  onSelect={() => handleSelectVariant(v)}
+                  onSelect={() => setVariantPreview(i)}
                 />
               ))}
             </div>
           </div>
         </div>
+      )}
+
+      {variantPreview !== null && (
+        <VariantLightbox
+          variants={variants}
+          initialIndex={variantPreview}
+          assetsDir={assetsDir}
+          onSetPrimary={handleSelectVariant}
+          onClose={() => setVariantPreview(null)}
+        />
       )}
     </div>
   );
@@ -397,7 +409,7 @@ function VariantThumb({
   return (
     <button
       onClick={onSelect}
-      title={entry.created_at}
+      title={`Preview — ${entry.created_at}`}
       className={`relative h-14 w-14 shrink-0 overflow-hidden rounded border-2 transition-[border-color,box-shadow] ${
         entry.is_active
           ? "border-accent shadow-[0_0_6px_var(--color-accent)]"

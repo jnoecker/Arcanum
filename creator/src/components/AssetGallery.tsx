@@ -12,7 +12,7 @@ import { useFocusTrap } from "@/lib/useFocusTrap";
 import { clearImageCache, useImageSrc, useImageSrcStatus } from "@/lib/useImageSrc";
 import { useMediaSrc } from "@/lib/useMediaSrc";
 import { removeBgAndSave, shouldRemoveBg } from "@/lib/useBackgroundRemoval";
-import type { AssetEntry, AssetType, MigrationProgress, MigrationReport, SyncProgress, SyncScope } from "@/types/assets";
+import type { AssetEntry, AssetType, MigrationProgress, MigrationReport, R2SyncProgress, SyncProgress, SyncScope } from "@/types/assets";
 import { Spinner } from "@/components/ui/FormWidgets";
 
 type SortKey = "newest" | "oldest" | "type";
@@ -144,6 +144,8 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   const [importing, setImporting] = useState(false);
   const [removingBg, setRemovingBg] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncProgress | null>(null);
+  const [syncProgress, setSyncProgress] = useState<R2SyncProgress | null>(null);
+  const [stoppingSync, setStoppingSync] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [checkingMigration, setCheckingMigration] = useState(false);
   const [migrating, setMigrating] = useState(false);
@@ -155,6 +157,15 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     const unlisten = listen<MigrationProgress>("asset-migration-progress", (event) => {
       setMigrationProgress(event.payload);
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
+
+  useEffect(() => {
+    const unlisten = listen<R2SyncProgress>("r2-sync-progress", (event) => {
+      setSyncProgress(event.payload);
     });
     return () => {
       unlisten.then((fn) => fn());
@@ -407,20 +418,45 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                 </select>
                 <button
                   onClick={async () => {
+                    setSyncProgress(null);
+                    setStoppingSync(false);
                     const result = await syncToR2(syncScope);
                     setSyncResult(result);
+                    setSyncProgress(null);
                   }}
                   disabled={syncing || unsyncedCount === 0}
                   className="rounded-full border border-[var(--chrome-stroke)] px-3 py-1.5 text-2xs font-medium transition-colors enabled:bg-accent/15 enabled:text-accent enabled:hover:bg-accent/25 disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-50"
                 >
-                  {syncing ? <span className="flex items-center gap-1.5"><Spinner />Syncing</span> : unsyncedCount > 0 ? `Sync ${unsyncedCount} to R2` : "All synced"}
+                  {syncing ? (
+                    <span className="flex items-center gap-1.5">
+                      <Spinner />
+                      {syncProgress ? `Syncing ${syncProgress.current.toLocaleString()} / ${syncProgress.total.toLocaleString()}` : "Syncing"}
+                    </span>
+                  ) : unsyncedCount > 0 ? (
+                    `Sync ${unsyncedCount} to R2`
+                  ) : (
+                    "All synced"
+                  )}
                 </button>
+                {syncing && (
+                  <button
+                    onClick={() => {
+                      setStoppingSync(true);
+                      invoke("cancel_r2_sync").catch(() => {});
+                    }}
+                    disabled={stoppingSync}
+                    className="rounded-full px-3 py-1.5 text-2xs text-text-muted transition-colors hover:text-text-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {stoppingSync ? "Stopping…" : "Stop"}
+                  </button>
+                )}
                 {syncResult && !syncing && (
                   <span className="text-2xs text-text-muted">
                     {syncResult.uploaded} uploaded, {syncResult.skipped} deduped
                     {syncResult.failed > 0 && (
                       <span className="text-status-error"> ({syncResult.failed} failed)</span>
                     )}
+                    {syncResult.cancelled && <span> — stopped early; the rest sync next run</span>}
                   </span>
                 )}
               </>

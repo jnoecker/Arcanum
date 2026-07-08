@@ -184,7 +184,18 @@ export interface SyncProgress {
   uploaded: number;
   skipped: number;
   failed: number;
+  /** Set by sync_assets; absent on locally-constructed placeholders. */
+  cancelled?: boolean;
   errors: string[];
+}
+
+/** Payload of the `r2-sync-progress` event */
+export interface R2SyncProgress {
+  current: number;
+  total: number;
+  uploaded: number;
+  skipped: number;
+  failed: number;
 }
 
 /** Mirrors the Rust MigrationReport struct */

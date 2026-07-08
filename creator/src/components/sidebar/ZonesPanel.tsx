@@ -276,10 +276,13 @@ function CategorySection({
             style={{ background: CATEGORY_COLORS[cat.key] }}
             aria-hidden="true"
           />
-          <span className="truncate font-display text-2xs font-semibold uppercase tracking-label text-text-secondary">
+          <span
+            className="truncate font-display text-2xs font-semibold uppercase tracking-label text-text-secondary"
+            title={cat.label}
+          >
             {cat.label}
           </span>
-          <span className="shrink-0 text-2xs text-text-muted">
+          <span className="ml-auto shrink-0 pl-1 text-2xs text-text-muted">
             {filtering && entries.length !== total ? `${entries.length}/${total}` : total}
           </span>
         </button>
@@ -311,7 +314,7 @@ function CategorySection({
                     ref={isSelected ? selectedRef : undefined}
                     onClick={() => onEntityClick(cat, row.id)}
                     aria-current={isSelected ? "true" : undefined}
-                    className={`flex w-full items-center gap-2 rounded-xl border px-2 py-1.5 text-left text-xs transition ${
+                    className={`focus-ring flex w-full items-center gap-2 rounded-xl border px-2 py-1.5 text-left text-xs transition ${
                       isSelected
                         ? "selected-pill text-text-primary"
                         : "border-transparent text-text-muted hover:bg-accent/8 hover:text-text-primary"

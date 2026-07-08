@@ -87,9 +87,15 @@ pub fn infer_behavior(
 
     let transparent_background = transparent_background.unwrap_or(false);
 
+    // Store at the resolution the runtime actually serves — R2/hub uploads
+    // downscale to the profile anyway, so anything larger is wasted disk,
+    // IPC payload, and decode time.
+    let (target_width, target_height) =
+        crate::image_profiles::cap_stored_dims(asset_type, width.max(1), height.max(1));
+
     ImageBehavior {
-        target_width: width.max(1),
-        target_height: height.max(1),
+        target_width,
+        target_height,
         output_format,
         transparent_background,
     }
@@ -210,6 +216,18 @@ fn encode_jpeg(image: &DynamicImage) -> Result<Vec<u8>, String> {
         .encode_image(&DynamicImage::ImageRgb8(flattened))
         .map_err(|e| format!("Failed to encode JPEG: {e}"))?;
     Ok(cursor.into_inner())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn infer_behavior_caps_generation_targets() {
+        let b = infer_behavior(Some("ability_icon"), 1024, 1024, None);
+        assert_eq!((b.target_width, b.target_height), (256, 256));
+        assert_eq!(b.output_format, OutputFormat::Png);
+    }
 }
 
 fn flatten_alpha(image: &ImageBuffer<Rgba<u8>, Vec<u8>>) -> image::RgbImage {

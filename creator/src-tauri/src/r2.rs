@@ -1,9 +1,5 @@
 use chrono::Utc;
 use hmac::{Hmac, Mac};
-use image::codecs::jpeg::JpegEncoder;
-use image::codecs::png::{CompressionType as PngCompressionType, FilterType as PngFilterType, PngEncoder};
-use image::imageops::FilterType as ResizeFilter;
-use image::{ExtendedColorType, ImageEncoder};
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 use tauri::AppHandle;
@@ -52,13 +48,6 @@ pub struct VoiceUploadJob {
     pub text_sha8: String,
     /// Cache filename stem of the local clip to upload.
     pub cache_hash: String,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct RuntimeImageProfile {
-    max_width: u32,
-    max_height: u32,
-    jpeg_quality: u8,
 }
 
 // ─── AWS Signature V4 (minimal, for S3-compatible R2) ───────────────
@@ -272,102 +261,17 @@ fn image_extension(path: &str) -> Option<String> {
     }
 }
 
-fn runtime_image_profile(asset_type: &str) -> Option<RuntimeImageProfile> {
-    let profile = match asset_type {
-        "player_sprite" | "ability_icon" | "status_effect_icon" | "ability_sprite" | "item" | "lore_item" | "status_art" => {
-            RuntimeImageProfile { max_width: 256, max_height: 256, jpeg_quality: 82 }
-        }
-        "mob" | "pet" | "entity_portrait" | "race_portrait" | "class_portrait" | "lore_character" | "lore_species" => {
-            RuntimeImageProfile { max_width: 512, max_height: 768, jpeg_quality: 84 }
-        }
-        "room" | "background" | "zone_map" | "splash_hero" | "panel_header" | "loading_vignette" | "empty_state" | "ornament" | "lore_location" => {
-            RuntimeImageProfile { max_width: 1280, max_height: 1280, jpeg_quality: 82 }
-        }
-        "lore_map" => {
-            RuntimeImageProfile { max_width: 2048, max_height: 2048, jpeg_quality: 85 }
-        }
-        "showcase_banner" => {
-            RuntimeImageProfile { max_width: 1920, max_height: 820, jpeg_quality: 85 }
-        }
-        "showcase_favicon" => {
-            RuntimeImageProfile { max_width: 512, max_height: 512, jpeg_quality: 88 }
-        }
-        _ => return None,
-    };
-    Some(profile)
-}
-
 fn optimized_runtime_image_bytes(
     asset_type: &str,
     source_name: &str,
     object_key: &str,
     bytes: &[u8],
 ) -> Vec<u8> {
-    let Some(profile) = runtime_image_profile(asset_type) else {
-        return bytes.to_vec();
-    };
-
     let target_ext = image_extension(object_key).or_else(|| image_extension(source_name));
     let Some(target_ext) = target_ext else {
         return bytes.to_vec();
     };
-
-    // Keep WEBP pass-through for now; current runtime optimization only re-encodes PNG/JPEG.
-    if target_ext == "webp" {
-        return bytes.to_vec();
-    }
-
-    let decoded = match image::load_from_memory(bytes) {
-        Ok(img) => img,
-        Err(_) => return bytes.to_vec(),
-    };
-    let original_width = decoded.width();
-    let original_height = decoded.height();
-
-    let resized = if original_width > profile.max_width || original_height > profile.max_height {
-        decoded.resize(profile.max_width, profile.max_height, ResizeFilter::Lanczos3)
-    } else {
-        decoded
-    };
-
-    let mut out = Vec::new();
-    let encode_result = match target_ext.as_str() {
-        "jpg" | "jpeg" => {
-            let rgb = resized.to_rgb8();
-            let mut encoder = JpegEncoder::new_with_quality(&mut out, profile.jpeg_quality);
-            encoder.encode(
-                rgb.as_raw(),
-                rgb.width(),
-                rgb.height(),
-                ExtendedColorType::Rgb8,
-            )
-        }
-        "png" => {
-            let rgba = resized.to_rgba8();
-            let encoder = PngEncoder::new_with_quality(
-                &mut out,
-                PngCompressionType::Best,
-                PngFilterType::Adaptive,
-            );
-            encoder.write_image(
-                rgba.as_raw(),
-                rgba.width(),
-                rgba.height(),
-                ExtendedColorType::Rgba8,
-            )
-        }
-        _ => return bytes.to_vec(),
-    };
-
-    if encode_result.is_err() || out.is_empty() {
-        return bytes.to_vec();
-    }
-
-    if out.len() < bytes.len() || resized.width() != original_width || resized.height() != original_height {
-        out
-    } else {
-        bytes.to_vec()
-    }
+    crate::image_profiles::cap_image_bytes(asset_type, &target_ext, bytes)
 }
 
 /// Check if an object already exists in R2.

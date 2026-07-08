@@ -12,7 +12,7 @@ import { ITEM_TYPES, ARCHETYPAL_STATS, isArchetypalStat } from "@/types/world";
 import type { EquipmentSlotDefinition, MobTiersConfig } from "@/types/config";
 import { resolveDoorKeyId, resolveDoorState } from "./doorHelpers";
 import { mobMaxDamageAtLevel, mobMinDamageAtLevel } from "./tuning/formulas";
-import { classifyMob, inferLevelBand, targetLevelForTier } from "./zoneRebalance";
+import { classifyMob, inferLevelBand } from "./zoneRebalance";
 import { exitTarget } from "./zoneEdits";
 import { getTrainerClasses } from "./trainers";
 import { resolveMobStats } from "./resolveMobStats";
@@ -225,7 +225,6 @@ function validateZoneBalanceTargets(
   if (!hasBoundedRange && !world.levelBand) return;
 
   const band = inferLevelBand(world);
-  const difficulty = world.difficultyHint ?? "standard";
   const zoneTargetLabel = formatZoneTargetLabel(band, world.difficultyHint);
 
   for (const [mobId, mob] of Object.entries(world.mobs)) {
@@ -242,13 +241,18 @@ function validateZoneBalanceTargets(
       continue;
     }
 
-    const expectedLevel = targetLevelForTier(tierKey, band, difficulty);
-    if (mob.level != null && mob.level !== expectedLevel) {
+    // Flag a mob only when its level escapes the zone's level band entirely.
+    // Within the band, authored placement is legitimate — graduated zones
+    // intentionally spread tiers across their range (weak near the entrance,
+    // bosses in the deep), so pinning every tier to a single canonical level
+    // produced warnings authors could only ignore. "Rebalance to tier" is
+    // still available to snap a mob to its tier's target inside the band.
+    if (mob.level != null && (mob.level < band.min || mob.level > band.max)) {
       addIssue(
         issues,
         "warning",
         `mob:${mobId}`,
-        `Mob level ${mob.level} is outside the zone target for tier "${tierKey}". Expected level ${expectedLevel} for zone ${zoneTargetLabel}. Run "Rebalance to tier" to fix.`,
+        `Mob level ${mob.level} falls outside the zone level band ${zoneTargetLabel}. Bring it within the band, widen the zone's level band, or run "Rebalance to tier".`,
       );
     }
   }
@@ -514,8 +518,13 @@ export function validateZone(
    *  archetypal stat slot that no class fills (the bonus would silently drop). */
   classStatPriorities?: Record<string, string[]>,
   /** `jukeboxOutput` enables the server's strict title/duration checks, which
-   *  only hold after save-time enrichment — in-editor songs are bare file refs. */
-  opts?: { jukeboxOutput?: boolean },
+   *  only hold after save-time enrichment — in-editor songs are bare file refs.
+   *  `knownQualifiedMobIds` is the set of every `zone:mobKey` across all zones,
+   *  supplied by `validateAllZones`. When present, a zone-qualified quest
+   *  giver/turn-in reference is resolved against it instead of blindly warned;
+   *  cross-zone references are a first-class feature (turn a letter in at
+   *  another town), so they should only warn when they resolve to nothing. */
+  opts?: { jukeboxOutput?: boolean; knownQualifiedMobIds?: ReadonlySet<string> },
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const roomIds = new Set(Object.keys(world.rooms));
@@ -976,43 +985,54 @@ export function validateZone(
     }
   }
 
+  // Validate a quest giver/turn-in reference. Bare keywords are qualified with
+  // this zone by the loader, so they must resolve locally. A zone-qualified
+  // `zone:mob` reference is an intentional cross-zone link (e.g. accept a
+  // letter here, deliver it in another town) — resolve it against the whole-
+  // world registry when we have one, and only warn when it resolves to nothing.
+  const knownQualifiedMobIds = opts?.knownQualifiedMobIds;
+  const checkQuestNpc = (entity: string, ref: string, label: string, uniqueNoun: string): void => {
+    if (ref.includes(":")) {
+      if (knownQualifiedMobIds && !knownQualifiedMobIds.has(ref)) {
+        addIssue(
+          issues,
+          "warning",
+          entity,
+          `${label} mob "${ref}" does not resolve to any mob in any zone — check the zone id and mob key.`,
+        );
+      }
+      return;
+    }
+    if (!mobIds.has(ref)) {
+      addIssue(
+        issues,
+        "warning",
+        entity,
+        `${label} mob "${ref}" is not a known mob in this zone. Use a bare keyword for a local NPC, or "zone:mob" to point at an NPC in another zone.`,
+      );
+      return;
+    }
+    const mob = world.mobs?.[ref];
+    if (mob && !isUniqueSpawn(mob)) {
+      addIssue(
+        issues,
+        "error",
+        entity,
+        `${label} mob "${ref}" must have exactly one spawn with count 1 — ${uniqueNoun} are unique NPCs`,
+      );
+    }
+  };
+
   for (const [questId, quest] of Object.entries(world.quests ?? {})) {
     const entity = `quest:${questId}`;
     if (!quest.name?.trim()) addIssue(issues, "warning", entity, "Quest has no name");
     if (!quest.giver) {
       addIssue(issues, "warning", entity, "Quest has no giver");
-    } else if (!mobIds.has(quest.giver)) {
-      addIssue(issues, "warning", entity, `Giver mob "${quest.giver}" is not a known mob in this zone`);
     } else {
-      const giverMob = world.mobs?.[quest.giver];
-      if (giverMob && !isUniqueSpawn(giverMob)) {
-        addIssue(
-          issues,
-          "error",
-          entity,
-          `Giver mob "${quest.giver}" must have exactly one spawn with count 1 — quest givers are unique NPCs`,
-        );
-      }
+      checkQuestNpc(entity, quest.giver, "Giver", "quest givers");
     }
     if (quest.turnInMob) {
-      if (!mobIds.has(quest.turnInMob)) {
-        addIssue(
-          issues,
-          "warning",
-          entity,
-          `Turn-in mob "${quest.turnInMob}" is not a known mob in this zone — the engine still qualifies it with the zone id, so this is only valid if the mob lives elsewhere`,
-        );
-      } else {
-        const turnInMob = world.mobs?.[quest.turnInMob];
-        if (turnInMob && !isUniqueSpawn(turnInMob)) {
-          addIssue(
-            issues,
-            "error",
-            entity,
-            `Turn-in mob "${quest.turnInMob}" must have exactly one spawn with count 1 — turn-in NPCs are unique`,
-          );
-        }
-      }
+      checkQuestNpc(entity, quest.turnInMob, "Turn-in", "turn-in NPCs");
     }
     // Objective-less quests are valid for the npc_turn_in completion type
     // (use case: "go visit this other NPC"). Auto-completion needs at least
@@ -1161,9 +1181,19 @@ export function validateAllZones(
   questXpConfig?: QuestXpConfig,
   classStatPriorities?: Record<string, string[]>,
 ): Map<string, ValidationIssue[]> {
+  // Registry of every `zone:mobKey` across all loaded zones, so per-zone
+  // validation can resolve intentional cross-zone quest references (turn-in
+  // NPCs, remote givers) instead of warning on every one of them.
+  const knownQualifiedMobIds = new Set<string>();
+  for (const [zoneId, zone] of zones) {
+    for (const mobKey of Object.keys(zone.data.mobs ?? {})) {
+      knownQualifiedMobIds.add(`${zoneId}:${mobKey}`);
+    }
+  }
+
   const results = new Map<string, ValidationIssue[]>();
   for (const [zoneId, zone] of zones) {
-    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions, knownAchievements, mobTiers, questXpConfig, classStatPriorities);
+    const issues = validateZone(zone.data, equipmentSlots, validClasses, knownFactions, knownAchievements, mobTiers, questXpConfig, classStatPriorities, { knownQualifiedMobIds });
     if (issues.length > 0) {
       results.set(zoneId, issues);
     }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateZone, type ValidationIssue } from "../validateZone";
+import { validateZone, validateAllZones, type ValidationIssue } from "../validateZone";
 import type { WorldFile } from "@/types/world";
 
 const TEST_MOB_TIERS = {
@@ -557,6 +557,62 @@ describe("validateZone", () => {
     expect(issues.some((i) => i.message.includes("at least one objective"))).toBe(false);
   });
 
+  it("warns on a zone-qualified turn-in reference when no cross-zone registry is available and it is unresolvable", () => {
+    // Standalone validateZone can't see other zones, so a qualified reference
+    // is taken on trust (the author explicitly pointed at another zone).
+    const world = makeValidWorld();
+    world.quests = {
+      q1: {
+        name: "Deliver the letter",
+        giver: "rat",
+        turnInMob: "other_zone:elder",
+        completionType: "NPC_TURN_IN",
+      },
+    };
+    const issues = warnings(validateZone(world));
+    expect(issues.some((i) => i.message.includes("other_zone:elder"))).toBe(false);
+  });
+
+  it("resolves a cross-zone turn-in reference against the whole-world registry", () => {
+    const home: { data: WorldFile } = { data: makeValidWorld() };
+    home.data.zone = "home";
+    home.data.quests = {
+      q1: {
+        name: "Deliver the letter",
+        giver: "rat",
+        turnInMob: "town:elder",
+        completionType: "NPC_TURN_IN",
+      },
+    };
+    const town: { data: WorldFile } = { data: makeValidWorld() };
+    town.data.zone = "town";
+    town.data.mobs = { elder: { name: "Elder", spawns: [{ room: "room1" }] } };
+
+    const results = validateAllZones(new Map([["home", home], ["town", town]]));
+    const homeIssues = results.get("home") ?? [];
+    expect(homeIssues.some((i) => i.message.includes("town:elder"))).toBe(false);
+  });
+
+  it("warns on a cross-zone turn-in reference that resolves to nothing", () => {
+    const home: { data: WorldFile } = { data: makeValidWorld() };
+    home.data.zone = "home";
+    home.data.quests = {
+      q1: {
+        name: "Deliver the letter",
+        giver: "rat",
+        turnInMob: "town:ghost",
+        completionType: "NPC_TURN_IN",
+      },
+    };
+    const town: { data: WorldFile } = { data: makeValidWorld() };
+    town.data.zone = "town";
+    town.data.mobs = { elder: { name: "Elder", spawns: [{ room: "room1" }] } };
+
+    const results = validateAllZones(new Map([["home", home], ["town", town]]));
+    const homeIssues = results.get("home") ?? [];
+    expect(homeIssues.some((i) => i.message.includes("town:ghost") && i.message.includes("does not resolve"))).toBe(true);
+  });
+
   // ─── Gathering node checks ────────────────────────────────
   it("errors if gathering node room does not exist", () => {
     const world = makeValidWorld();
@@ -808,15 +864,30 @@ describe("validateZone", () => {
   });
 
   describe("zone rebalance targets", () => {
-    it("warns when a mob level drifts outside the zone target band", () => {
+    it("warns when a mob level escapes the zone level band", () => {
       const world = makeValidWorld();
       world.levelBand = { min: 3, max: 7 };
       world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], tier: "weak", level: 12 };
 
       const issues = warnings(validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS));
 
-      expect(issues.some((i) => i.entity === "mob:rat" && i.message.includes("outside the zone target"))).toBe(true);
-      expect(issues.some((i) => i.entity === "mob:rat" && i.message.includes("Expected level 3"))).toBe(true);
+      expect(issues.some((i) => i.entity === "mob:rat" && i.message.includes("outside the zone level band"))).toBe(true);
+      expect(issues.some((i) => i.entity === "mob:rat" && i.message.includes("3-7"))).toBe(true);
+    });
+
+    it("stays quiet for a level within the band even if it is off the tier's canonical level", () => {
+      // Graduated zones spread tiers across the band on purpose: a standard-tier
+      // mob at the entrance can sit at band-min while another sits at mid. Only a
+      // level that escapes the band is worth flagging.
+      const world = makeValidWorld();
+      world.levelBand = { min: 1, max: 5 };
+      // standard tier's canonical target for band 1-5 is level 3; level 1 is
+      // still inside the band and must not warn.
+      world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], tier: "standard", level: 1 };
+
+      const issues = validateZone(world, undefined, undefined, undefined, undefined, TEST_MOB_TIERS);
+
+      expect(issues.filter((i) => i.entity === "mob:rat")).toHaveLength(0);
     });
 
     // (Override-divergence warnings were removed when the rebalance flow
@@ -834,7 +905,7 @@ describe("validateZone", () => {
       expect(issues.some((i) => i.entity === "mob:rat" && i.message.includes("cannot be validated"))).toBe(true);
     });
 
-    it("stays quiet when the mob already matches the zone target", () => {
+    it("stays quiet when the mob sits within the band", () => {
       const world = makeValidWorld();
       world.levelBand = { min: 3, max: 7 };
       world.mobs!.rat = { name: "Rat", spawns: [{ room: "room1" }], tier: "weak", level: 3 };

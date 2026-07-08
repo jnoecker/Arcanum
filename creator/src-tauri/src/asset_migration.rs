@@ -1,9 +1,10 @@
 //! Migrates an existing asset library to the per-asset-type runtime image
 //! profiles. Files are content-addressed (`<sha256>.<ext>`), so re-encoding
-//! produces a new filename; the migration rewrites every YAML reference in
-//! the project via exact-token replacement — hash filenames are globally
-//! unique 64-hex strings, so plain string substitution cannot false-match
-//! and preserves formatting without re-serializing YAML.
+//! produces a new filename; the migration rewrites every YAML and JSON
+//! reference in the project (zones, config, lore, story files) via
+//! exact-token replacement — hash filenames are globally unique 64-hex
+//! strings, so plain string substitution cannot false-match and preserves
+//! formatting without re-serializing.
 
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -34,7 +35,7 @@ pub struct MigrationReport {
     /// Dry run: estimated from the area ratio. Real run: actual.
     pub bytes_after: u64,
     pub estimated: bool,
-    /// YAML files whose references were rewritten.
+    /// Project files whose references were rewritten.
     pub references_updated: usize,
     pub errors: Vec<String>,
 }
@@ -93,8 +94,9 @@ fn rewrite_content(content: &str, mapping: &HashMap<String, String>) -> Option<S
     changed.then_some(result)
 }
 
-/// Walk the project directory and rewrite references in every YAML file.
-/// Returns the number of files updated.
+/// Walk the project directory and rewrite references in every YAML and JSON
+/// file (zone/config/lore YAML, story JSON). Returns the number of files
+/// updated.
 fn rewrite_project_references(
     root: &Path,
     mapping: &HashMap<String, String>,
@@ -108,19 +110,28 @@ fn rewrite_project_references(
         let entries = std::fs::read_dir(&dir)
             .map_err(|e| format!("Failed to read {}: {e}", dir.display()))?;
         for entry in entries.flatten() {
+            // Never follow symlinks — a linked directory could escape the
+            // project root (rewriting files the snapshot doesn't cover) or
+            // form a cycle.
+            let Ok(file_type) = entry.file_type() else {
+                continue;
+            };
+            if file_type.is_symlink() {
+                continue;
+            }
             let path = entry.path();
             let name = entry.file_name().to_string_lossy().to_string();
-            if path.is_dir() {
+            if file_type.is_dir() {
                 if !SKIP_DIRS.contains(&name.as_str()) {
                     stack.push(path);
                 }
                 continue;
             }
-            let is_yaml = matches!(
+            let is_rewritable = matches!(
                 path.extension().and_then(|e| e.to_str()),
-                Some("yaml") | Some("yml")
+                Some("yaml") | Some("yml") | Some("json")
             );
-            if !is_yaml {
+            if !is_rewritable {
                 continue;
             }
             let Ok(content) = std::fs::read_to_string(&path) else {
@@ -266,10 +277,9 @@ pub async fn migrate_assets_to_profiles(
 
         let (new_w, new_h) = match imagesize::blob_size(&new_bytes) {
             Ok(size) => (size.width as u32, size.height as u32),
-            Err(_) => (
-                crate::image_profiles::cap_stored_dims(&plan.asset_type, plan.width, plan.height).0,
-                crate::image_profiles::cap_stored_dims(&plan.asset_type, plan.width, plan.height).1,
-            ),
+            Err(_) => {
+                crate::image_profiles::cap_stored_dims(&plan.asset_type, plan.width, plan.height)
+            }
         };
 
         let dest = images_dir.join(&new_name);
@@ -305,7 +315,15 @@ pub async fn migrate_assets_to_profiles(
 
     // Old files go last, once the manifest and every reference point at the
     // new names — a failure above leaves a working (just unmigrated) library.
+    // Skip any name the final manifest still references: an optimized output
+    // can hash to a file that already existed, and an entry whose asset type
+    // has no profile can share a file with a migrated entry.
+    let still_referenced: std::collections::HashSet<&str> =
+        manifest.assets.iter().map(|a| a.file_name.as_str()).collect();
     for old_name in mapping.keys() {
+        if still_referenced.contains(old_name.as_str()) {
+            continue;
+        }
         let _ = tokio::fs::remove_file(images_dir.join(old_name)).await;
     }
 
@@ -359,5 +377,75 @@ mod tests {
     fn extension_of_lowercases() {
         assert_eq!(extension_of("ABC.PNG"), "png");
         assert_eq!(extension_of("x.jpg"), "jpg");
+    }
+
+    #[test]
+    fn rewrite_project_references_covers_yaml_and_json_and_skips_excluded_dirs() {
+        let root = std::env::temp_dir().join(format!(
+            "arcanum-migration-test-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("stories")).unwrap();
+        std::fs::create_dir_all(root.join(".arcanum")).unwrap();
+
+        std::fs::write(
+            root.join("zone.yaml"),
+            format!("rooms:\n  start:\n    image: {OLD_A}\n"),
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("stories").join("intro.json"),
+            format!("{{\n  \"imageOverride\": \"{OLD_A}\"\n}}\n"),
+        )
+        .unwrap();
+        std::fs::write(
+            root.join(".arcanum").join("manifest.json"),
+            format!("{{\"fileName\": \"{OLD_A}\"}}"),
+        )
+        .unwrap();
+        std::fs::write(root.join("notes.txt"), OLD_A).unwrap();
+
+        let updated =
+            rewrite_project_references(&root, &mapping(&[(OLD_A, NEW_A)])).unwrap();
+        assert_eq!(updated, 2);
+
+        let zone = std::fs::read_to_string(root.join("zone.yaml")).unwrap();
+        assert!(zone.contains(NEW_A) && !zone.contains(OLD_A));
+        let story = std::fs::read_to_string(root.join("stories").join("intro.json")).unwrap();
+        assert!(story.contains(NEW_A) && !story.contains(OLD_A));
+        let manifest =
+            std::fs::read_to_string(root.join(".arcanum").join("manifest.json")).unwrap();
+        assert!(manifest.contains(OLD_A));
+        let notes = std::fs::read_to_string(root.join("notes.txt")).unwrap();
+        assert!(notes.contains(OLD_A));
+
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn rewrite_project_references_does_not_follow_symlinks() {
+        let base = std::env::temp_dir().join(format!(
+            "arcanum-migration-symlink-test-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&base);
+        let root = base.join("project");
+        let outside = base.join("outside");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+
+        std::fs::write(outside.join("external.yaml"), format!("image: {OLD_A}\n")).unwrap();
+        std::os::unix::fs::symlink(&outside, root.join("linked")).unwrap();
+
+        let updated =
+            rewrite_project_references(&root, &mapping(&[(OLD_A, NEW_A)])).unwrap();
+        assert_eq!(updated, 0);
+
+        let external = std::fs::read_to_string(outside.join("external.yaml")).unwrap();
+        assert!(external.contains(OLD_A));
+
+        let _ = std::fs::remove_dir_all(&base);
     }
 }

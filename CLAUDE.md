@@ -108,7 +108,7 @@ All public functions exposed to the frontend are `#[tauri::command]` and return 
 - `assets.rs` — asset manifest (JSON) with content-addressed SHA-256 storage
 - `generation.rs` — image generation utilities (dimension capping to 1024px, format inference, resize pipeline)
 - `image_profiles.rs` — per-asset-type runtime image profiles + downscale helpers, shared by the ingest paths and the R2 optimizer. Always compiled (not behind the `ai` feature) because `assets.rs` and `r2.rs` use it in the Community Edition build
-- `asset_migration.rs` — one-shot library migration ("Optimize Library" in the Asset Gallery): downscales stored images that exceed their runtime profile, takes a project snapshot, updates the manifest, and rewrites every YAML reference via exact-token replacement (content-hash filenames are globally unique, so plain substitution is safe and format-preserving). Old files are deleted only after the manifest and all references point at the new names
+- `asset_migration.rs` — one-shot library migration ("Optimize Library" in the Asset Gallery): downscales stored images that exceed their runtime profile, takes a project snapshot, updates the manifest, and rewrites every YAML/JSON reference (zones, config, lore, story files) via exact-token replacement (content-hash filenames are globally unique, so plain substitution is safe and format-preserving). Old files are deleted only after the manifest and all references point at the new names
 - `deepinfra.rs` — DeepInfra API client (FLUX image generation)
 - `runware.rs` — Runware API client (alternative image provider)
 - `openai_images.rs` — OpenAI GPT Image provider

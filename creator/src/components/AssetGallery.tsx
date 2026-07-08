@@ -5,6 +5,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { useConfigStore } from "@/stores/configStore";
 import { useLoreStore } from "@/stores/loreStore";
+import { useStoryStore } from "@/stores/storyStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useZoneStore } from "@/stores/zoneStore";
 import { useFocusTrap } from "@/lib/useFocusTrap";
@@ -161,7 +162,8 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
 
   const handleOptimizeCheck = async () => {
     const zonesDirty = Array.from(useZoneStore.getState().zones.values()).some((z) => z.dirty);
-    if (zonesDirty || useConfigStore.getState().dirty || useLoreStore.getState().dirty) {
+    const storiesDirty = Object.values(useStoryStore.getState().dirty).some(Boolean);
+    if (zonesDirty || storiesDirty || useConfigStore.getState().dirty || useLoreStore.getState().dirty) {
       useToastStore.getState().show("Save all changes first — optimizing rewrites project files", 4000);
       return;
     }
@@ -438,7 +440,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
             {migrationPlan && !migrating && (
               <>
                 <span className="text-text-secondary">
-                  {migrationPlan.affected} of {migrationPlan.totalAssets} images exceed their serving size — {formatMB(migrationPlan.bytesBefore)} → ~{formatMB(migrationPlan.bytesAfter)}. A project snapshot is taken first; filenames change and every zone/lore reference is updated. Downscaled images can't be restored to full size.
+                  {migrationPlan.affected} of {migrationPlan.totalAssets} images exceed their serving size — {formatMB(migrationPlan.bytesBefore)} → ~{formatMB(migrationPlan.bytesAfter)}. A project snapshot is taken first; filenames change and every zone, lore, and story reference is updated. Downscaled images can't be restored to full size.
                 </span>
                 <button
                   onClick={handleOptimizeRun}

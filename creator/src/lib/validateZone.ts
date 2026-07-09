@@ -943,6 +943,14 @@ export function validateZone(
         `itemType "${item.itemType}" is not a known type. Valid: ${ITEM_TYPES.join(", ")}`,
       );
     }
+    // Mirrors the server's WorldLoader rules: mount items must carry a mountId,
+    // and mountId is meaningless (rejected) on any other item type.
+    if (item.itemType === "mount" && !item.mountId?.trim()) {
+      addIssue(issues, "error", entity, "Mount items must set a mountId (matches a mount sprite's requirement)");
+    }
+    if (item.itemType !== "mount" && item.mountId?.trim()) {
+      addIssue(issues, "error", entity, 'mountId is only valid when itemType is "mount"');
+    }
     if (item.classes && item.classes.length > 0) {
       for (const cls of item.classes) {
         if (!VALID_CLASSES.has(cls.toUpperCase())) {

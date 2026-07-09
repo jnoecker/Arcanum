@@ -769,6 +769,7 @@ export function generateSpritesYaml(): string {
             case "class": return { type: "class", playerClass: req.playerClass };
             case "achievement": return { type: "achievement", achievementId: req.achievementId };
             case "staff": return { type: "staff" };
+            case "mount": return { type: "mount", mountId: req.mountId };
           }
         })
       : [{ type: "minLevel", level: 0 }];

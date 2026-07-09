@@ -20,6 +20,7 @@ function emptyRequirement(type: RequirementType): SpriteRequirement {
     case "class": return { type: "class", playerClass: "" };
     case "achievement": return { type: "achievement", achievementId: "" };
     case "staff": return { type: "staff" };
+    case "mount": return { type: "mount", mountId: "" };
   }
 }
 
@@ -30,6 +31,7 @@ export function requirementLabel(req: SpriteRequirement): string {
     case "class": return `Class: ${req.playerClass || "?"}`;
     case "achievement": return `Achievement: ${req.achievementId || "?"}`;
     case "staff": return "Staff";
+    case "mount": return `Mount: ${req.mountId || "?"}`;
   }
 }
 
@@ -39,6 +41,7 @@ const REQUIREMENT_TYPES: { value: RequirementType; label: string }[] = [
   { value: "class", label: "Class" },
   { value: "achievement", label: "Achievement" },
   { value: "staff", label: "Staff" },
+  { value: "mount", label: "Mount" },
 ];
 
 // ─── Thumbnail ──────────────────────────────────────────────────────
@@ -226,6 +229,15 @@ export function RequirementRow({
         <span className="text-2xs text-text-muted">Player must be staff</span>
       )}
 
+      {req.type === "mount" && (
+        <input
+          value={req.mountId}
+          onChange={(e) => onChange(index, { type: "mount", mountId: e.target.value })}
+          className="ornate-input min-h-11 flex-1 rounded-2xl px-3 py-3 text-sm text-text-primary"
+          placeholder="mount id — matches the shop item's mountId"
+        />
+      )}
+
       <ActionButton
         onClick={() => onRemove(index)}
         className="ml-auto shrink-0"
@@ -304,10 +316,11 @@ export function SpriteDetailEditor({
             <select
               className="ornate-input min-h-11 rounded-2xl px-4 py-3 text-sm text-text-primary"
               value={def.category}
-              onChange={(e) => onPatch({ category: e.target.value as "general" | "staff" })}
+              onChange={(e) => onPatch({ category: e.target.value as SpriteDefinition["category"] })}
             >
               <option value="general">General</option>
               <option value="staff">Staff</option>
+              <option value="mount">Mount</option>
             </select>
           </label>
           <label className="flex flex-col gap-1 text-xs text-text-secondary">

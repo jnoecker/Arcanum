@@ -234,6 +234,10 @@ export function normalizeAkathavaeConfig(config?: AppConfig["akathavae"]): AppCo
     zoneCompletionGold: c.zoneCompletionGold,
     unpledgedSuccessMultiplier: c.unpledgedSuccessMultiplier,
     unpledgedXpMultiplier: c.unpledgedXpMultiplier,
+    sketchMsPerEstimatedRound: c.sketchMsPerEstimatedRound,
+    sketchMinMs: c.sketchMinMs,
+    sketchMaxMs: c.sketchMaxMs,
+    observeSketchMs: c.observeSketchMs,
   };
   return JSON.stringify(ordered) === JSON.stringify(d) ? undefined : ordered;
 }

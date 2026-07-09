@@ -139,6 +139,21 @@ export function AkathavaePanel({ config, onChange }: ConfigPanelProps) {
           {num(a.unpledgedXpMultiplier, (v) => patch({ unpledgedXpMultiplier: v }), { min: 0, max: 1, step: 0.05 })}
         </FieldRow>
       </Section>
+
+      <Section title="Sketching">
+        <FieldRow label="Ms per combat round" hint="Sketch time per estimated melee round-to-kill — illumination takes about as long as the fight would. All-zero sketch knobs make it instant.">
+          {num(a.sketchMsPerEstimatedRound, (v) => patch({ sketchMsPerEstimatedRound: v }), { min: 0 })}
+        </FieldRow>
+        <FieldRow label="Min duration (ms)" hint="Lower clamp on sketch time for combat-capable subjects.">
+          {num(a.sketchMinMs, (v) => patch({ sketchMinMs: v }), { min: 0 })}
+        </FieldRow>
+        <FieldRow label="Max duration (ms)" hint="Upper clamp on sketch time for combat-capable subjects.">
+          {num(a.sketchMaxMs, (v) => patch({ sketchMaxMs: v }), { min: 0 })}
+        </FieldRow>
+        <FieldRow label="Observe duration (ms)" hint="Flat sketch time for observing a non-combat NPC.">
+          {num(a.observeSketchMs, (v) => patch({ observeSketchMs: v }), { min: 0 })}
+        </FieldRow>
+      </Section>
     </div>
   );
 }

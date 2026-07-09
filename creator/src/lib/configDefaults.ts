@@ -47,6 +47,10 @@ export const DEFAULT_AKATHAVAE: AppConfig["akathavae"] = {
   zoneCompletionGold: 500,
   unpledgedSuccessMultiplier: 0.5,
   unpledgedXpMultiplier: 0.25,
+  sketchMsPerEstimatedRound: 1_000,
+  sketchMinMs: 2_000,
+  sketchMaxMs: 10_000,
+  observeSketchMs: 2_000,
 };
 
 /** Canonical defaults for flight masters (mirrors the server's FlightConfig).

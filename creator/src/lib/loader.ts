@@ -766,6 +766,10 @@ function parseAkathavaeConfig(raw: unknown): AppConfig["akathavae"] {
     zoneCompletionGold: asNumber(s.zoneCompletionGold, d.zoneCompletionGold),
     unpledgedSuccessMultiplier: asNumber(s.unpledgedSuccessMultiplier, d.unpledgedSuccessMultiplier),
     unpledgedXpMultiplier: asNumber(s.unpledgedXpMultiplier, d.unpledgedXpMultiplier),
+    sketchMsPerEstimatedRound: asNumber(s.sketchMsPerEstimatedRound, d.sketchMsPerEstimatedRound),
+    sketchMinMs: asNumber(s.sketchMinMs, d.sketchMinMs),
+    sketchMaxMs: asNumber(s.sketchMaxMs, d.sketchMaxMs),
+    observeSketchMs: asNumber(s.observeSketchMs, d.observeSketchMs),
   };
 }
 

@@ -1460,6 +1460,23 @@ export interface AkathavaeConfig {
   observeNpcXp: number;
   /** Minimum gap between discovery XP awards (ms) — anti-speedrun throttle. */
   discoveryXpThrottleMs: number;
+  /** Extra room-discovery XP per average mob level of the zone — dangerous zones pay like the zone. */
+  roomDiscoveryXpPerZoneLevel: number;
+  /** One-time XP per room in a zone, paid when its Arcanum record reaches 100%. */
+  zoneCompletionXpPerRoom: number;
+  /** One-time gold paid on zone completion — the Akathavae's gold faucet. */
+  zoneCompletionGold: number;
+  /** Multiplier (0..1) on illumination success odds for unpledged players — anyone may keep a field journal. */
+  unpledgedSuccessMultiplier: number;
+  /** Multiplier (0..1) on discovery XP for unpledged players. 0 turns their journaling into pure record-keeping. */
+  unpledgedXpMultiplier: number;
+  /** Sketch time per estimated melee round-to-kill (ms) — illumination takes about as long as the fight would. */
+  sketchMsPerEstimatedRound: number;
+  /** Sketch duration clamp (ms). All-zero sketch knobs make illumination instant. */
+  sketchMinMs: number;
+  sketchMaxMs: number;
+  /** Flat sketch time for observing a non-combat NPC (ms). */
+  observeSketchMs: number;
 }
 
 // ─── Flight masters (gold fast-travel) ─────────────────────────────

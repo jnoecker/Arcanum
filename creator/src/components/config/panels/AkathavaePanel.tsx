@@ -108,6 +108,9 @@ export function AkathavaePanel({ config, onChange }: ConfigPanelProps) {
         <FieldRow label="Room discovery XP" hint="XP for recording a never-before-visited room.">
           {num(a.roomDiscoveryXp, (v) => patch({ roomDiscoveryXp: v }), { min: 0 })}
         </FieldRow>
+        <FieldRow label="Room XP per zone level" hint="Extra room XP per average mob level of the zone — dangerous zones pay like the zone.">
+          {num(a.roomDiscoveryXpPerZoneLevel, (v) => patch({ roomDiscoveryXpPerZoneLevel: v }), { min: 0 })}
+        </FieldRow>
         <FieldRow label="Item discovery XP" hint="XP for recording a never-before-seen item.">
           {num(a.itemDiscoveryXp, (v) => patch({ itemDiscoveryXp: v }), { min: 0 })}
         </FieldRow>
@@ -116,6 +119,39 @@ export function AkathavaePanel({ config, onChange }: ConfigPanelProps) {
         </FieldRow>
         <FieldRow label="XP throttle" hint="Minimum milliseconds between discovery XP awards — anti-speedrun throttle.">
           {num(a.discoveryXpThrottleMs, (v) => patch({ discoveryXpThrottleMs: v }), { min: 0 })}
+        </FieldRow>
+      </Section>
+
+      <Section title="Zone Completion">
+        <FieldRow label="XP per room" hint="One-time XP per room in a zone, paid when its Arcanum record reaches 100%.">
+          {num(a.zoneCompletionXpPerRoom, (v) => patch({ zoneCompletionXpPerRoom: v }), { min: 0 })}
+        </FieldRow>
+        <FieldRow label="Completion gold" hint="One-time gold paid on zone completion — the Akathavae's gold faucet.">
+          {num(a.zoneCompletionGold, (v) => patch({ zoneCompletionGold: v }), { min: 0 })}
+        </FieldRow>
+      </Section>
+
+      <Section title="Unpledged Journaling">
+        <FieldRow label="Success multiplier" hint="Scales illumination odds for players who never pledged (0–1) — anyone may keep a field journal.">
+          {num(a.unpledgedSuccessMultiplier, (v) => patch({ unpledgedSuccessMultiplier: v }), { min: 0, max: 1, step: 0.05 })}
+        </FieldRow>
+        <FieldRow label="XP multiplier" hint="Scales discovery XP for unpledged players (0–1). 0 makes their journaling pure record-keeping.">
+          {num(a.unpledgedXpMultiplier, (v) => patch({ unpledgedXpMultiplier: v }), { min: 0, max: 1, step: 0.05 })}
+        </FieldRow>
+      </Section>
+
+      <Section title="Sketching">
+        <FieldRow label="Ms per combat round" hint="Sketch time per estimated melee round-to-kill — illumination takes about as long as the fight would. All-zero sketch knobs make it instant.">
+          {num(a.sketchMsPerEstimatedRound, (v) => patch({ sketchMsPerEstimatedRound: v }), { min: 0 })}
+        </FieldRow>
+        <FieldRow label="Min duration (ms)" hint="Lower clamp on sketch time for combat-capable subjects.">
+          {num(a.sketchMinMs, (v) => patch({ sketchMinMs: v }), { min: 0 })}
+        </FieldRow>
+        <FieldRow label="Max duration (ms)" hint="Upper clamp on sketch time for combat-capable subjects.">
+          {num(a.sketchMaxMs, (v) => patch({ sketchMaxMs: v }), { min: 0 })}
+        </FieldRow>
+        <FieldRow label="Observe duration (ms)" hint="Flat sketch time for observing a non-combat NPC.">
+          {num(a.observeSketchMs, (v) => patch({ observeSketchMs: v }), { min: 0 })}
         </FieldRow>
       </Section>
     </div>

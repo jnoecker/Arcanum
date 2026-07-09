@@ -492,10 +492,21 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     key: "arcanum_widget",
     defaultFilename: "arcanum_widget.png",
     label: "Arcanum Kiosk",
-    description: "Action-dock button that opens the Akathavae's Arcanum journal. Shown to pledged players.",
+    description: "Action-dock button that opens the Arcanum journal — every player keeps a field journal now.",
     assetType: "ability_icon",
     defaultPrompt:
       "A single open illuminated codex with a quill resting across it and a faint candlelight glow, gilded page edges, centered, soft outline, transparent background.",
+    transparent: true,
+    optional: true,
+  },
+  {
+    key: "shrine_widget",
+    defaultFilename: "shrine_widget.png",
+    label: "Akathavae Shrine Kiosk",
+    description: "Action-dock button that opens the shrine panel for taking or renouncing the Akathavae pledge.",
+    assetType: "ability_icon",
+    defaultPrompt:
+      "A small stone shrine arch sheltering a single serene candle flame, faint motes of light rising, centered, soft outline, transparent background.",
     transparent: true,
     optional: true,
   },

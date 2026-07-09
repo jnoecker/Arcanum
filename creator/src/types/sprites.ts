@@ -39,12 +39,19 @@ export interface StaffRequirement {
   type: "staff";
 }
 
+/** Player must have bought the mount with this id (a shop item's `mountId`). */
+export interface MountRequirement {
+  type: "mount";
+  mountId: string;
+}
+
 export type SpriteRequirement =
   | MinLevelRequirement
   | RaceRequirement
   | ClassRequirement
   | AchievementRequirement
-  | StaffRequirement;
+  | StaffRequirement
+  | MountRequirement;
 
 export type RequirementType = SpriteRequirement["type"];
 
@@ -55,7 +62,7 @@ export interface SpriteDefinition {
   description?: string;
   /** Visual prompt guidance for AI image generation — separate from player-facing description. */
   artDirection?: string;
-  category: "general" | "staff";
+  category: "general" | "staff" | "mount";
   gender?: string;
   sortOrder: number;
   requirements: SpriteRequirement[];

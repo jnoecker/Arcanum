@@ -445,17 +445,35 @@ function ItemEditorContent({
                 hint={
                   item.itemType === "keepsake"
                     ? "Keepsakes are soulbound souvenirs — locked like a quest item, but shelved under their own Keepsakes heading in the inventory."
-                    : undefined
+                    : item.itemType === "mount"
+                      ? "Mounts sold in shops never enter the inventory — buying one permanently unlocks its sprite and map fast travel."
+                      : undefined
                 }
               >
                 <SelectInput
                   value={item.itemType ?? ""}
                   options={itemTypeOptions}
-                  onCommit={(v) => patch({ itemType: (v || undefined) as ItemType | undefined })}
+                  onCommit={(v) => {
+                    const next = (v || undefined) as ItemType | undefined;
+                    // mountId is only valid on mount items; the server refuses it elsewhere.
+                    patch(next === "mount" ? { itemType: next } : { itemType: next, mountId: undefined });
+                  }}
                   allowEmpty
                   placeholder="— auto —"
                 />
               </FieldRow>
+              {item.itemType === "mount" && (
+                <FieldRow
+                  label="Mount ID"
+                  hint="Must match the {type: mount, mountId} requirement on a mount sprite (Player Sprites manager). Required for mount items."
+                >
+                  <TextInput
+                    value={item.mountId ?? ""}
+                    onCommit={(v) => patch({ mountId: v.trim() || undefined })}
+                    placeholder="e.g. dappled_pony"
+                  />
+                </FieldRow>
+              )}
               <FieldRow label="Quest Item">
                 <CheckboxInput
                   checked={item.questItem ?? false}

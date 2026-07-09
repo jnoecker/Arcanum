@@ -545,7 +545,7 @@ export interface BtNodeFile {
  * these automatically — e.g. a lyric sheet on the first play of a music-box
  * song — but they can also be authored by hand here.
  */
-export type ItemType = "equipment" | "consumable" | "quest" | "treasure" | "keepsake" | "misc";
+export type ItemType = "equipment" | "consumable" | "quest" | "treasure" | "keepsake" | "mount" | "misc";
 
 export const ITEM_TYPES: readonly ItemType[] = [
   "equipment",
@@ -553,6 +553,7 @@ export const ITEM_TYPES: readonly ItemType[] = [
   "quest",
   "treasure",
   "keepsake",
+  "mount",
   "misc",
 ] as const;
 
@@ -591,6 +592,14 @@ export interface ItemFile {
    * other fields. Values are lowercase to match the server's `ItemType.label()`.
    */
   itemType?: ItemType;
+  /**
+   * Mount unlock id, required when `itemType` is "mount" and forbidden
+   * otherwise. Buying the item never enters the inventory: the server records
+   * this id on the character permanently, which unlocks the mount sprite
+   * whose `{type: "mount", mountId}` requirement matches and enables map
+   * fast travel.
+   */
+  mountId?: string;
   /**
    * Soulbound flag: quest items cannot be dropped, sold, traded, given, or
    * stored in containers. Always resolves to the "quest" category server-side.

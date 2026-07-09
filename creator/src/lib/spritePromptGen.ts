@@ -23,6 +23,8 @@ export interface SpriteDimensions {
   race?: string;
   playerClass?: string;
   gender?: string;
+  /** True for mount sprites — the subject is the rideable creature, not an adventurer. */
+  mount?: boolean;
 }
 
 export interface SpritePromptArgs {
@@ -81,6 +83,7 @@ export function resolveSpriteDimensions(def: SpriteDefinition): SpriteDimensions
     race: findReq(def.requirements, "race")?.race || undefined,
     playerClass: findReq(def.requirements, "class")?.playerClass || undefined,
     gender: def.gender || undefined,
+    mount: def.category === "mount" || undefined,
   };
 }
 
@@ -93,6 +96,9 @@ export function spritePromptNotes(def: SpriteDefinition): string | undefined {
 // ─── Prompt assembly ─────────────────────────────────────────────────
 
 function spriteSubject(dimensions: SpriteDimensions): string {
+  if (dimensions.mount) {
+    return "rideable fantasy mount, saddled and bridled, with a small hooded rider seated in the saddle";
+  }
   const parts: string[] = [];
   if (dimensions.gender) parts.push(dimensions.gender);
   if (dimensions.race) {
@@ -119,26 +125,30 @@ export function spriteContext(
   notes?: string,
 ): string {
   const parts = [
-    `Player character sprite "${displayName}" — a full-body standing figure used as a "player is standing here" marker composited into room scenes at small sizes.`,
+    dimensions.mount
+      ? `Mount sprite "${displayName}" — a full-body saddled rideable creature carrying a small rider, shown while a player fast-travels; composited into room scenes at small sizes in place of the usual standing figure.`
+      : `Player character sprite "${displayName}" — a full-body standing figure used as a "player is standing here" marker composited into room scenes at small sizes.`,
   ];
-  if (dimensions.gender) parts.push(`Gender: ${dimensions.gender}`);
-  if (dimensions.race) {
-    const desc = getRaceBodyDescription(dimensions.race);
-    parts.push(desc !== dimensions.race ? `Race: ${dimensions.race} — ${desc}` : `Race: ${dimensions.race}`);
-  }
-  if (dimensions.playerClass) {
-    const desc = getClassOutfitDescription(dimensions.playerClass);
-    parts.push(
-      desc !== dimensions.playerClass
-        ? `Class: ${dimensions.playerClass} — outfit: ${desc}`
-        : `Class: ${dimensions.playerClass}`,
-    );
-  } else {
-    parts.push("No class — wearing simple traveler's clothing");
-  }
-  const directive = getRaceImagePromptDirective(dimensions.race);
-  if (directive) {
-    parts.push(`Hard constraint for this race (must never be contradicted): ${directive}`);
+  if (!dimensions.mount) {
+    if (dimensions.gender) parts.push(`Gender: ${dimensions.gender}`);
+    if (dimensions.race) {
+      const desc = getRaceBodyDescription(dimensions.race);
+      parts.push(desc !== dimensions.race ? `Race: ${dimensions.race} — ${desc}` : `Race: ${dimensions.race}`);
+    }
+    if (dimensions.playerClass) {
+      const desc = getClassOutfitDescription(dimensions.playerClass);
+      parts.push(
+        desc !== dimensions.playerClass
+          ? `Class: ${dimensions.playerClass} — outfit: ${desc}`
+          : `Class: ${dimensions.playerClass}`,
+      );
+    } else {
+      parts.push("No class — wearing simple traveler's clothing");
+    }
+    const directive = getRaceImagePromptDirective(dimensions.race);
+    if (directive) {
+      parts.push(`Hard constraint for this race (must never be contradicted): ${directive}`);
+    }
   }
   if (notes?.trim()) parts.push(`Art direction: ${notes.trim()}`);
   return parts.join("\n");

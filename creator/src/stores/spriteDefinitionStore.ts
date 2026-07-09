@@ -23,6 +23,8 @@ function parseRequirement(raw: Record<string, unknown>): SpriteRequirement | nul
       return { type: "achievement", achievementId: String(raw.achievementId ?? "") };
     case "staff":
       return { type: "staff" };
+    case "mount":
+      return { type: "mount", mountId: String(raw.mountId ?? "") };
     default:
       return null;
   }
@@ -100,7 +102,7 @@ function parseDefinition(id: string, entry: Record<string, unknown>): SpriteDefi
     displayName: String(entry.displayName ?? id),
     description: entry.description ? String(entry.description) : undefined,
     artDirection: entry.artDirection ? String(entry.artDirection) : undefined,
-    category: entry.category === "staff" ? "staff" : "general",
+    category: entry.category === "staff" ? "staff" : entry.category === "mount" ? "mount" : "general",
     gender: entry.gender ? String(entry.gender) : undefined,
     sortOrder: Number(entry.sortOrder) || 0,
     requirements,
@@ -122,6 +124,8 @@ function requirementToPlain(req: SpriteRequirement): Record<string, unknown> {
       return { type: "achievement", achievementId: req.achievementId };
     case "staff":
       return { type: "staff" };
+    case "mount":
+      return { type: "mount", mountId: req.mountId };
   }
 }
 

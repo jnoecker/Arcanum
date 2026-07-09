@@ -106,7 +106,7 @@ const SpriteListRow = memo(function SpriteListRow({
           )}
         </div>
         <span className="shrink-0 text-2xs text-text-muted">
-          {def.category === "staff" ? "S" : def.sortOrder}
+          {def.category === "staff" ? "S" : def.category === "mount" ? "M" : def.sortOrder}
         </span>
       </button>
     </div>
@@ -135,7 +135,7 @@ export function PlayerSpriteManager() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newId, setNewId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterCategory, setFilterCategory] = useState<"all" | "general" | "staff">("all");
+  const [filterCategory, setFilterCategory] = useState<"all" | "general" | "staff" | "mount">("all");
   const [filterRace, setFilterRace] = useState<string>("all");
   const [filterClass, setFilterClass] = useState<string>("all");
   const [filterGender, setFilterGender] = useState<string>("all");
@@ -627,12 +627,13 @@ export function PlayerSpriteManager() {
               <select
                 className="ornate-input min-h-7 rounded-xl px-2 py-1 text-2xs text-text-primary"
                 value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value as "all" | "general" | "staff")}
+                onChange={(e) => setFilterCategory(e.target.value as "all" | "general" | "staff" | "mount")}
                 title="Category"
               >
                 <option value="all">All categories</option>
                 <option value="general">General</option>
                 <option value="staff">Staff</option>
+                <option value="mount">Mount</option>
               </select>
               <select
                 className="ornate-input min-h-7 rounded-xl px-2 py-1 text-2xs text-text-primary"

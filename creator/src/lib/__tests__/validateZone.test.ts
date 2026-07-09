@@ -971,6 +971,46 @@ describe("validateZone", () => {
     });
   });
 
+  // ─── Minimap pins (mapX/mapY/mapZ) ───────────────────────────
+  describe("map pins", () => {
+    it("accepts full pins on distinct cells, and the same cell across floors", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, mapX: 0, mapY: 0 };
+      world.rooms.room2 = { ...world.rooms.room2!, mapX: 0, mapY: 0, mapZ: 1 };
+      const issues = validateZone(world).filter((i) => i.message.toLowerCase().includes("map"));
+      expect(issues).toHaveLength(0);
+    });
+
+    it("errors on a half-specified pin", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, mapX: 3 };
+      const issues = errors(validateZone(world));
+      expect(issues.some((i) => i.message.includes("both mapX and mapY"))).toBe(true);
+    });
+
+    it("errors on mapZ without mapX/mapY", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, mapZ: 1 };
+      const issues = errors(validateZone(world));
+      expect(issues.some((i) => i.message.includes("mapZ without mapX/mapY"))).toBe(true);
+    });
+
+    it("errors on non-integer pin coordinates", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, mapX: 1.5, mapY: 0 };
+      const issues = errors(validateZone(world));
+      expect(issues.some((i) => i.message.includes("must be an integer"))).toBe(true);
+    });
+
+    it("errors when two rooms pin the same cell of the same floor", () => {
+      const world = makeValidWorld();
+      world.rooms.room1 = { ...world.rooms.room1!, mapX: 2, mapY: 2 };
+      world.rooms.room2 = { ...world.rooms.room2!, mapX: 2, mapY: 2 };
+      const issues = errors(validateZone(world));
+      expect(issues.some((i) => i.message.includes("duplicate pins"))).toBe(true);
+    });
+  });
+
   // ─── Boat docks (pins + routes) ──────────────────────────────
   describe("boat dock coordinates and routes", () => {
     it("accepts a boat dock with both coordinates in range and a valid local route", () => {

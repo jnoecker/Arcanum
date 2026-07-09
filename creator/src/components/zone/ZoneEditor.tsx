@@ -24,6 +24,7 @@ import { useAssetStore } from "@/stores/assetStore";
 import { useToastStore } from "@/stores/toastStore";
 import { zoneToGraph, GRAPH } from "@/lib/zoneToGraph";
 import { compassLayout, getLayoutBounds, type LayoutMeasurement } from "@/lib/dagreLayout";
+import { quantizeLayout, applyMapPins } from "@/lib/mapPins";
 import { addRoom, addExit, deleteExit, deleteRoom, generateRoomId } from "@/lib/zoneEdits";
 import { saveZone } from "@/lib/saveZone";
 import type { WorldFile } from "@/types/world";
@@ -479,6 +480,19 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
     [zoneId, updateZone],
   );
 
+  // ─── Save map layout ─────────────────────────────────────────────
+  // Quantize the current (possibly hand-dragged) node positions to integer
+  // grid cells and pin every room (mapX/mapY/mapZ). The change goes through
+  // the normal undo stack; Save then writes the pins into the zone YAML,
+  // where the server seats each room exactly where the builder left it.
+  const handleSaveLayout = useCallback(() => {
+    if (!zoneState) return;
+    const pins = quantizeLayout(nodes, zoneState.data);
+    if (pins.size === 0) return;
+    applyWorldChange(applyMapPins(zoneState.data, pins));
+    useToastStore.getState().show("Map layout pinned — Save writes it to the zone");
+  }, [zoneState, nodes, applyWorldChange]);
+
   // ─── Connection (exit creation) ──────────────────────────────────
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -745,6 +759,15 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
               aria-label="Re-layout rooms"
             >
               Re-layout
+            </button>
+            <button
+              onClick={handleSaveLayout}
+              disabled={roomCount === 0}
+              className="h-6 rounded px-2 text-xs text-text-secondary transition-colors hover:bg-[var(--chrome-highlight)] hover:text-text-primary disabled:opacity-30 max-[1100px]:h-9"
+              title="Pin every room to its current map position (written to the zone on Save)"
+              aria-label="Save map layout"
+            >
+              Save Layout
             </button>
             <button
               onClick={() => setShowDuplicate(true)}

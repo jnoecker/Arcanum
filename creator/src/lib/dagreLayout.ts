@@ -2,34 +2,19 @@ import type { Node } from "@xyflow/react";
 import dagre from "@dagrejs/dagre";
 import type { WorldFile } from "@/types/world";
 import { exitTarget } from "@/lib/zoneEdits";
-
-const DEFAULT_NODE_WIDTH = 220;
-const DEFAULT_NODE_HEIGHT = 140;
-
-const COL_GUTTER = 80;
-const ROW_GUTTER = 60;
+import {
+  COL_GUTTER,
+  DEFAULT_NODE_HEIGHT,
+  DEFAULT_NODE_WIDTH,
+  DIR_OFFSET,
+  ROW_GUTTER,
+  findFreeCell,
+  zoneMapPins,
+  type MapPin,
+} from "@/lib/mapPins";
 
 /** Empty grid rows inserted between separate floor islands. */
 const ISLAND_GAP = 3;
-
-/**
- * Compass direction → grid offset (x, y). Y-axis is inverted: negative = up.
- *
- * u/d are omitted on purpose: they're vertical transitions (stairs, portals),
- * not 2D directions. BFS traverses through them for reachability but does not
- * let them dictate grid coordinates — otherwise a cave with n/u/s/w chains
- * explodes into a diagonal sprawl.
- */
-const DIR_OFFSET: Record<string, [number, number]> = {
-  n: [0, -1],
-  s: [0, 1],
-  e: [1, 0],
-  w: [-1, 0],
-  ne: [1, -1],
-  nw: [-1, -1],
-  se: [1, 1],
-  sw: [-1, 1],
-};
 
 /** Process cardinals first so they pin the grid before diagonals fill gaps. */
 const DIR_PRIORITY: Record<string, number> = {
@@ -101,7 +86,12 @@ function buildLayoutFingerprint(world: WorldFile): string {
       }
       exits = exitParts.join(";");
     }
-    parts.push(`r:${id}|${exits}`);
+    // Authored map pins shape the layout too, so they invalidate the cache.
+    const pin =
+      room.mapX != null && room.mapY != null
+        ? `|p${room.mapX},${room.mapY},${room.mapZ ?? 0}`
+        : "";
+    parts.push(`r:${id}|${exits}${pin}`);
   }
   return parts.join("\n");
 }
@@ -166,13 +156,16 @@ export function compassLayout(
   const allNodeIds = new Set(nodes.map((n) => n.id));
   const grid = new Map<string, string>();
   const pos = new Map<string, [number, number]>();
+  /** Rooms whose exits have already been walked — placed-but-unexpanded rooms
+   *  (author pins) still spread their neighbours when BFS reaches them. */
+  const expanded = new Set<string>();
   let collisions = 0;
 
   function place(id: string, gx: number, gy: number) {
     const key = `${gx},${gy}`;
     if (grid.has(key)) {
       collisions++;
-      [gx, gy] = findEmpty(gx, gy, grid);
+      [gx, gy] = findFreeCell(gx, gy, grid);
     }
     pos.set(id, [gx, gy]);
     grid.set(`${gx},${gy}`, id);
@@ -196,14 +189,18 @@ export function compassLayout(
   } {
     const placed: string[] = [];
     const nextSeeds: string[] = [];
-    if (pos.has(startId)) return { placed, nextFloorSeeds: nextSeeds };
+    if (expanded.has(startId)) return { placed, nextFloorSeeds: nextSeeds };
 
-    place(startId, ox, oy);
-    placed.push(startId);
+    // A pre-seated seed (author pin) keeps its cell and just expands in place.
+    if (!pos.has(startId)) {
+      place(startId, ox, oy);
+      placed.push(startId);
+    }
 
     const queue = [startId];
     while (queue.length > 0) {
       const cur = queue.shift()!;
+      if (!expanded.add(cur)) continue;
       const [cx, cy] = pos.get(cur)!;
 
       const room = world.rooms[cur];
@@ -215,22 +212,34 @@ export function compassLayout(
         const nodeId = raw.includes(":") ? `xzone:${raw}` : raw;
 
         if (!allNodeIds.has(nodeId)) continue;
-        if (pos.has(nodeId)) continue;
+        const isRoom = !raw.includes(":") && Boolean(world.rooms[raw]);
 
         const offset = DIR_OFFSET[dir];
         if (!offset) {
           // u/d: don't pull the target into this floor — it lives on its own
-          // island. Note the link so the caller can seed the next floor.
-          if (!raw.includes(":") && world.rooms[raw]) {
+          // island. Note the link so the caller can seed the next floor. A
+          // pinned partner is already seated; walk through it so its own
+          // unpinned neighbours seat around the authored cell.
+          if (!isRoom) continue;
+          if (pos.has(nodeId)) {
+            if (!expanded.has(nodeId)) queue.push(nodeId);
+          } else {
             nextSeeds.push(nodeId);
           }
+          continue;
+        }
+
+        if (pos.has(nodeId)) {
+          // Placed earlier (pin or previous pass) — keep its cell but keep
+          // flowing outward through it.
+          if (isRoom && !expanded.has(nodeId)) queue.push(nodeId);
           continue;
         }
 
         place(nodeId, cx + offset[0], cy + offset[1]);
         placed.push(nodeId);
 
-        if (!raw.includes(":") && world.rooms[raw]) {
+        if (isRoom) {
           queue.push(nodeId);
         }
       }
@@ -239,17 +248,59 @@ export function compassLayout(
     return { placed, nextFloorSeeds: nextSeeds };
   }
 
+  let maxY = 0;
+
+  // Phase 0: seat author pins (mapX/mapY/mapZ) exactly where they were placed,
+  // one island per pinned floor in ascending z order. This mirrors the server
+  // loader: pins are fixed anchors, BFS lays out only the unpinned remainder
+  // around them (flowing outward through pinned rooms via `expanded`).
+  const pins = zoneMapPins(world);
+  const pinnedIds: string[] = [];
+  if (pins.size > 0) {
+    const byFloor = new Map<number, Array<[string, MapPin]>>();
+    for (const [id, pin] of pins) {
+      if (!allNodeIds.has(id)) continue;
+      const list = byFloor.get(pin.z) ?? [];
+      list.push([id, pin]);
+      byFloor.set(pin.z, list);
+    }
+    const zs = [...byFloor.keys()].sort((a, b) => a - b);
+    for (const z of zs) {
+      const entries = byFloor.get(z)!;
+      let minX = Infinity;
+      let minY = Infinity;
+      for (const [, p] of entries) {
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+      }
+      const islandY = pos.size === 0 ? 0 : maxY + ISLAND_GAP;
+      entries.sort(
+        (a, b) => a[1].y - b[1].y || a[1].x - b[1].x || a[0].localeCompare(b[0]),
+      );
+      for (const [id, p] of entries) {
+        place(id, p.x - minX, islandY + (p.y - minY));
+        pinnedIds.push(id);
+      }
+      for (const [, [, y]] of pos) {
+        if (y > maxY) maxY = y;
+      }
+    }
+    // Pin collisions are authoring errors (validateZone flags them); the
+    // spiral in place() keeps the editor usable, but they mustn't count
+    // toward the grid-embeddability heuristic below.
+    collisions = 0;
+  }
+
   // Place the start floor, then walk u/d links breadth-first to find sibling
   // floors and stack each one below the previous. Floors connected via stairs
   // end up in vertical reading order (start → upstairs → attic, etc.); fully
-  // disconnected pockets fall through to the orphan sweep below.
-  let maxY = 0;
-  const floorQueue: string[] = [world.startRoom];
+  // disconnected pockets fall through to the orphan sweep below. Pinned rooms
+  // queue too so their unpinned neighbours seat around the authored cells.
+  const floorQueue: string[] = [world.startRoom, ...pinnedIds];
 
   function placeAndAdvance(seedId: string) {
     const islandY = pos.size === 0 ? 0 : maxY + ISLAND_GAP;
     const result = placeFloor(seedId, 0, islandY);
-    if (result.placed.length === 0) return;
     for (const [, [, y]] of pos) {
       if (y > maxY) maxY = y;
     }
@@ -264,7 +315,7 @@ export function compassLayout(
   let mainPlaced = 0;
   while (floorQueue.length > 0) {
     const seed = floorQueue.shift()!;
-    if (pos.has(seed)) continue;
+    if (expanded.has(seed)) continue;
     const beforeCol = collisions;
     const beforeSize = pos.size;
     placeAndAdvance(seed);
@@ -285,8 +336,10 @@ export function compassLayout(
 
   // Heuristic: if many placements collided in the main BFS, the graph isn't
   // grid-embeddable. Throw it away and run a proper hierarchical layout.
+  // Never when the author pinned a layout — pins ARE the layout.
   let result: Node[];
   if (
+    pins.size === 0 &&
     mainPlaced >= 8 &&
     mainCollisions / Math.max(1, mainPlaced) > COLLISION_FALLBACK_RATIO
   ) {
@@ -488,21 +541,4 @@ export function getLayoutBounds(
   };
 }
 
-/** Spiral outward from (x, y) to find the nearest unoccupied grid cell. */
-function findEmpty(
-  x: number,
-  y: number,
-  grid: Map<string, string>,
-): [number, number] {
-  for (let r = 1; r <= 20; r++) {
-    for (let dx = -r; dx <= r; dx++) {
-      for (let dy = -r; dy <= r; dy++) {
-        if (Math.abs(dx) < r && Math.abs(dy) < r) continue;
-        const key = `${x + dx},${y + dy}`;
-        if (!grid.has(key)) return [x + dx, y + dy];
-      }
-    }
-  }
-  return [x + 1, y];
-}
 

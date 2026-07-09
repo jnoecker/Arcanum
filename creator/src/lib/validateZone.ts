@@ -101,6 +101,45 @@ function validateFlightMapCoords(
 }
 
 /**
+ * Minimap pins must satisfy the server's load contract: `mapX`/`mapY` come as
+ * an integer pair, `mapZ` is only valid alongside them, and no two rooms in a
+ * zone may pin the same cell of the same floor. The loader refuses the whole
+ * zone on any of these, so they're all errors.
+ */
+function validateMapPin(
+  issues: ValidationIssue[],
+  entity: string,
+  roomId: string,
+  room: WorldFile["rooms"][string],
+  pinnedCells: Map<string, string>,
+): void {
+  const { mapX, mapY, mapZ } = room;
+  if (mapX == null && mapY == null) {
+    if (mapZ != null) {
+      addIssue(issues, "error", entity, "mapZ without mapX/mapY — a floor alone doesn't pin a map cell; the server will refuse to load this zone");
+    }
+    return;
+  }
+  if (mapX == null || mapY == null) {
+    addIssue(issues, "error", entity, "Map pin needs both mapX and mapY — the server refuses half-specified pins");
+    return;
+  }
+  for (const [axis, value] of [["mapX", mapX], ["mapY", mapY], ["mapZ", mapZ]] as const) {
+    if (value != null && !Number.isInteger(value)) {
+      addIssue(issues, "error", entity, `${axis} (${value}) must be an integer grid coordinate`);
+      return;
+    }
+  }
+  const cell = `${mapX},${mapY},${mapZ ?? 0}`;
+  const other = pinnedCells.get(cell);
+  if (other) {
+    addIssue(issues, "error", entity, `Pinned to map cell (${mapX},${mapY}) on floor ${mapZ ?? 0}, already taken by room "${other}" — the server refuses duplicate pins`);
+  } else {
+    pinnedCells.set(cell, roomId);
+  }
+}
+
+/**
  * Boat docks share the flight map's coordinate contract (each coord, if present,
  * is a number in 0..100, and the engine only seats a hotspot when both are set),
  * and additionally carry authored routes. Each route needs a non-negative fare
@@ -596,6 +635,7 @@ export function validateZone(
   }
   factionCheck("zone", world.faction, "Controlling faction");
 
+  const pinnedCells = new Map<string, string>();
   for (const [roomId, room] of Object.entries(world.rooms)) {
     const entity = `room:${roomId}`;
     if (!room.title?.trim()) addIssue(issues, "warning", entity, "Room has no title");
@@ -605,6 +645,7 @@ export function validateZone(
     }
 
     validateFlightMapCoords(issues, entity, room);
+    validateMapPin(issues, entity, roomId, room, pinnedCells);
     validateBoatDock(issues, entity, room, roomIds);
 
     for (const [dir, exit] of Object.entries(room.exits ?? {})) {

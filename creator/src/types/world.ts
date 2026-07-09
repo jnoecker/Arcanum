@@ -174,6 +174,18 @@ export interface RoomFile {
   /** A single song — present means the room has a music box (a free, player-scoped
    *  one-song miniature of the jukebox). */
   musicBox?: MusicBoxFile;
+  /** Explicit minimap grid pin (server contract, AmbonMUD #1401): integer grid
+   *  column within the zone's own frame, +x = east. Written for every room by
+   *  the zone editor's "Save Layout"; the server seats pinned rooms exactly
+   *  here and BFS-places unpinned rooms around them. Must be paired with
+   *  {@link mapY} — the server fails to load a half-specified pin, and fails if
+   *  two rooms in one zone share a cell on the same floor. */
+  mapX?: number;
+  /** Explicit minimap grid pin: integer grid row, +y = south. See {@link mapX}. */
+  mapY?: number;
+  /** Minimap floor for the pin: 0 = ground, positive = upstairs. Only valid
+   *  alongside {@link mapX}/{@link mapY}; defaults to 0 when omitted. */
+  mapZ?: number;
   /** Legacy Arcanum-only alias; stripped on output. */
   audio?: string;
 }

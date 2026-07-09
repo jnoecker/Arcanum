@@ -556,6 +556,28 @@ ambonmud:
     // Block re-parses cleanly with the change preserved.
     expect(parseAppConfigYaml(stringify({ ambonmud: runtime })).akathavae.renounceCostGold).toBe(5000);
   });
+
+  it("round-trips the unpledged journaling and zone-completion knobs", () => {
+    const base = parseAppConfigYaml(`
+ambonmud:
+  server: { telnetPort: 4000, webPort: 8080 }
+  world: { startRoom: hub:square, resources: [] }
+  engine: {}
+`);
+    const tuned: AppConfig = {
+      ...base,
+      akathavae: { ...base.akathavae, unpledgedSuccessMultiplier: 0.3, unpledgedXpMultiplier: 0, zoneCompletionGold: 1000 },
+    };
+    const runtime = buildMonolithicConfigObject(tuned) as any;
+    expect(runtime.engine.akathavae.unpledgedSuccessMultiplier).toBe(0.3);
+    const reparsed = parseAppConfigYaml(stringify({ ambonmud: runtime })).akathavae;
+    expect(reparsed.unpledgedSuccessMultiplier).toBe(0.3);
+    expect(reparsed.unpledgedXpMultiplier).toBe(0);
+    expect(reparsed.zoneCompletionGold).toBe(1000);
+    // Untouched new knobs fall back to canonical defaults.
+    expect(reparsed.roomDiscoveryXpPerZoneLevel).toBe(5);
+    expect(reparsed.zoneCompletionXpPerRoom).toBe(50);
+  });
 });
 
 describe("flight config", () => {

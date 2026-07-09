@@ -39,9 +39,14 @@ export const DEFAULT_AKATHAVAE: AppConfig["akathavae"] = {
   repeatXpFraction: 0.2,
   repeatXpCooldownMs: 300_000,
   roomDiscoveryXp: 15,
+  roomDiscoveryXpPerZoneLevel: 5,
   itemDiscoveryXp: 25,
   observeNpcXp: 10,
   discoveryXpThrottleMs: 1_500,
+  zoneCompletionXpPerRoom: 50,
+  zoneCompletionGold: 500,
+  unpledgedSuccessMultiplier: 0.5,
+  unpledgedXpMultiplier: 0.25,
 };
 
 /** Canonical defaults for flight masters (mirrors the server's FlightConfig).

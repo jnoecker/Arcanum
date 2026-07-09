@@ -761,6 +761,11 @@ function parseAkathavaeConfig(raw: unknown): AppConfig["akathavae"] {
     itemDiscoveryXp: asNumber(s.itemDiscoveryXp, d.itemDiscoveryXp),
     observeNpcXp: asNumber(s.observeNpcXp, d.observeNpcXp),
     discoveryXpThrottleMs: asNumber(s.discoveryXpThrottleMs, d.discoveryXpThrottleMs),
+    roomDiscoveryXpPerZoneLevel: asNumber(s.roomDiscoveryXpPerZoneLevel, d.roomDiscoveryXpPerZoneLevel),
+    zoneCompletionXpPerRoom: asNumber(s.zoneCompletionXpPerRoom, d.zoneCompletionXpPerRoom),
+    zoneCompletionGold: asNumber(s.zoneCompletionGold, d.zoneCompletionGold),
+    unpledgedSuccessMultiplier: asNumber(s.unpledgedSuccessMultiplier, d.unpledgedSuccessMultiplier),
+    unpledgedXpMultiplier: asNumber(s.unpledgedXpMultiplier, d.unpledgedXpMultiplier),
   };
 }
 

@@ -248,3 +248,74 @@ describe("getLayoutBounds", () => {
     expect(bounds).toEqual({ x: 0, y: 0, width: 100, height: 50 });
   });
 });
+
+describe("compassLayout with map pins", () => {
+  it("seats pinned rooms in their authored arrangement, ignoring exit geometry", () => {
+    // The exit says "b is north of a", but the author pinned b two cells EAST.
+    // Pins win.
+    const world = makeWorld({
+      a: { title: "A", description: "", exits: { n: "b" }, mapX: 0, mapY: 0 },
+      b: { title: "B", description: "", exits: { s: "a" }, mapX: 2, mapY: 0 },
+    });
+    const { nodes } = zoneToGraph(world);
+    const laid = compassLayout(nodes, world);
+    const a = laid.find((n) => n.id === "a")!;
+    const b = laid.find((n) => n.id === "b")!;
+    expect(b.position.y).toBe(a.position.y);
+    expect(b.position.x).toBeGreaterThan(a.position.x);
+  });
+
+  it("BFS-places unpinned rooms relative to their pinned neighbours", () => {
+    const world = makeWorld({
+      a: { title: "A", description: "", exits: { e: "b" }, mapX: 4, mapY: 4 },
+      b: { title: "B", description: "", exits: { w: "a", e: "c" }, mapX: 5, mapY: 4 },
+      c: { title: "C", description: "", exits: { w: "b" } }, // unpinned
+    });
+    const { nodes } = zoneToGraph(world);
+    const laid = compassLayout(nodes, world);
+    const b = laid.find((n) => n.id === "b")!;
+    const c = laid.find((n) => n.id === "c")!;
+    // c flows out of pinned b, one cell east on the same row.
+    expect(c.position.y).toBe(b.position.y);
+    expect(c.position.x).toBeGreaterThan(b.position.x);
+  });
+
+  it("keeps pinned floors on separate islands and expands through stairs", () => {
+    const world = makeWorld({
+      ground: { title: "", description: "", exits: { u: "loft" }, mapX: 0, mapY: 0 },
+      loft: { title: "", description: "", exits: { d: "ground", e: "loft_east" }, mapX: 0, mapY: 0, mapZ: 1 },
+      loft_east: { title: "", description: "", exits: { w: "loft" } }, // unpinned
+    });
+    const { nodes } = zoneToGraph(world);
+    const laid = compassLayout(nodes, world);
+    const ground = laid.find((n) => n.id === "ground")!;
+    const loft = laid.find((n) => n.id === "loft")!;
+    const loftEast = laid.find((n) => n.id === "loft_east")!;
+    // Same authored cell, different floors → stacked islands, not a collision.
+    expect(loft.position.y).not.toBe(ground.position.y);
+    // The unpinned neighbour seats east of the pinned loft on its island.
+    expect(loftEast.position.y).toBe(loft.position.y);
+    expect(loftEast.position.x).toBeGreaterThan(loft.position.x);
+  });
+
+  it("recomputes the cached layout when only pins change", () => {
+    const rooms: WorldFile["rooms"] = {
+      a: { title: "A", description: "", exits: { e: "b" } },
+      b: { title: "B", description: "", exits: { w: "a" } },
+    };
+    const unpinned = makeWorld(structuredClone(rooms));
+    const { nodes: nodes1 } = zoneToGraph(unpinned);
+    const before = compassLayout(nodes1, unpinned);
+    const bBefore = before.find((n) => n.id === "b")!;
+
+    // Same exits, but b pinned far east — the layout cache must not serve
+    // the unpinned result.
+    const pinned = makeWorld(structuredClone(rooms));
+    pinned.rooms.a = { ...pinned.rooms.a!, mapX: 0, mapY: 0 };
+    pinned.rooms.b = { ...pinned.rooms.b!, mapX: 5, mapY: 0 };
+    const { nodes: nodes2 } = zoneToGraph(pinned);
+    const after = compassLayout(nodes2, pinned);
+    const bAfter = after.find((n) => n.id === "b")!;
+    expect(bAfter.position.x).toBeGreaterThan(bBefore.position.x);
+  });
+});

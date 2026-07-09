@@ -160,7 +160,14 @@ function buildGraphFingerprint(world: WorldFile): string {
       }
       exits = exitParts.join(";");
     }
-    parts.push(`r:${id}|${room.title}|${room.image ?? ""}|${room.station ?? ""}|${flags}|${exits}`);
+    // Map pins don't feed node data, but compassLayout's fastest cache tier
+    // assumes "same nodes ref → same layout inputs" — so anything the layout
+    // reads must be part of this fingerprint too.
+    const pin =
+      room.mapX != null && room.mapY != null
+        ? `|p${room.mapX},${room.mapY},${room.mapZ ?? 0}`
+        : "";
+    parts.push(`r:${id}|${room.title}|${room.image ?? ""}|${room.station ?? ""}|${flags}|${exits}${pin}`);
   }
 
   for (const [id, mob] of Object.entries(world.mobs ?? {})) {

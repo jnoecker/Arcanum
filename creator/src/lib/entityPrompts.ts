@@ -1,5 +1,6 @@
-import type { RoomFile, MobFile, ItemFile, ShopFile, GatheringNodeFile, WorldFile, DungeonFile, DungeonRoomTemplate } from "@/types/world";
+import type { RoomFile, MobFile, ItemFile, ShopFile, FeatureFile, GatheringNodeFile, WorldFile, DungeonFile, DungeonRoomTemplate } from "@/types/world";
 import type { GuildHallRoomTemplate, HousingTemplateDefinition } from "@/types/config";
+import type { FeatureType } from "./zoneEdits";
 import { getTrainerPrimaryClass } from "@/lib/trainers";
 import {
   type ArtStyle,
@@ -73,6 +74,65 @@ export function shopContext(shopId: string, shop: ShopFile): string {
   }
   parts.push("Composition: wide landscape, an empty marketplace interior — storefront, shelves, wares, and architecture only");
   parts.push(EMPTY_SCENE_DIRECTIVE);
+  return parts.join("\n");
+}
+
+const FEATURE_BACKDROP_BRIEF: Record<FeatureType, (label: string) => string> = {
+  CONTAINER: (label) =>
+    `A backdrop for ${label} — an open chest or container viewed head-on, lid/back up top, a deep open interior in the lower half where the contents list overlays. Centered, cover-friendly.`,
+  SIGN: (label) =>
+    `A backdrop for ${label} — a carved sign board or placard with a clear central text-safe area and a decorative frame. The sign text renders over the center.`,
+  LEVER: (label) =>
+    `A backdrop box for ${label} — the decorative recessed alcove the lever sits inside. Leave the center open; the plate and handle render on top.`,
+};
+
+/**
+ * Build a context description for a feature's full-card backdrop
+ * (CONTAINER / SIGN / LEVER). Grounds the backdrop in what the feature
+ * actually says or holds, the room it stands in, and the zone's atmosphere —
+ * a bare display name gives the enhancer nothing to design from.
+ */
+export function featureBackgroundContext(
+  world: WorldFile,
+  roomId: string,
+  type: FeatureType,
+  feature: FeatureFile,
+  zoneVibe?: string,
+): string {
+  const label = feature.displayName || type.toLowerCase();
+  const parts = [FEATURE_BACKDROP_BRIEF[type](label)];
+
+  if (type === "SIGN") {
+    const text = feature.text?.trim();
+    if (text) {
+      parts.push(
+        `The sign will display this text (do NOT render it — it overlays at runtime; let its meaning, tone, and imagery shape the board's materials, ornament, and palette):\n${text}`,
+      );
+    }
+  }
+  if (type === "CONTAINER") {
+    const contents = (feature.items ?? [])
+      .map((id) => world.items?.[id]?.displayName || id)
+      .filter(Boolean);
+    if (contents.length > 0) {
+      parts.push(
+        `It holds: ${contents.join(", ")} — let the contents suggest the container's character and materials (do NOT draw the items; they overlay as a list).`,
+      );
+    }
+  }
+
+  const room = world.rooms[roomId];
+  if (room) {
+    const where = [`It stands in the room "${room.title}"`];
+    if (room.description) where.push(`described as: ${room.description}`);
+    parts.push(
+      `${where.join(", ")}\nUse the room only to inform the backdrop's setting, materials, and mood — the image is a close-up of the ${type.toLowerCase()} itself, not the room.`,
+    );
+  }
+
+  const vibe = zoneVibe?.trim();
+  if (vibe) parts.push(`Zone atmosphere:\n${vibe}`);
+
   return parts.join("\n");
 }
 

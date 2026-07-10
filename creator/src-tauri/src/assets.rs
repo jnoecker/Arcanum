@@ -510,9 +510,12 @@ pub async fn import_asset(
         detected
     };
 
-    // Cap oversized images to the runtime profile before hashing so the
-    // content-addressed name reflects the bytes actually stored.
-    let bytes = crate::image_profiles::cap_image_bytes(&asset_type, ext, &bytes);
+    // Fit oversized images to the runtime profile and byte budget before
+    // hashing so the content-addressed name reflects the bytes actually
+    // stored. May convert to WebP, changing the extension.
+    let optimized = crate::image_profiles::optimize_image_bytes(&asset_type, ext, &bytes);
+    let bytes = optimized.bytes;
+    let ext = optimized.ext.as_str();
 
     let mut hasher = Sha256::new();
     hasher.update(&bytes);
@@ -732,9 +735,12 @@ pub async fn save_bytes_as_asset(
     let detected = detect_extension(&bytes);
     let ext = if detected == "bin" { "png" } else { detected };
 
-    // Cap oversized images to the runtime profile before hashing so the
-    // content-addressed name reflects the bytes actually stored.
-    let bytes = crate::image_profiles::cap_image_bytes(&asset_type, ext, &bytes);
+    // Fit oversized images to the runtime profile and byte budget before
+    // hashing so the content-addressed name reflects the bytes actually
+    // stored. May convert to WebP, changing the extension.
+    let optimized = crate::image_profiles::optimize_image_bytes(&asset_type, ext, &bytes);
+    let bytes = optimized.bytes;
+    let ext = optimized.ext.as_str();
 
     let mut hasher = Sha256::new();
     hasher.update(&bytes);
@@ -1176,9 +1182,12 @@ pub async fn bulk_import_images(
             detected
         };
 
-        // Cap oversized images to the runtime profile before hashing so the
-        // content-addressed name reflects the bytes actually stored.
-        let bytes = crate::image_profiles::cap_image_bytes(&asset_type, file_ext, &bytes);
+        // Fit oversized images to the runtime profile and byte budget before
+        // hashing so the content-addressed name reflects the bytes actually
+        // stored. May convert to WebP, changing the extension.
+        let optimized = crate::image_profiles::optimize_image_bytes(&asset_type, file_ext, &bytes);
+        let bytes = optimized.bytes;
+        let file_ext = optimized.ext.as_str();
 
         let mut hasher = Sha256::new();
         hasher.update(&bytes);

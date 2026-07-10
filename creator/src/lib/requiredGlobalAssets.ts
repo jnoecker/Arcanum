@@ -1201,13 +1201,27 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
   {
     key: "arcanum_bg",
     defaultFilename: "arcanum_bg.png",
-    label: "Arcanum Journal Spread",
-    description: "Painted backdrop behind the Akathavae's Arcanum panel (recorded creatures, items, and places). Falls back to procedural pages when absent.",
+    label: "Arcanum Field Folio",
+    description:
+      "Fully painted backdrop for the Akathavae's Arcanum panel — a two-page indigo field folio. The intro plaque and journey ledger overlay the left page and the specimen catalogue (search, tabs, cards) overlays the right page. Falls back to the CSS folio treatment when absent.",
     assetType: "background",
     defaultPrompt:
-      "An open illuminated codex viewed from above, two facing aged-parchment pages with a softly shadowed center gutter, gilded margins and faint candlelight glow, warm paper with subtle fibers and gentle wear, leather binding edges, no writing, no ruled lines, no objects, no figures, no readable text, suitable as a backdrop behind a catalogue of recorded discoveries.",
+      "An open naturalist's field folio viewed from above filling the frame edge to edge — two facing aged-parchment pages bound in deep indigo leather with gilded corner fittings, a small blank title plaque in the upper-left of the left page, a tall open ledger column below it on the left page, the entire right page an open uncluttered parchment area where a catalogue of specimen cards overlays, pressed flowers, inked sketch fragments and faint candlelight glow in the margins, warm paper with subtle fibers and gentle wear, no writing, no ruled lines, no figures, no readable text, wide landscape composition, suitable as a backdrop behind a field-journal panel.",
     transparent: false,
     aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "arcanum_bg_portrait",
+    defaultFilename: "arcanum_bg_portrait.png",
+    label: "Arcanum Field Folio (Portrait)",
+    description:
+      "Portrait variant of the Arcanum field folio served to mobile / narrow viewports — a 941×1672 recomposition, not a crop. The intro plaque, a horizontal journey ledger strip, and the specimen catalogue stack top to bottom. Falls back to the landscape art when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A tall naturalist's field-folio page filling the frame edge to edge — aged parchment bound in deep indigo leather with gilded fittings, a small blank title plaque band near the top, a short horizontal ledger strip beneath it, the remaining lower two-thirds an open uncluttered parchment area where a catalogue of specimen cards overlays, pressed flowers, inked sketch fragments and faint candlelight glow in the margins, warm paper with subtle fibers and gentle wear, no writing, no ruled lines, no figures, no readable text, portrait composition, suitable as a backdrop behind a field-journal panel on a narrow screen.",
+    transparent: false,
+    aspect: "portrait",
     optional: true,
   },
   {

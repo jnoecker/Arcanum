@@ -1,5 +1,75 @@
 import { describe, expect, it } from "vitest";
-import { musicBoxKeepsakeContext } from "@/lib/entityPrompts";
+import { featureBackgroundContext, musicBoxKeepsakeContext } from "@/lib/entityPrompts";
+import type { FeatureFile, WorldFile } from "@/types/world";
+
+function makeWorld(): WorldFile {
+  return {
+    zone: "harbor",
+    startRoom: "parlor",
+    rooms: {
+      parlor: {
+        title: "The Velvet Parlor",
+        description: "A candlelit parlor where a brass music box turns slowly on the mantel.",
+        exits: {},
+      },
+    },
+    mobs: {},
+    items: {
+      locket: { displayName: "a silver locket" },
+      shell: { displayName: "a spiraled shell" },
+    },
+    shops: {},
+  };
+}
+
+function makeSign(): FeatureFile {
+  return {
+    type: "SIGN",
+    displayName: "a small lacquered placard beside the music box",
+    keyword: "placard",
+    text: "Wind me gently, and I will sing you the tide's own lullaby.",
+  };
+}
+
+describe("featureBackgroundContext", () => {
+  it("grounds a sign in its text, room, and zone vibe", () => {
+    const ctx = featureBackgroundContext(makeWorld(), "parlor", "SIGN", makeSign(), "Sleepy seaside town, warm lantern light");
+    expect(ctx).toContain("a small lacquered placard beside the music box");
+    expect(ctx).toContain("the tide's own lullaby");
+    expect(ctx).toMatch(/do NOT render it/i);
+    expect(ctx).toContain('"The Velvet Parlor"');
+    expect(ctx).toContain("brass music box turns slowly");
+    expect(ctx).toContain("Sleepy seaside town, warm lantern light");
+  });
+
+  it("omits blank sign text and vibe", () => {
+    const sign = { ...makeSign(), text: "   " };
+    const ctx = featureBackgroundContext(makeWorld(), "parlor", "SIGN", sign, "  ");
+    expect(ctx).not.toContain("will display this text");
+    expect(ctx).not.toContain("Zone atmosphere");
+  });
+
+  it("survives an unknown room and falls back to the type label", () => {
+    const sign = { ...makeSign(), displayName: "" };
+    const ctx = featureBackgroundContext(makeWorld(), "nowhere", "SIGN", sign);
+    expect(ctx).toContain("A backdrop for sign");
+    expect(ctx).not.toContain("It stands in the room");
+  });
+
+  it("resolves container contents to display names", () => {
+    const chest: FeatureFile = {
+      type: "CONTAINER",
+      displayName: "a barnacled sea chest",
+      keyword: "chest",
+      items: ["locket", "shell", "unknown_id"],
+    };
+    const ctx = featureBackgroundContext(makeWorld(), "parlor", "CONTAINER", chest);
+    expect(ctx).toContain("a silver locket");
+    expect(ctx).toContain("a spiraled shell");
+    expect(ctx).toContain("unknown_id");
+    expect(ctx).toMatch(/do NOT draw the items/i);
+  });
+});
 
 describe("musicBoxKeepsakeContext", () => {
   it("names the song and artist", () => {

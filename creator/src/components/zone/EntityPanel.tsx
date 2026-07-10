@@ -3,8 +3,8 @@ import type { WorldFile } from "@/types/world";
 import { duplicateMob, duplicateItem } from "@/lib/zoneEdits";
 import { useToastStore } from "@/stores/toastStore";
 import type { EntitySelection } from "./RoomPanel";
-import { MobEditor } from "@/components/editors/MobEditor";
-import { ItemEditor } from "@/components/editors/ItemEditor";
+import { MobEditor, type MobTab } from "@/components/editors/MobEditor";
+import { ItemEditor, type ItemTab } from "@/components/editors/ItemEditor";
 import { ShopEditor } from "@/components/editors/ShopEditor";
 import { QuestEditor } from "@/components/editors/QuestEditor";
 import { GatheringNodeEditor } from "@/components/editors/GatheringNodeEditor";
@@ -31,6 +31,10 @@ interface EntityPanelProps {
   onClose: () => void;
   onRename?: (newId: string) => void;
   zoneId?: string;
+  mobTab?: MobTab;
+  onMobTabChange?: (tab: MobTab) => void;
+  itemTab?: ItemTab;
+  onItemTabChange?: (tab: ItemTab) => void;
 }
 
 export function EntityPanel({
@@ -40,6 +44,10 @@ export function EntityPanel({
   onClose,
   onRename,
   zoneId,
+  mobTab,
+  onMobTabChange,
+  itemTab,
+  onItemTabChange,
 }: EntityPanelProps) {
   const [showYaml, setShowYaml] = useState(false);
   const [renaming, setRenaming] = useState(false);
@@ -165,6 +173,8 @@ export function EntityPanel({
           onDelete={handleDelete}
           onDuplicate={onRename ? handleDuplicateMob : undefined}
           zoneId={zoneId}
+          activeTab={mobTab}
+          onTabChange={onMobTabChange}
         />
       )}
       {selection.kind === "item" && (
@@ -175,6 +185,8 @@ export function EntityPanel({
           onDelete={handleDelete}
           onDuplicate={onRename ? handleDuplicateItem : undefined}
           zoneId={zoneId}
+          activeTab={itemTab}
+          onTabChange={onItemTabChange}
         />
       )}
       {selection.kind === "shop" && (

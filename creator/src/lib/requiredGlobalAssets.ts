@@ -1225,6 +1225,32 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     optional: true,
   },
   {
+    key: "shrine_bg",
+    defaultFilename: "shrine_bg.png",
+    label: "Akathavae Shrine Vow Table",
+    description:
+      "Fully painted backdrop for the Akathavae shrine panel — a ceremonial vow tablet where players take or renounce the pledge. The vow text and pledge controls overlay it. Falls back to the parchment CSS treatment when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A ceremonial shrine vow tablet backdrop filling the frame edge to edge — an aged stone tablet framed by a weathered shrine arch, a single serene candle flame glowing to one side with faint motes of light rising, carved votive niches and draped ceremonial cloth along the edges, warm parchment and weathered-stone tones, an open uncluttered center where the vow text and pledge controls overlay, soft candlelight glow, no figures, no readable text, wide landscape composition, suitable as a backdrop behind a shrine pledge panel.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
+  {
+    key: "shrine_bg_portrait",
+    defaultFilename: "shrine_bg_portrait.png",
+    label: "Akathavae Shrine Vow Table (Portrait)",
+    description:
+      "Portrait variant of the shrine vow tablet served to mobile / narrow viewports — a 941×1672 recomposition, not a crop. The vow text and pledge controls stack top to bottom. Falls back to the parchment CSS treatment when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A tall ceremonial shrine vow tablet backdrop filling the frame edge to edge — an aged stone tablet beneath a weathered shrine arch near the top, a single serene candle flame with faint motes of light rising, carved votive niches and draped ceremonial cloth along the upper edges, warm parchment and weathered-stone tones, an open uncluttered lower region where the vow text and pledge controls overlay, soft candlelight glow, portrait composition, no figures, no readable text, suitable as a backdrop behind a shrine pledge panel on a narrow screen.",
+    transparent: false,
+    aspect: "portrait",
+    optional: true,
+  },
+  {
     key: "puzzle_bg",
     defaultFilename: "puzzle_bg.png",
     label: "Puzzle Codex Page",

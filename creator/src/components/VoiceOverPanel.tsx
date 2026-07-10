@@ -84,6 +84,7 @@ export default function VoiceOverPanel() {
   const [savedMap, setSavedMap] = useState(false);
   const [forceReupload, setForceReupload] = useState(false);
   const [sha8Map, setSha8Map] = useState<Record<string, string>>({});
+  const [zoneFilter, setZoneFilter] = useState("");
 
   const hasKey = !!settings?.elevenlabs_api_key;
   const r2Configured = !!(
@@ -122,6 +123,26 @@ export default function VoiceOverPanel() {
     }
     return [...map.values()];
   }, [lines]);
+
+  const zoneLineCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const line of lines) {
+      counts.set(line.zone, (counts.get(line.zone) ?? 0) + 1);
+    }
+    return counts;
+  }, [lines]);
+  const zoneNames = useMemo(() => [...zoneLineCounts.keys()].sort((a, b) => a.localeCompare(b)), [zoneLineCounts]);
+
+  // A closed zone's filter selection silently falls back to "all zones".
+  const activeZoneFilter = zoneLineCounts.has(zoneFilter) ? zoneFilter : "";
+  const filteredLines = useMemo(
+    () => (activeZoneFilter ? lines.filter((l) => l.zone === activeZoneFilter) : lines),
+    [lines, activeZoneFilter],
+  );
+  const filteredMobGroups = useMemo(
+    () => (activeZoneFilter ? mobGroups.filter((g) => g.zone === activeZoneFilter) : mobGroups),
+    [mobGroups, activeZoneFilter],
+  );
 
   // Compute the contract hash of each line's current text so we can flag
   // clips that were generated against an older version of the line.
@@ -207,17 +228,17 @@ export default function VoiceOverPanel() {
 
   const doneCount = useMemo(() => {
     let n = 0;
-    for (const line of lines) {
+    for (const line of filteredLines) {
       const st = results.get(lineKey(line.zone, line.templateKey, line.nodeId));
       if (st?.status === "done") n += 1;
     }
     return n;
-  }, [lines, results]);
+  }, [filteredLines, results]);
 
   const errorSummary = useMemo(() => {
     let count = 0;
     let firstMessage = "";
-    for (const line of lines) {
+    for (const line of filteredLines) {
       const st = results.get(lineKey(line.zone, line.templateKey, line.nodeId));
       if (st?.status === "error") {
         count += 1;
@@ -225,7 +246,7 @@ export default function VoiceOverPanel() {
       }
     }
     return { count, firstMessage };
-  }, [lines, results]);
+  }, [filteredLines, results]);
 
   const handleSaveMap = async () => {
     setSavingMap(true);
@@ -250,15 +271,34 @@ export default function VoiceOverPanel() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 overflow-y-auto px-6 py-6">
       {/* Header */}
-      <header>
-        <h2 className="font-display text-lg uppercase tracking-widest text-text-primary">
-          Dialogue Voice-Over
-        </h2>
-        <p className="mt-1 max-w-3xl text-2xs leading-5 text-text-muted">
-          Synthesize spoken audio for every NPC dialogue line with ElevenLabs and publish the clips
-          to your CDN. The web client plays them as players talk to NPCs; telnet is unaffected.
-          Choices stay text-only.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-lg uppercase tracking-widest text-text-primary">
+            Dialogue Voice-Over
+          </h2>
+          <p className="mt-1 max-w-3xl text-2xs leading-5 text-text-muted">
+            Synthesize spoken audio for every NPC dialogue line with ElevenLabs and publish the
+            clips to your CDN. The web client plays them as players talk to NPCs; telnet is
+            unaffected. Choices stay text-only.
+          </p>
+        </div>
+        {zoneNames.length > 1 && (
+          <label className="flex shrink-0 items-center gap-2">
+            <span className="text-2xs uppercase tracking-wider text-text-muted">Zone</span>
+            <select
+              value={activeZoneFilter}
+              onChange={(e) => setZoneFilter(e.target.value)}
+              className="rounded border border-border-default bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent/50 focus-visible:ring-2 focus-visible:ring-border-active"
+            >
+              <option value="">All zones ({lines.length} lines)</option>
+              {zoneNames.map((z) => (
+                <option key={z} value={z}>
+                  {z} ({zoneLineCounts.get(z)} {zoneLineCounts.get(z) === 1 ? "line" : "lines"})
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </header>
 
       {/* API key warning */}
@@ -367,14 +407,15 @@ export default function VoiceOverPanel() {
         )}
 
         {/* Per-mob assignment */}
-        {mobGroups.length > 0 && (
+        {filteredMobGroups.length > 0 && (
           <div className="mt-4">
             <p className="mb-2 text-2xs uppercase tracking-wider text-text-muted">
-              Per-NPC voices ({mobGroups.length} speaking{" "}
-              {mobGroups.length === 1 ? "NPC" : "NPCs"})
+              Per-NPC voices ({filteredMobGroups.length} speaking{" "}
+              {filteredMobGroups.length === 1 ? "NPC" : "NPCs"}
+              {activeZoneFilter ? ` in ${activeZoneFilter}` : ""})
             </p>
             <ul className="flex flex-col gap-1.5">
-              {mobGroups.map((g) => (
+              {filteredMobGroups.map((g) => (
                 <MobAssignmentRow
                   key={`${g.zone} ${g.templateKey}`}
                   group={g}
@@ -403,13 +444,19 @@ export default function VoiceOverPanel() {
           <h3 className="font-display text-sm uppercase tracking-widest text-text-primary">
             Lines{" "}
             <span className="ml-1 text-2xs font-normal normal-case tracking-normal text-text-muted">
-              {doneCount}/{lines.length} generated
+              {doneCount}/{filteredLines.length} generated
+              {activeZoneFilter ? ` in ${activeZoneFilter}` : ""}
             </span>
           </h3>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => generateAll(lines)}
-              disabled={!hasKey || generating || lines.length === 0}
+              onClick={() => generateAll(filteredLines)}
+              disabled={!hasKey || generating || filteredLines.length === 0}
+              title={
+                activeZoneFilter
+                  ? `Generate the ${filteredLines.length} lines in ${activeZoneFilter}`
+                  : undefined
+              }
               className="action-button action-button-primary action-button-sm focus-ring"
             >
               {generating ? "Generating…" : "Generate all"}
@@ -427,9 +474,15 @@ export default function VoiceOverPanel() {
               Force re-upload
             </label>
             <button
-              onClick={() => publishToR2(lines, forceReupload)}
+              onClick={() => publishToR2(filteredLines, forceReupload)}
               disabled={!r2Configured || publishing || doneCount === 0}
-              title={r2Configured ? undefined : "Configure Cloudflare R2 in Settings to publish."}
+              title={
+                !r2Configured
+                  ? "Configure Cloudflare R2 in Settings to publish."
+                  : activeZoneFilter
+                    ? `Publish the generated clips in ${activeZoneFilter}`
+                    : undefined
+              }
               className="action-button action-button-secondary action-button-sm focus-ring"
             >
               {publishing ? "Publishing…" : "Publish to R2"}
@@ -462,13 +515,13 @@ export default function VoiceOverPanel() {
           </div>
         )}
 
-        {lines.length === 0 ? (
+        {filteredLines.length === 0 ? (
           <p className="rounded border border-dashed border-border-muted bg-bg-primary px-3 py-6 text-center text-2xs italic text-text-muted/70">
             No NPC dialogue found in the loaded zones. Add dialogue to a mob, then return here.
           </p>
         ) : (
           <ul className="flex flex-col gap-1">
-            {lines.map((line) => {
+            {filteredLines.map((line) => {
               const key = lineKey(line.zone, line.templateKey, line.nodeId);
               const st = results.get(key);
               const clip = st?.clip;

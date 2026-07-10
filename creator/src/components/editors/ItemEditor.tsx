@@ -38,9 +38,11 @@ interface ItemEditorProps {
   onDelete: () => void;
   onDuplicate?: () => void;
   zoneId?: string;
+  activeTab?: ItemTab;
+  onTabChange?: (tab: ItemTab) => void;
 }
 
-type ItemTab = "item" | "media";
+export type ItemTab = "item" | "media";
 const ITEM_TABS: readonly { value: ItemTab; label: string }[] = [
   { value: "item", label: "Item" },
   { value: "media", label: "Media" },
@@ -83,8 +85,12 @@ function ItemEditorContent({
   patch,
   handleDelete,
   rooms,
+  activeTab: controlledTab,
+  onTabChange,
 }: ItemEditorContentProps) {
-  const [activeTab, setActiveTab] = useState<ItemTab>("item");
+  const [localTab, setLocalTab] = useState<ItemTab>("item");
+  const activeTab = controlledTab ?? localTab;
+  const setActiveTab = onTabChange ?? setLocalTab;
   const equipmentSlots = useConfigStore((s) => s.config?.equipmentSlots);
   const slotOptions = useConfigOptions(equipmentSlots, [
     { value: "head", label: "Head" },

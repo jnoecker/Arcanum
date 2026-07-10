@@ -56,6 +56,8 @@ interface MobEditorProps {
   onDelete: () => void;
   onDuplicate?: () => void;
   zoneId?: string;
+  activeTab?: MobTab;
+  onTabChange?: (tab: MobTab) => void;
 }
 
 const TIER_OPTIONS = [
@@ -136,7 +138,7 @@ const TEMPLATES_WITH_WANDER_DISTANCE = new Set(["wander", "wander_aggro", "cowar
 const TEMPLATES_WITH_AGGRO_MSG = new Set(["aggro_guard", "patrol_aggro", "wander_aggro"]);
 const TEMPLATES_WITH_FLEE = new Set(["coward"]);
 
-type MobTab = "mob" | "rewards" | "dialogue" | "media";
+export type MobTab = "mob" | "rewards" | "dialogue" | "media";
 const MOB_TABS: readonly { value: MobTab; label: string }[] = [
   { value: "mob", label: "Mob" },
   { value: "rewards", label: "Rewards" },
@@ -183,8 +185,12 @@ function MobEditorContent({
   patch,
   handleDelete,
   rooms,
+  activeTab: controlledTab,
+  onTabChange,
 }: MobEditorContentProps) {
-  const [activeTab, setActiveTab] = useState<MobTab>("mob");
+  const [localTab, setLocalTab] = useState<MobTab>("mob");
+  const activeTab = controlledTab ?? localTab;
+  const setActiveTab = onTabChange ?? setLocalTab;
 
   const role: MobRole = mob.role ?? "combat";
   const isCombatant = role === "combat";
@@ -473,7 +479,7 @@ function MobEditorContent({
         </div>
       </EntityHeader>
 
-      <TabBar tabs={visibleTabs} active={activeTab} onChange={setActiveTab} />
+      <TabBar tabs={visibleTabs} active={effectiveTab} onChange={setActiveTab} />
 
       {effectiveTab === "mob" && (
         <>

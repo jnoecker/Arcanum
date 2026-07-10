@@ -33,6 +33,8 @@ import { CrossZoneNode } from "./CrossZoneNode";
 import { ExitEdge, ExitDeleteContext } from "./ExitEdge";
 import { RoomPanel, type EntitySelection } from "./RoomPanel";
 import { EntityPanel } from "./EntityPanel";
+import type { MobTab } from "@/components/editors/MobEditor";
+import type { ItemTab } from "@/components/editors/ItemEditor";
 import { DirectionPicker } from "./DirectionPicker";
 import { useBatchArtStore } from "@/stores/batchArtStore";
 import { RethemeDialog } from "./RethemeDialog";
@@ -179,6 +181,8 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<EntitySelection | null>(null);
   const [roomPanelTab, setRoomPanelTab] = useState<"room" | "entities" | "media">("room");
+  const [mobPanelTab, setMobPanelTab] = useState<MobTab>("mob");
+  const [itemPanelTab, setItemPanelTab] = useState<ItemTab>("item");
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [newRoomId, setNewRoomId] = useState("");
   const addRoomInputRef = useRef<HTMLInputElement>(null);
@@ -1242,6 +1246,10 @@ function ZoneEditorInner({ zoneId }: ZoneEditorProps) {
                   )
                 }
                 zoneId={zoneId}
+                mobTab={mobPanelTab}
+                onMobTabChange={setMobPanelTab}
+                itemTab={itemPanelTab}
+                onItemTabChange={setItemPanelTab}
               />
             </SpringPanel>
           ) : selectedRoomId ? (

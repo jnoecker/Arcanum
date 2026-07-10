@@ -185,7 +185,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
     try {
       const plan = await invoke<MigrationReport>("migrate_assets_to_profiles", { dryRun: true });
       if (plan.affected === 0) {
-        useToastStore.getState().show("Library already optimized — every image fits its serving size", 3000);
+        useToastStore.getState().show("Library already optimized — every image fits its serving size and byte budget", 3000);
       } else {
         setMigrationPlan(plan);
       }
@@ -491,7 +491,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
             {migrationPlan && !migrating && (
               <>
                 <span className="text-text-secondary">
-                  {migrationPlan.affected} of {migrationPlan.totalAssets} images exceed their serving size — {formatMB(migrationPlan.bytesBefore)} → ~{formatMB(migrationPlan.bytesAfter)}. A project snapshot is taken first; filenames change and every zone, lore, and story reference is updated. Downscaled images can't be restored to full size.
+                  {migrationPlan.affected} of {migrationPlan.totalAssets} images exceed their serving size or byte budget — {formatMB(migrationPlan.bytesBefore)} → ~{formatMB(migrationPlan.bytesAfter)}{migrationPlan.converted > 0 ? `, ${migrationPlan.converted} re-encoded as WebP` : ""}. A project snapshot is taken first; filenames change and every zone, config, lore, and story reference is updated. Optimized images can't be restored to the original quality.
                 </span>
                 <button
                   onClick={handleOptimizeRun}
@@ -532,7 +532,7 @@ export function AssetGallery({ onClose }: { onClose: () => void }) {
                 {migrationResult.cancelled
                   ? `Stopped early — ${migrationResult.affected - migrationResult.remaining} of ${migrationResult.affected} images optimized, ${migrationResult.remaining} remaining (run Optimize Library again to continue). `
                   : `Optimized ${migrationResult.affected} images — `}
-                {formatMB(migrationResult.bytesBefore)} → {formatMB(migrationResult.bytesAfter)}, {migrationResult.referencesUpdated} project {migrationResult.referencesUpdated === 1 ? "file" : "files"} updated. Reload the project to refresh open editors.
+                {formatMB(migrationResult.bytesBefore)} → {formatMB(migrationResult.bytesAfter)}{migrationResult.converted > 0 ? `, ${migrationResult.converted} re-encoded as WebP` : ""}, {migrationResult.referencesUpdated} project {migrationResult.referencesUpdated === 1 ? "file" : "files"} updated. Reload the project to refresh open editors.
                 {migrationResult.errors.length > 0 && (
                   <span className="text-status-error"> {migrationResult.errors.length} failed — see console.</span>
                 )}

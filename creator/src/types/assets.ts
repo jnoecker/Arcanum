@@ -202,6 +202,7 @@ export interface R2SyncProgress {
 export interface MigrationReport {
   totalAssets: number;
   affected: number;
+  converted: number;
   bytesBefore: number;
   bytesAfter: number;
   estimated: boolean;

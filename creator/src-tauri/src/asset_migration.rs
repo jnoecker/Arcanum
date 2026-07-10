@@ -41,8 +41,11 @@ const COMMIT_INTERVAL: usize = 50;
 pub struct MigrationReport {
     /// Image assets that have a runtime profile and were checked.
     pub total_assets: usize,
-    /// Assets exceeding their profile (migrated, or would be in a dry run).
+    /// Assets exceeding their profile's dimensions or byte budget (migrated,
+    /// or would be in a dry run).
     pub affected: usize,
+    /// Affected assets converted to WebP (or that would be, in a dry run).
+    pub converted: usize,
     pub bytes_before: u64,
     /// Dry run: estimated from the area ratio. Real run: actual.
     pub bytes_after: u64,
@@ -153,20 +156,21 @@ struct EncodedImage {
     bytes: Vec<u8>,
 }
 
-/// CPU side of one plan: read, downscale, hash. Returns `None` when the
-/// re-encode is byte-identical (nothing to migrate). The file write happens
-/// on the async side so two plans hashing to the same output never race.
+/// CPU side of one plan: read, downscale/convert, hash. Returns `None` when
+/// the re-encode is byte-identical (nothing to migrate). The file write
+/// happens on the async side so two plans hashing to the same output never
+/// race.
 fn encode_plan(plan_path: &Path, asset_type: &str, ext: &str, old_name: &str, fallback_w: u32, fallback_h: u32) -> Result<Option<EncodedImage>, String> {
     let bytes = std::fs::read(plan_path).map_err(|e| format!("read failed: {e}"))?;
-    let new_bytes = crate::image_profiles::cap_image_bytes(asset_type, ext, &bytes);
+    let optimized = crate::image_profiles::optimize_image_bytes(asset_type, ext, &bytes);
     let mut hasher = Sha256::new();
-    hasher.update(&new_bytes);
+    hasher.update(&optimized.bytes);
     let hash = format!("{:x}", hasher.finalize());
-    let new_name = format!("{hash}.{ext}");
+    let new_name = format!("{hash}.{}", optimized.ext);
     if new_name == old_name {
         return Ok(None);
     }
-    let (width, height) = match imagesize::blob_size(&new_bytes) {
+    let (width, height) = match imagesize::blob_size(&optimized.bytes) {
         Ok(size) => (size.width as u32, size.height as u32),
         Err(_) => crate::image_profiles::cap_stored_dims(asset_type, fallback_w, fallback_h),
     };
@@ -175,7 +179,7 @@ fn encode_plan(plan_path: &Path, asset_type: &str, ext: &str, old_name: &str, fa
         hash,
         width,
         height,
-        bytes: new_bytes,
+        bytes: optimized.bytes,
     }))
 }
 
@@ -298,12 +302,14 @@ pub async fn migrate_assets_to_profiles(
                 emit_progress(&scan_app, "scanning", idx, entry_count);
             }
             let ext = extension_of(&entry.file_name);
-            if !matches!(ext.as_str(), "png" | "jpg" | "jpeg") {
+            if !matches!(ext.as_str(), "png" | "jpg" | "jpeg" | "webp") {
                 continue;
             }
-            if crate::image_profiles::runtime_image_profile(&entry.asset_type).is_none() {
+            let Some(profile) =
+                crate::image_profiles::runtime_image_profile(&entry.asset_type)
+            else {
                 continue;
-            }
+            };
             let path = scan_images_dir.join(&entry.file_name);
             let Ok(meta) = std::fs::metadata(&path) else {
                 continue;
@@ -323,18 +329,40 @@ pub async fn migrate_assets_to_profiles(
                     Err(_) => continue,
                 }
             };
-            let (capped_w, capped_h) =
-                crate::image_profiles::cap_stored_dims(&entry.asset_type, width, height);
-            if (capped_w, capped_h) == (width, height) {
+            if !crate::image_profiles::needs_optimization(
+                &entry.asset_type,
+                &ext,
+                meta.len(),
+                width,
+                height,
+            ) {
                 continue;
             }
 
             report.affected += 1;
             report.bytes_before += meta.len();
+            let converts = ext != "webp" && crate::image_profiles::webp_convertible(&entry.asset_type);
             if dry_run {
+                if converts {
+                    report.converted += 1;
+                }
+                let (capped_w, capped_h) =
+                    crate::image_profiles::cap_stored_dims(&entry.asset_type, width, height);
                 let ratio = (capped_w as u64 * capped_h as u64) as f64
                     / (width as u64 * height as u64) as f64;
-                report.bytes_after += (meta.len() as f64 * ratio) as u64;
+                // WebP conversion shrinks bytes beyond the resolution change;
+                // the factors are rough, so clamp to the profile's soft target.
+                let format_factor = match ext.as_str() {
+                    "png" if converts => 0.25,
+                    "jpg" | "jpeg" if converts => 0.7,
+                    _ => 1.0,
+                };
+                let estimate = meta.len() as f64 * ratio * format_factor;
+                report.bytes_after += if converts {
+                    (estimate as u64).min(profile.preferred_bytes)
+                } else {
+                    estimate as u64
+                };
             }
 
             planned.insert(entry.file_name.clone(), plans.len());
@@ -452,6 +480,9 @@ pub async fn migrate_assets_to_profiles(
                 };
                 if written {
                     report.bytes_after += img.bytes.len() as u64;
+                    if extension_of(&img.new_name) != plan.ext {
+                        report.converted += 1;
+                    }
                     for &i in &plan.indices {
                         let entry = &mut manifest.assets[i];
                         entry.hash = img.hash.clone();

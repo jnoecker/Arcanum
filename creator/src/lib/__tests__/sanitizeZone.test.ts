@@ -205,6 +205,29 @@ describe("sanitizeZone — ID remapping", () => {
   });
 });
 
+// ─── sanitizeZone — worldMap placement ────────────────────────────
+
+describe("sanitizeZone — worldMap placement", () => {
+  it("preserves a valid worldMap rectangle", () => {
+    const world = makeWorld({ worldMap: { x: 12.5, y: 30, w: 22, h: 18.25 } });
+    expect(sanitizeZone(world).worldMap).toEqual({ x: 12.5, y: 30, w: 22, h: 18.25 });
+  });
+
+  it("drops a worldMap that extends past the map edge", () => {
+    const world = makeWorld({ worldMap: { x: 90, y: 30, w: 22, h: 18 } });
+    expect(sanitizeZone(world).worldMap).toBeUndefined();
+  });
+
+  it("drops a worldMap with non-positive size", () => {
+    const world = makeWorld({ worldMap: { x: 10, y: 10, w: 0, h: 18 } });
+    expect(sanitizeZone(world).worldMap).toBeUndefined();
+  });
+
+  it("omits worldMap when absent", () => {
+    expect(sanitizeZone(makeWorld()).worldMap).toBeUndefined();
+  });
+});
+
 // ─── sanitizeZone — invalid entity stripping ──────────────────────
 
 describe("sanitizeZone — invalid entity stripping", () => {

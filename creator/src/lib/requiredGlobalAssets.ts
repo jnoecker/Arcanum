@@ -445,6 +445,19 @@ export const REQUIRED_GLOBAL_ASSETS: readonly RequiredGlobalAsset[] = [
     transparent: true,
     optional: true,
   },
+  {
+    key: "world_map",
+    defaultFilename: "flight_map.png",
+    label: "World Map — Atlas",
+    description:
+      "Painted world map behind the game's World Map atlas tab. Zones published from the Map overlay (zone YAML worldMap) are seated onto it as glowing regions with their name and level range. Defaults to the same art as the Flight Map so every world-map surface shares one coastline — only assign this if the atlas should use different art. Optional — the tab falls back to a parchment backdrop when absent.",
+    assetType: "background",
+    defaultPrompt:
+      "A painted antique cartographer's map of the fantasy land of Ambon, full-bleed edge to edge, weathered vellum with hand-inked coastlines, mountains, forests, and rivers, warm sepia and muted jewel tones, soft ambient candlelight, no grid, no pins, no markers, no readable text, no labels, suitable as a backdrop for overlaid travel hotspots.",
+    transparent: false,
+    aspect: "landscape",
+    optional: true,
+  },
   // Persistent player-UI navigation buttons rendered down the left edge of
   // every room canvas (unlike the room-feature badges above, which only
   // appear on rooms that host the corresponding feature).

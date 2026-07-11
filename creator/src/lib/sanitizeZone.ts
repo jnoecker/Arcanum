@@ -915,6 +915,19 @@ function cleanOutput(world: WorldFile): WorldFile {
   ) {
     result.difficultyHint = world.difficultyHint;
   }
+  if (
+    world.worldMap &&
+    [world.worldMap.x, world.worldMap.y, world.worldMap.w, world.worldMap.h].every(Number.isFinite) &&
+    world.worldMap.x >= 0 &&
+    world.worldMap.y >= 0 &&
+    world.worldMap.w > 0 &&
+    world.worldMap.h > 0 &&
+    world.worldMap.x + world.worldMap.w <= 100 &&
+    world.worldMap.y + world.worldMap.h <= 100
+  ) {
+    const { x, y, w, h } = world.worldMap;
+    result.worldMap = { x, y, w, h };
+  }
   if (world.faction?.trim()) result.faction = world.faction.trim();
   if (world.image) {
     // Strip zoneMap — it's Arcanum-only; the MUD server's ZoneImageDefaults

@@ -62,6 +62,13 @@ export interface WorldFile {
   levelBand?: { min: number; max: number };
   /** Intended difficulty profile — informs rebalance stat targets. */
   difficultyHint?: "casual" | "standard" | "challenging";
+  /**
+   * The zone's rectangle on the painted world map, in percent (0–100) of the
+   * image from its top-left corner. Written by the Map overlay's "Publish to
+   * Game" action; the MUD serves it to the web client's World Map atlas tab
+   * via `World.Areas`.
+   */
+  worldMap?: { x: number; y: number; w: number; h: number };
   /** Controlling faction ID (references FactionConfig.definitions). Drives "hostile territory" reactions. */
   faction?: string;
   puzzles?: Record<string, PuzzleFile>;

@@ -276,6 +276,7 @@ function MapBackdrop({
 
 function WorldOverlay() {
   const zones = useZoneStore((s) => s.zones);
+  const updateZone = useZoneStore((s) => s.updateZone);
   const maps = useLoreStore(selectMaps);
   const openTab = useProjectStore((s) => s.openTab);
   const projectPath = useProjectStore((s) => s.project?.mudDir ?? "");
@@ -352,6 +353,59 @@ function WorldOverlay() {
     },
     [openTab],
   );
+
+  const [publishNote, setPublishNote] = useState<string | null>(null);
+
+  // Write the selected map's placements into each zone's YAML as a percent
+  // rectangle (`worldMap`), which the MUD forwards to the web client's World
+  // Map atlas tab via `World.Areas`. Zones absent from this map get their
+  // stale `worldMap` cleared so the game and the overlay stay in agreement.
+  const publishToGame = useCallback(() => {
+    const round = (v: number) => Math.round(v * 100) / 100;
+    let published = 0;
+    let cleared = 0;
+    let skipped = 0;
+    for (const [zoneId, state] of zones.entries()) {
+      const pl = placements[zoneId];
+      if (pl) {
+        // Intersect with the map so the game never sees out-of-bounds rects.
+        const x1 = round(Math.max(0, Math.min(100, (pl.x / mapW) * 100)));
+        const y1 = round(Math.max(0, Math.min(100, (pl.y / mapH) * 100)));
+        const x2 = round(Math.max(0, Math.min(100, ((pl.x + pl.w) / mapW) * 100)));
+        const y2 = round(Math.max(0, Math.min(100, ((pl.y + pl.h) / mapH) * 100)));
+        const rect = { x: x1, y: y1, w: round(x2 - x1), h: round(y2 - y1) };
+        if (rect.w < 0.1 || rect.h < 0.1) {
+          skipped++;
+          continue;
+        }
+        const prev = state.data.worldMap;
+        if (prev && prev.x === rect.x && prev.y === rect.y && prev.w === rect.w && prev.h === rect.h) {
+          continue;
+        }
+        updateZone(zoneId, { ...state.data, worldMap: rect });
+        published++;
+      } else if (state.data.worldMap) {
+        const next = { ...state.data };
+        delete next.worldMap;
+        updateZone(zoneId, next);
+        cleared++;
+      }
+    }
+    if (published + cleared === 0) {
+      setPublishNote(skipped > 0 ? "Nothing published — every placed zone sits off the map" : "Zone YAML already matches this map");
+      return;
+    }
+    const parts = [`${published} placed`];
+    if (cleared > 0) parts.push(`${cleared} cleared`);
+    if (skipped > 0) parts.push(`${skipped} off-map skipped`);
+    setPublishNote(`Published to zone YAML (${parts.join(", ")}) — save zones to write to disk`);
+  }, [zones, placements, mapW, mapH, updateZone]);
+
+  useEffect(() => {
+    if (!publishNote) return;
+    const t = setTimeout(() => setPublishNote(null), 6000);
+    return () => clearTimeout(t);
+  }, [publishNote]);
 
   // ── Per-zone geometry (footprint + connector anchors) ─────────────
   const zoneMeta = useMemo(() => {
@@ -648,12 +702,31 @@ function WorldOverlay() {
               Clear Placements
             </button>
           )}
+          {placedCount > 0 && (
+            <button
+              type="button"
+              onClick={publishToGame}
+              className="pointer-events-auto rounded-full border border-accent/50 bg-bg-abyss/80 px-2.5 py-1 uppercase tracking-wider text-accent backdrop-blur transition-colors hover:border-accent hover:bg-accent/10"
+              title="Write this map's placements into each zone's YAML (worldMap) — powers the game's World Map atlas tab"
+            >
+              Publish to Game
+            </button>
+          )}
+          {publishNote && (
+            <span
+              role="status"
+              className="pointer-events-none rounded-full border border-border-muted bg-bg-abyss/85 px-2.5 py-1 text-text-secondary backdrop-blur"
+            >
+              {publishNote}
+            </span>
+          )}
         </div>
 
         <div className="pointer-events-none absolute bottom-4 left-4 z-10 max-w-md rounded-lg border border-border-muted bg-bg-abyss/85 px-3 py-2 text-2xs italic text-text-muted backdrop-blur">
           Drag a zone from the tray onto the map, then drag to move and pull the handles to
           stretch it into place. Lines mark cross-zone connections — line up the endpoints
-          where zones meet. Double-click a zone to open it.
+          where zones meet. Double-click a zone to open it. Publish to Game writes the
+          placements into each zone&apos;s YAML for the game&apos;s World Map tab.
         </div>
       </div>
 

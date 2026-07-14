@@ -608,6 +608,22 @@ export interface ItemFile {
    */
   mountId?: string;
   /**
+   * Ride-speed multiplier for mount items, forbidden on any other item type.
+   * The server paces map fast travel at `mountTravel.msPerRoom / mountSpeed`,
+   * so 2.0 rides twice as fast as the base pace. Must be in (0, 10]; leave
+   * unset for the server default of 1.0. Every item selling the same mountId
+   * must agree on this value (the server rejects conflicts at load).
+   */
+  mountSpeed?: number;
+  /**
+   * Marks a mount item's mount as flying, forbidden on any other item type.
+   * Flying mounts can travel to explored rooms the rider knows no ground
+   * path to — including rooms in other zones picked from the game's World
+   * Map zone charts. Every item selling the same mountId must agree on this
+   * value (the server rejects conflicts at load).
+   */
+  flying?: boolean;
+  /**
    * Soulbound flag: quest items cannot be dropped, sold, traded, given, or
    * stored in containers. Always resolves to the "quest" category server-side.
    */

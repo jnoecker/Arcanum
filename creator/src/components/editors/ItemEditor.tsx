@@ -461,24 +461,48 @@ function ItemEditorContent({
                   options={itemTypeOptions}
                   onCommit={(v) => {
                     const next = (v || undefined) as ItemType | undefined;
-                    // mountId is only valid on mount items; the server refuses it elsewhere.
-                    patch(next === "mount" ? { itemType: next } : { itemType: next, mountId: undefined });
+                    // Mount fields are only valid on mount items; the server refuses them elsewhere.
+                    patch(next === "mount"
+                      ? { itemType: next }
+                      : { itemType: next, mountId: undefined, mountSpeed: undefined, flying: undefined });
                   }}
                   allowEmpty
                   placeholder="— auto —"
                 />
               </FieldRow>
               {item.itemType === "mount" && (
-                <FieldRow
-                  label="Mount ID"
-                  hint="Must match the {type: mount, mountId} requirement on a mount sprite (Player Sprites manager). Required for mount items."
-                >
-                  <TextInput
-                    value={item.mountId ?? ""}
-                    onCommit={(v) => patch({ mountId: v.trim() || undefined })}
-                    placeholder="e.g. dappled_pony"
-                  />
-                </FieldRow>
+                <>
+                  <FieldRow
+                    label="Mount ID"
+                    hint="Must match the {type: mount, mountId} requirement on a mount sprite (Player Sprites manager). Required for mount items."
+                  >
+                    <TextInput
+                      value={item.mountId ?? ""}
+                      onCommit={(v) => patch({ mountId: v.trim() || undefined })}
+                      placeholder="e.g. dappled_pony"
+                    />
+                  </FieldRow>
+                  <FieldRow
+                    label="Ride Speed"
+                    hint="Speed multiplier over the base travel pace — 2.0 rides twice as fast. Leave blank for the server default of 1.0. Every item selling this mount must agree."
+                  >
+                    <NumberInput
+                      value={item.mountSpeed}
+                      onCommit={(v) => patch({ mountSpeed: v })}
+                      placeholder="1.0"
+                      min={0.1}
+                      max={10}
+                      step={0.1}
+                    />
+                  </FieldRow>
+                  <FieldRow label="Flying">
+                    <CheckboxInput
+                      checked={item.flying ?? false}
+                      onCommit={(v) => patch({ flying: v || undefined })}
+                      label="Can fly — carries the rider to explored rooms in any zone via the World Map"
+                    />
+                  </FieldRow>
+                </>
               )}
               <FieldRow label="Quest Item">
                 <CheckboxInput

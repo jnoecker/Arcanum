@@ -951,6 +951,12 @@ export function validateZone(
     if (item.itemType !== "mount" && item.mountId?.trim()) {
       addIssue(issues, "error", entity, 'mountId is only valid when itemType is "mount"');
     }
+    if (item.itemType !== "mount" && (item.mountSpeed != null || item.flying != null)) {
+      addIssue(issues, "error", entity, 'mountSpeed/flying are only valid when itemType is "mount"');
+    }
+    if (item.mountSpeed != null && !(item.mountSpeed > 0 && item.mountSpeed <= 10)) {
+      addIssue(issues, "error", entity, `mountSpeed must be in (0, 10] (got ${item.mountSpeed})`);
+    }
     if (item.classes && item.classes.length > 0) {
       for (const cls of item.classes) {
         if (!VALID_CLASSES.has(cls.toUpperCase())) {
@@ -977,6 +983,29 @@ export function validateZone(
           );
         }
       }
+    }
+  }
+
+  // Every item selling the same mount must agree on its stats — the player
+  // owns the mountId, not the item, so the server rejects conflicts at load.
+  // (This covers items within the zone; cross-zone conflicts surface when the
+  // server loads the full world.)
+  const mountStatsById = new Map<string, { itemId: string; speed: number; flying: boolean }>();
+  for (const [itemId, item] of Object.entries(world.items ?? {})) {
+    const mountId = item.mountId?.trim();
+    if (item.itemType !== "mount" || !mountId) continue;
+    const speed = item.mountSpeed ?? 1.0;
+    const flying = item.flying ?? false;
+    const prior = mountStatsById.get(mountId);
+    if (!prior) {
+      mountStatsById.set(mountId, { itemId, speed, flying });
+    } else if (prior.speed !== speed || prior.flying !== flying) {
+      addIssue(
+        issues,
+        "error",
+        `item:${itemId}`,
+        `Items "${prior.itemId}" and "${itemId}" both sell mount "${mountId}" but disagree on mountSpeed/flying`,
+      );
     }
   }
 

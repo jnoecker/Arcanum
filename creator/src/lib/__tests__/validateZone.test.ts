@@ -933,6 +933,48 @@ describe("validateZone", () => {
     });
   });
 
+  // ─── Mount items ─────────────────────────────────────────────
+  describe("mount item stats", () => {
+    it("accepts a mount with a speed and flying flag", () => {
+      const world = makeValidWorld();
+      world.items!.gryphon = {
+        displayName: "Gryphon", itemType: "mount", mountId: "gryphon", mountSpeed: 2.0, flying: true, basePrice: 2500,
+      };
+      expect(errors(validateZone(world))).toHaveLength(0);
+    });
+
+    it("errors when a non-mount item sets mountSpeed or flying", () => {
+      const world = makeValidWorld();
+      world.items!.sword = { displayName: "Sword", mountSpeed: 2.0 };
+      world.items!.shield = { displayName: "Shield", flying: true };
+      const issues = errors(validateZone(world));
+      expect(issues.filter((i) => i.message.includes('only valid when itemType is "mount"'))).toHaveLength(2);
+    });
+
+    it("errors when mountSpeed is out of range", () => {
+      const world = makeValidWorld();
+      world.items!.slug = { displayName: "Slug", itemType: "mount", mountId: "slug", mountSpeed: 0 };
+      world.items!.comet = { displayName: "Comet", itemType: "mount", mountId: "comet", mountSpeed: 10.5 };
+      const issues = errors(validateZone(world));
+      expect(issues.filter((i) => i.message.includes("mountSpeed must be in"))).toHaveLength(2);
+    });
+
+    it("errors when two items selling the same mount disagree on stats", () => {
+      const world = makeValidWorld();
+      world.items!.pony_a = { displayName: "Pony", itemType: "mount", mountId: "pony", mountSpeed: 1.0 };
+      world.items!.pony_b = { displayName: "Pony Again", itemType: "mount", mountId: "pony", mountSpeed: 2.0 };
+      const issues = errors(validateZone(world));
+      expect(issues.some((i) => i.message.includes("disagree on mountSpeed/flying"))).toBe(true);
+    });
+
+    it("treats an unset speed as the 1.0 default when comparing sellers", () => {
+      const world = makeValidWorld();
+      world.items!.pony_a = { displayName: "Pony", itemType: "mount", mountId: "pony" };
+      world.items!.pony_b = { displayName: "Pony Again", itemType: "mount", mountId: "pony", mountSpeed: 1.0 };
+      expect(errors(validateZone(world))).toHaveLength(0);
+    });
+  });
+
   // ─── Flight map pins ─────────────────────────────────────────
   describe("flight map coordinates", () => {
     it("accepts a flight master with both coordinates in range", () => {

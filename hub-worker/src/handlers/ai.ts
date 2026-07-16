@@ -6,7 +6,7 @@
 // GPT quality tier) so a single request can't blow through the budget.
 //
 //   POST /ai/image/generate            → Runware (FLUX.2 or GPT Image 2)
-//   POST /ai/image/remove-background   → Runware Bria RMBG v2.0
+//   POST /ai/image/remove-background   → Runware BiRefNet General
 //   POST /ai/llm/complete              → OpenRouter → DeepSeek V3.2
 //   POST /ai/llm/vision                → Anthropic Claude Sonnet 4.6
 //   POST /ai/embed                     → Voyage AI (voyage-3-lite)
@@ -37,9 +37,10 @@ const IMAGE_MODELS = new Set([
 ]);
 
 // Background removal is locked to a single model — no caller choice.
-// Bria RMBG v2.0 is fast, high quality, and priced at ~$0.018/image
-// which fits comfortably inside the same image quota.
-const BG_REMOVAL_MODEL = "bria:2@1";
+// BiRefNet General handles thin structures (antlers, wings, chains)
+// better than the local ISNet pipeline and costs ~$0.0006/image —
+// roughly 1/30 of Bria RMBG v2.0, which shares the same architecture.
+const BG_REMOVAL_MODEL = "runware:112@5";
 
 // Default Runware FLUX model matches creator/src-tauri/src/runware.rs.
 const DEFAULT_IMAGE_MODEL = "runware:400@2";
@@ -332,12 +333,12 @@ async function imageGenerate(req: Request, env: Env, user: UserRow): Promise<Res
   );
 }
 
-// ─── Background removal (Bria RMBG v2.0) ─────────────────────────────
+// ─── Background removal (BiRefNet General) ───────────────────────────
 //
-// Server-side background removal via Runware's Bria model. Bills
-// against the same `images_used` counter as image generation — it's
-// one upstream image API call — so quota-exhausted users can't farm
-// free bg-removal by switching modes.
+// Server-side background removal via Runware's hosted BiRefNet model.
+// Bills against the same `images_used` counter as image generation —
+// it's one upstream image API call — so quota-exhausted users can't
+// farm free bg-removal by switching modes.
 
 interface RemoveBgBody {
   imageDataUrl?: string;
@@ -350,7 +351,6 @@ interface RunwareRemoveBgTask {
   outputType: "base64Data";
   outputFormat: "PNG";
   inputs: { image: string };
-  providerSettings: { bria: { preserveAlpha: boolean } };
   includeCost: boolean;
 }
 
@@ -395,7 +395,6 @@ async function imageRemoveBackground(req: Request, env: Env, user: UserRow): Pro
     outputType: "base64Data",
     outputFormat: "PNG",
     inputs: { image },
-    providerSettings: { bria: { preserveAlpha: false } },
     includeCost: true,
   };
 

@@ -86,7 +86,7 @@ export type AssetType =
 export type SyncScope = "approved" | "all";
 
 /** Background removal backend. "local" runs Imgly/ONNX in a Web Worker;
- *  "runware" calls Bria RMBG v2.0 via Runware (or the hub proxy). */
+ *  "runware" calls BiRefNet General via Runware (or the hub proxy). */
 export type BgRemovalProvider = "local" | "runware";
 
 /** Mirrors the Rust Settings struct */

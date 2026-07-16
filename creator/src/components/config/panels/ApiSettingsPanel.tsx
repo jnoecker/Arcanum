@@ -165,8 +165,8 @@ const BG_REMOVAL_PROVIDERS = [
   },
   {
     id: "runware" as const,
-    label: "Runware (Bria RMBG v2.0)",
-    description: "Server-side, high quality. ~$0.018/image when using direct Runware; billed against your hub image quota in hub mode.",
+    label: "Runware (BiRefNet General)",
+    description: "Server-side, high quality — much better with antlers, wings, and other fine structures. ~$0.0006/image when using direct Runware; billed against your hub image quota in hub mode.",
   },
 ];
 

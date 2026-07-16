@@ -54,7 +54,7 @@ function getWorker(): Worker {
 /** Remove background from an image data URL.
  *  Dispatches based on the project's bg_removal_provider setting:
  *  - "local": runs the Imgly/ONNX model in a Web Worker.
- *  - "runware": calls Runware Bria RMBG v2.0 (direct or via hub). */
+ *  - "runware": calls Runware BiRefNet General (direct or via hub). */
 export async function removeBackground(imageDataUrl: string): Promise<Blob> {
   if (!AI_ENABLED) return removeBackgroundLocal(imageDataUrl);
   if (currentBgProvider() === "runware") {

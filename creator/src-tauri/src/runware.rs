@@ -287,33 +287,24 @@ pub async fn runware_generate_image(
     .await
 }
 
-// ─── Background Removal (Bria RMBG v2.0) ─────────────────────────────
+// ─── Background Removal (BiRefNet General) ───────────────────────────
 //
-// Server-side background removal via Runware's Bria model. An
-// alternative to the local @imgly/background-removal WASM pipeline for
-// users whose machines can't run onnxruntime reliably, or who prefer
-// the quality of the Bria model. In hub mode this short-circuits to
-// the hub proxy; otherwise it calls Runware directly with the user's
-// runware_api_key.
+// Server-side background removal via Runware's hosted BiRefNet General
+// model. An alternative to the local @imgly/background-removal WASM
+// pipeline for users whose machines can't run onnxruntime reliably, or
+// who need better handling of thin structures (antlers, wings, chains).
+// BiRefNet's high-resolution refinement branch preserves those where
+// the local ISNet model hedges with semi-transparent alpha — at ~1/30
+// the per-image cost of Bria RMBG v2.0 (same architecture family). In
+// hub mode this short-circuits to the hub proxy; otherwise it calls
+// Runware directly with the user's runware_api_key.
 //
 // The command takes a data URL (what the frontend has on hand after
 // image generation) and returns the PNG bytes as base64, matching the
 // shape the existing `removeBackground()` helper expects so all the
 // current call sites keep working unchanged.
 
-const BG_REMOVAL_MODEL: &str = "bria:2@1";
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct BriaProviderSettings {
-    preserve_alpha: bool,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RemoveBgProviderSettings {
-    bria: BriaProviderSettings,
-}
+const BG_REMOVAL_MODEL: &str = "runware:112@5";
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -331,7 +322,6 @@ struct RunwareRemoveBgTask {
     output_type: String,
     output_format: String,
     inputs: RemoveBgInputs,
-    provider_settings: RemoveBgProviderSettings,
 }
 
 #[derive(Debug, Deserialize)]
@@ -354,7 +344,7 @@ struct RunwareRemoveBgError {
     message: Option<String>,
 }
 
-/// Server-side background removal via Runware Bria RMBG v2.0.
+/// Server-side background removal via Runware BiRefNet General.
 /// Takes a data URL and returns the processed PNG as base64.
 #[tauri::command]
 pub async fn runware_remove_background(
@@ -381,9 +371,6 @@ pub async fn runware_remove_background(
         output_type: "base64Data".to_string(),
         output_format: "PNG".to_string(),
         inputs: RemoveBgInputs { image: image_data_url },
-        provider_settings: RemoveBgProviderSettings {
-            bria: BriaProviderSettings { preserve_alpha: false },
-        },
     };
 
     let client = crate::http::shared_client();

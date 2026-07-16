@@ -232,7 +232,7 @@ pub async fn generate_image(
     .await
 }
 
-/// Hub-proxied background removal (Bria RMBG v2.0 via Runware).
+/// Hub-proxied background removal (BiRefNet General via Runware).
 /// Returns the processed PNG bytes as base64.
 pub async fn remove_background(s: &Settings, image_data_url: &str) -> Result<String, String> {
     let body = HubRemoveBgRequest { image_data_url };

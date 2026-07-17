@@ -6,7 +6,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { useAssetStore } from "@/stores/assetStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useLoreStore } from "@/stores/loreStore";
-import { useImageSrc, isLegacyImagePath, isR2HashPath } from "@/lib/useImageSrc";
+import { useImageSrc, isLegacyImagePath, isR2HashPath, resolveImageDataUrl } from "@/lib/useImageSrc";
 import { getEnhanceSystemPrompt, ART_STYLE_LABELS, ENHANCED_PROMPT_TAIL, getNegativePrompt, getPreamble, getStyleSuffix, type ArtStyle } from "@/lib/arcanumPrompts";
 import type { ArtStyleSurface } from "@/lib/loreGeneration";
 import { IMAGE_MODELS, ENTITY_DIMENSIONS, DIMENSION_PRESETS, resolveImageModel, modelNativelyTransparent } from "@/types/assets";
@@ -149,6 +149,7 @@ export function EntityArtGenerator({
   // Whether the current prompt has been LLM-enhanced (skip re-enhancement during generation)
   const [enhanced, setEnhanced] = useState(false);
   const [removingBg, setRemovingBg] = useState(false);
+  const [bgError, setBgError] = useState<string | null>(null);
   const [flipping, setFlipping] = useState(false);
   const [showGalleryPicker, setShowGalleryPicker] = useState(false);
   const [showSketch, setShowSketch] = useState(false);
@@ -479,15 +480,33 @@ export function EntityArtGenerator({
 
     if (needsBgRemoval && savedDataUrl && assetType) {
       setRemovingBg(true);
+      setBgError(null);
       try {
-        const entry = await removeBgAndSave(savedDataUrl, assetType, context, variantGroup).catch(() => null);
-        if (entry) {
-          onAccept(entry.file_name);
-          await useAssetStore.getState().loadAssets();
-        }
+        const entry = await removeBgAndSave(savedDataUrl, assetType, context, variantGroup);
+        onAccept(entry.file_name);
+        await useAssetStore.getState().loadAssets();
+      } catch (e) {
+        setBgError(`Background removal failed: ${e instanceof Error ? e.message : String(e)}`);
       } finally {
         setRemovingBg(false);
       }
+    }
+  };
+
+  const handleRemoveBg = async () => {
+    if (!currentImage || !assetType) return;
+    setRemovingBg(true);
+    setBgError(null);
+    try {
+      const dataUrl = await resolveImageDataUrl(currentImage);
+      if (!dataUrl) throw new Error("Could not load the current image");
+      const entry = await removeBgAndSave(dataUrl, assetType, context, variantGroup || undefined);
+      onAccept(entry.file_name);
+      await useAssetStore.getState().loadAssets();
+    } catch (e) {
+      setBgError(`Background removal failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setRemovingBg(false);
     }
   };
 
@@ -561,6 +580,9 @@ export function EntityArtGenerator({
             canFlip={!!currentImage && isR2HashPath(currentImage) && stage === "idle"}
             flipping={flipping}
             onFlip={handleFlip}
+            canRemoveBg={!!currentImage && !!assetType && shouldRemoveBg(assetType) && stage === "idle"}
+            removingBg={removingBg}
+            onRemoveBg={handleRemoveBg}
             onZoom={(src) => setLightbox(src)}
           />
 
@@ -822,6 +844,10 @@ export function EntityArtGenerator({
           {error && (
             <InlineError error={error} onDismiss={() => setError(null)} onRetry={handleGenerate} />
           )}
+
+          {bgError && (
+            <InlineError error={bgError} onDismiss={() => setBgError(null)} onRetry={handleRemoveBg} />
+          )}
         </div>
       </div>
 
@@ -884,6 +910,9 @@ function HeroCanvas({
   canFlip,
   flipping,
   onFlip,
+  canRemoveBg,
+  removingBg,
+  onRemoveBg,
   onZoom,
 }: {
   stage: Stage;
@@ -895,6 +924,9 @@ function HeroCanvas({
   canFlip: boolean;
   flipping: boolean;
   onFlip: () => void;
+  canRemoveBg: boolean;
+  removingBg: boolean;
+  onRemoveBg: () => void;
   onZoom?: (src: string) => void;
 }) {
   if (stage === "generating") {
@@ -981,10 +1013,20 @@ function HeroCanvas({
           <button
             className="art-hero-action"
             onClick={(e) => { e.stopPropagation(); onFlip(); }}
-            disabled={flipping}
+            disabled={flipping || removingBg}
             title="Flip horizontally"
           >
             ⇄
+          </button>
+        )}
+        {canRemoveBg && (
+          <button
+            className="art-hero-action"
+            onClick={(e) => { e.stopPropagation(); onRemoveBg(); }}
+            disabled={removingBg || flipping}
+            title="Remove background"
+          >
+            ✂
           </button>
         )}
       </div>

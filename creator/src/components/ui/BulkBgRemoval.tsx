@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { DialogShell, ActionButton, Spinner } from "@/components/ui/FormWidgets";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { useAssetStore } from "@/stores/assetStore";
-import { removeBgAndSave } from "@/lib/useBackgroundRemoval";
+import { removeBgAndSave, bgRemovalConcurrency } from "@/lib/useBackgroundRemoval";
 import type { AssetContext, AssetEntry } from "@/types/assets";
 
 // ─── Types ─────────────────────────────────────────────────────────
@@ -93,44 +93,60 @@ export function BulkBgRemoval({
 
     const processed: { target: BulkBgTarget; fileName: string }[] = [];
 
-    for (const { item, idx } of toProcess) {
-      if (abortRef.current) break;
+    // Worker pool sized to the provider's concurrency (1 for local, more
+    // for Runware) so bulk runs overlap HTTP round trips instead of paying
+    // full per-image latency serially. Abort stops workers between items;
+    // in-flight removals finish and land normally.
+    let nextJob = 0;
+    const worker = async () => {
+      while (!abortRef.current) {
+        const job = toProcess[nextJob++];
+        if (!job) return;
+        const { item, idx } = job;
 
-      setItems((prev) =>
-        prev.map((t, i) => (i === idx ? { ...t, status: "processing" } : t)),
-      );
-
-      try {
-        // Get data URL from the resolved path. This fails for newly
-        // generated images when the DB path format has drifted — the
-        // thrown error is surfaced into the row below.
-        const dataUrl = await invoke<string>("read_image_data_url", {
-          path: item.resolvedPath,
-        });
-
-        const entry = await removeBgAndSave(
-          dataUrl,
-          item.assetType,
-          item.context,
-          item.variantGroup,
-        );
-
-        // Record the bg-free result so the caller can repoint the entity's
-        // image field. removeBgAndSave flips the active variant server-side,
-        // but the entity keeps referencing its original background image until
-        // we rewrite it via onComplete below.
-        processed.push({ target: item, fileName: entry.file_name });
         setItems((prev) =>
-          prev.map((t, i) => (i === idx ? { ...t, status: "done", error: undefined } : t)),
+          prev.map((t, i) => (i === idx ? { ...t, status: "processing" } : t)),
         );
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(`[bulk bg removal] ${item.label} failed:`, err);
-        setItems((prev) =>
-          prev.map((t, i) => (i === idx ? { ...t, status: "error", error: message } : t)),
-        );
+
+        try {
+          // Get data URL from the resolved path. This fails for newly
+          // generated images when the DB path format has drifted — the
+          // thrown error is surfaced into the row below.
+          const dataUrl = await invoke<string>("read_image_data_url", {
+            path: item.resolvedPath,
+          });
+
+          const entry = await removeBgAndSave(
+            dataUrl,
+            item.assetType,
+            item.context,
+            item.variantGroup,
+          );
+
+          // Record the bg-free result so the caller can repoint the entity's
+          // image field. removeBgAndSave flips the active variant server-side,
+          // but the entity keeps referencing its original background image until
+          // we rewrite it via onComplete below.
+          processed.push({ target: item, fileName: entry.file_name });
+          setItems((prev) =>
+            prev.map((t, i) => (i === idx ? { ...t, status: "done", error: undefined } : t)),
+          );
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error(`[bulk bg removal] ${item.label} failed:`, err);
+          setItems((prev) =>
+            prev.map((t, i) => (i === idx ? { ...t, status: "error", error: message } : t)),
+          );
+        }
       }
-    }
+    };
+
+    await Promise.all(
+      Array.from(
+        { length: Math.min(bgRemovalConcurrency(), toProcess.length) },
+        () => worker(),
+      ),
+    );
 
     await loadAssets();
     if (processed.length > 0) onComplete?.(processed);

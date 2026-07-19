@@ -85,14 +85,24 @@ async function removeBackgroundRunware(imageDataUrl: string): Promise<Blob> {
   return new Blob([bytes], { type: "image/png" });
 }
 
-// ─── Sequential queue ─────────────────────────────────────────────
-// Serialize requests so we don't send multiple large data URLs
-// to the worker at once (memory pressure).
+// ─── Bounded-concurrency queue ────────────────────────────────────
+// The local provider stays strictly serial: there's a single WASM
+// worker, and holding multiple large data URLs at once creates memory
+// pressure. The Runware provider is just an HTTP round trip, so several
+// removals run in flight at once — the per-image latency is upstream
+// inference, and parallel requests are how you buy it back.
 //
-// NOTE: the queue runner must never let a task throw out of the while
-// loop, because that would leave `bgQueueRunning = true` and wedge the
-// whole queue for the rest of the session. Per-task errors are surfaced
-// through the per-task promise (reject), not through the runner.
+// NOTE: a runner must never let a task throw out of its loop — that
+// would leak an `activeBgRunners` slot and shrink the pool for the rest
+// of the session. Per-task errors are surfaced through the per-task
+// promise (reject), not through the runner.
+
+const RUNWARE_BG_CONCURRENCY = 4;
+
+/** How many bg-removal tasks may run at once for the current provider. */
+export function bgRemovalConcurrency(): number {
+  return currentBgProvider() === "runware" ? RUNWARE_BG_CONCURRENCY : 1;
+}
 
 interface QueueEntry<T> {
   run: () => Promise<T>;
@@ -101,11 +111,10 @@ interface QueueEntry<T> {
 }
 
 const bgQueue: QueueEntry<unknown>[] = [];
-let bgQueueRunning = false;
+let activeBgRunners = 0;
 
-async function processBgQueue() {
-  if (bgQueueRunning) return;
-  bgQueueRunning = true;
+async function runBgWorker() {
+  activeBgRunners++;
   try {
     while (bgQueue.length > 0) {
       const entry = bgQueue.shift()!;
@@ -117,7 +126,17 @@ async function processBgQueue() {
       }
     }
   } finally {
-    bgQueueRunning = false;
+    activeBgRunners--;
+  }
+}
+
+function processBgQueue() {
+  // Re-read the limit on every pump: the provider can switch mid-session,
+  // and extra runners drain naturally when their loop finds an empty queue.
+  // Each spawned worker synchronously shifts its first task, so this loop
+  // can't spawn more workers than there are waiting tasks.
+  while (activeBgRunners < bgRemovalConcurrency() && bgQueue.length > 0) {
+    runBgWorker();
   }
 }
 

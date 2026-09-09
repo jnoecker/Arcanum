@@ -661,6 +661,24 @@ function parseProgressionConfig(raw: unknown): AppConfig["progression"] {
       baseMana: asNumber(rewards.baseMana, 20),
     },
     quests: parseQuestXpConfig(s.quests),
+    repeatableXp: parseRepeatableXpConfig(s.repeatableXp),
+  };
+}
+
+/**
+ * Claim-time scaling fractions for repeatable rewards. Absent in the source means absent in the
+ * config, so a project that never set them round-trips without gaining a block of zeroes.
+ */
+function parseRepeatableXpConfig(raw: unknown): AppConfig["progression"]["repeatableXp"] {
+  if (raw == null || typeof raw !== "object") return undefined;
+  const s = raw as Record<string, unknown>;
+  return {
+    dailyFractionOfLevel: asNumber(s.dailyFractionOfLevel, 0),
+    weeklyFractionOfLevel: asNumber(s.weeklyFractionOfLevel, 0),
+    autoQuestFractionOfLevel: asNumber(s.autoQuestFractionOfLevel, 0),
+    globalFirstFractionOfLevel: asNumber(s.globalFirstFractionOfLevel, 0),
+    globalSecondFractionOfLevel: asNumber(s.globalSecondFractionOfLevel, 0),
+    globalThirdFractionOfLevel: asNumber(s.globalThirdFractionOfLevel, 0),
   };
 }
 

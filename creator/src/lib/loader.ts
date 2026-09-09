@@ -588,10 +588,13 @@ function parseLevelAnchors(raw: unknown): { levelAnchors?: AppConfig["mobTiers"]
   for (const [level, anchor] of Object.entries(raw as Record<string, unknown>)) {
     if (!anchor || typeof anchor !== "object") continue;
     const a = anchor as Record<string, unknown>;
+    // xpReward is optional: only carry it when the source declares it, so tiers that anchor hp and
+    // damage alone round-trip unchanged instead of gaining an xpReward: 0 the engine would reject.
     out[String(level).trim()] = {
       hp: asNumber(a.hp, 0),
       minDamage: asNumber(a.minDamage, 0),
       maxDamage: asNumber(a.maxDamage, 0),
+      ...(a.xpReward == null ? {} : { xpReward: asNumber(a.xpReward, 0) }),
     };
   }
   return Object.keys(out).length > 0 ? { levelAnchors: out } : {};

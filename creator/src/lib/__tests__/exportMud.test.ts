@@ -905,6 +905,25 @@ ambonmud:
           baseManaMultiplier: 0.628
 `;
 
+  it("carries an anchored xpReward through parse and export", () => {
+    const config = parseAppConfigYaml(yaml);
+    const anchors = config.mobTiers.standard.levelAnchors!;
+    anchors["1"] = { ...anchors["1"], xpReward: 86 };
+    anchors["30"] = { ...anchors["30"], xpReward: 857 };
+    const runtime = buildMonolithicConfigObject(config) as any;
+    expect(runtime.engine.mob.tiers.standard.levelAnchors["30"].xpReward).toBe(857);
+    const round = parseAppConfigYaml(stringify({ ambonmud: runtime }));
+    expect(round.mobTiers.standard.levelAnchors?.["1"]).toEqual({ hp: 87, minDamage: 8, maxDamage: 10, xpReward: 86 });
+    expect(round.mobTiers.standard.levelAnchors?.["30"]?.xpReward).toBe(857);
+  });
+
+  it("leaves xpReward off anchors whose source never set it", () => {
+    const config = parseAppConfigYaml(yaml);
+    expect(config.mobTiers.standard.levelAnchors?.["30"]).toEqual({ hp: 9258, minDamage: 676, maxDamage: 914 });
+    const runtime = buildMonolithicConfigObject(config) as any;
+    expect(runtime.engine.mob.tiers.standard.levelAnchors["30"]).not.toHaveProperty("xpReward");
+  });
+
   it("keeps class base multipliers, tier levelAnchors, shield bindings, and xpBonusCap", () => {
     const config = parseAppConfigYaml(yaml);
     expect(config.classes.bulwark.baseHpMultiplier).toBe(1.362);

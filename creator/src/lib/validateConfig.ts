@@ -987,6 +987,19 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         if (anchor.maxDamage < anchor.minDamage) {
           issues.push({ severity: "error", entity, message: `levelAnchors[${level}].maxDamage must be >= minDamage` });
         }
+        if (anchor.xpReward != null && anchor.xpReward < 0) {
+          issues.push({ severity: "error", entity, message: `levelAnchors[${level}].xpReward must be >= 0` });
+        }
+      }
+      // The engine anchors XP only when every anchor declares it; a partial curve would silently mix
+      // the anchors with the xpScalingRate formula, so it is rejected on both sides.
+      const withXp = entries.filter(([, anchor]) => anchor.xpReward != null && anchor.xpReward > 0).length;
+      if (withXp > 0 && withXp < entries.length) {
+        issues.push({
+          severity: "error",
+          entity,
+          message: `levelAnchors must declare xpReward on every anchor or on none (found ${withXp} of ${entries.length})`,
+        });
       }
     }
     if (tier.baseXpReward < 0) {

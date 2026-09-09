@@ -469,6 +469,22 @@ export interface ProgressionConfig {
   rewards: LevelRewardsConfig;
   /** Engine-computed XP for quests. Authors pick a difficulty tier; engine computes XP at completion. */
   quests?: QuestXpConfig;
+  /** Claim-time scaling for repeatable rewards; omitted or 0 keeps each source's authored flat award. */
+  repeatableXp?: RepeatableXpConfig;
+}
+
+/**
+ * A repeatable reward can pay a fraction of the claimant's own remaining level cost instead of a flat
+ * number, so one daily slot is the same slice of progress at level 2 and at level 29. Every fraction
+ * defaults to 0, which keeps the authored flat award.
+ */
+export interface RepeatableXpConfig {
+  dailyFractionOfLevel: number;
+  weeklyFractionOfLevel: number;
+  autoQuestFractionOfLevel: number;
+  globalFirstFractionOfLevel: number;
+  globalSecondFractionOfLevel: number;
+  globalThirdFractionOfLevel: number;
 }
 
 export type QuestDifficulty = "trivial" | "easy" | "standard" | "hard" | "epic";

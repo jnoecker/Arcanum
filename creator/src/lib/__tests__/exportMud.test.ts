@@ -905,6 +905,28 @@ ambonmud:
           baseManaMultiplier: 0.628
 `;
 
+  it("carries progression.repeatableXp through parse and export", () => {
+    const config = parseAppConfigYaml(yaml);
+    config.progression.repeatableXp = {
+      dailyFractionOfLevel: 0.1,
+      weeklyFractionOfLevel: 0.375,
+      autoQuestFractionOfLevel: 0.05,
+      globalFirstFractionOfLevel: 0.225,
+      globalSecondFractionOfLevel: 0.11,
+      globalThirdFractionOfLevel: 0.05,
+    };
+    const runtime = buildMonolithicConfigObject(config) as any;
+    expect(runtime.progression.repeatableXp.weeklyFractionOfLevel).toBe(0.375);
+    const round = parseAppConfigYaml(stringify({ ambonmud: runtime }));
+    expect(round.progression.repeatableXp?.dailyFractionOfLevel).toBe(0.1);
+    expect(round.progression.repeatableXp?.globalThirdFractionOfLevel).toBe(0.05);
+  });
+
+  it("leaves repeatableXp absent when the source never set it", () => {
+    const config = parseAppConfigYaml(yaml);
+    expect(config.progression.repeatableXp).toBeUndefined();
+  });
+
   it("keeps class base multipliers, tier levelAnchors, shield bindings, and xpBonusCap", () => {
     const config = parseAppConfigYaml(yaml);
     expect(config.classes.bulwark.baseHpMultiplier).toBe(1.362);

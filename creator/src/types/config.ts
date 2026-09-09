@@ -403,6 +403,12 @@ export interface MobTierAnchor {
   hp: number;
   minDamage: number;
   maxDamage: number;
+  /**
+   * Optional per-level XP award. When present on every anchor of a tier the engine interpolates XP
+   * across the anchors exactly as it does hp and damage; when absent XP stays on
+   * `baseXpReward * xpScalingRate^(level-1)`. A tier must declare it on all anchors or none.
+   */
+  xpReward?: number;
 }
 
 export interface MobTiersConfig {

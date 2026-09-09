@@ -925,6 +925,8 @@ ambonmud:
   it("leaves repeatableXp absent when the source never set it", () => {
     const config = parseAppConfigYaml(yaml);
     expect(config.progression.repeatableXp).toBeUndefined();
+  });
+
   it("carries an anchored xpReward through parse and export", () => {
     const config = parseAppConfigYaml(yaml);
     const anchors = config.mobTiers.standard.levelAnchors!;

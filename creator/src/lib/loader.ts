@@ -595,6 +595,8 @@ function parseLevelAnchors(raw: unknown): { levelAnchors?: AppConfig["mobTiers"]
       minDamage: asNumber(a.minDamage, 0),
       maxDamage: asNumber(a.maxDamage, 0),
       ...(a.xpReward == null ? {} : { xpReward: asNumber(a.xpReward, 0) }),
+      ...(a.goldMin == null ? {} : { goldMin: asNumber(a.goldMin, 0) }),
+      ...(a.goldMax == null ? {} : { goldMax: asNumber(a.goldMax, 0) }),
     };
   }
   return Object.keys(out).length > 0 ? { levelAnchors: out } : {};

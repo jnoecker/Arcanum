@@ -990,6 +990,12 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
         if (anchor.xpReward != null && anchor.xpReward < 0) {
           issues.push({ severity: "error", entity, message: `levelAnchors[${level}].xpReward must be >= 0` });
         }
+        if (anchor.goldMin != null && anchor.goldMin < 0) {
+          issues.push({ severity: "error", entity, message: `levelAnchors[${level}].goldMin must be >= 0` });
+        }
+        if (anchor.goldMax != null && anchor.goldMax < (anchor.goldMin ?? 0)) {
+          issues.push({ severity: "error", entity, message: `levelAnchors[${level}].goldMax must be >= goldMin` });
+        }
       }
       // The engine anchors XP only when every anchor declares it; a partial curve would silently mix
       // the anchors with the xpScalingRate formula, so it is rejected on both sides.
@@ -999,6 +1005,14 @@ export function validateConfig(config: AppConfig): ValidationIssue[] {
           severity: "error",
           entity,
           message: `levelAnchors must declare xpReward on every anchor or on none (found ${withXp} of ${entries.length})`,
+        });
+      }
+      const withGold = entries.filter(([, anchor]) => anchor.goldMax != null && anchor.goldMax > 0).length;
+      if (withGold > 0 && withGold < entries.length) {
+        issues.push({
+          severity: "error",
+          entity,
+          message: `levelAnchors must declare goldMax on every anchor or on none (found ${withGold} of ${entries.length})`,
         });
       }
     }

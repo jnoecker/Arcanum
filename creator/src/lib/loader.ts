@@ -700,6 +700,8 @@ function parseQuestXpConfig(raw: unknown): AppConfig["progression"]["quests"] {
     baseline: {
       baseXp: asNumber(baseline.baseXp, 50),
       xpPerLevel: asNumber(baseline.xpPerLevel, 20),
+      ...(baseline.goldBase == null ? {} : { goldBase: asNumber(baseline.goldBase, 0) }),
+      ...(baseline.goldPerLevel == null ? {} : { goldPerLevel: asNumber(baseline.goldPerLevel, 0) }),
     },
     tiers,
   };
@@ -843,6 +845,10 @@ function parseAkathavaeConfig(raw: unknown): AppConfig["akathavae"] {
     roomDiscoveryXpPerZoneLevel: asNumber(s.roomDiscoveryXpPerZoneLevel, d.roomDiscoveryXpPerZoneLevel),
     zoneCompletionXpPerRoom: asNumber(s.zoneCompletionXpPerRoom, d.zoneCompletionXpPerRoom),
     zoneCompletionGold: asNumber(s.zoneCompletionGold, d.zoneCompletionGold),
+    // Absent stays absent, so a project that never set it round-trips without gaining a zero.
+    ...(s.zoneCompletionGoldPerZoneLevel == null
+      ? {}
+      : { zoneCompletionGoldPerZoneLevel: asNumber(s.zoneCompletionGoldPerZoneLevel, 0) }),
     unpledgedSuccessMultiplier: asNumber(s.unpledgedSuccessMultiplier, d.unpledgedSuccessMultiplier),
     unpledgedXpMultiplier: asNumber(s.unpledgedXpMultiplier, d.unpledgedXpMultiplier),
     sketchMsPerEstimatedRound: asNumber(s.sketchMsPerEstimatedRound, d.sketchMsPerEstimatedRound),

@@ -232,6 +232,11 @@ export function normalizeAkathavaeConfig(config?: AppConfig["akathavae"]): AppCo
     discoveryXpThrottleMs: c.discoveryXpThrottleMs,
     zoneCompletionXpPerRoom: c.zoneCompletionXpPerRoom,
     zoneCompletionGold: c.zoneCompletionGold,
+    // Absent stays absent: the key is optional engine-side, and emitting a zero would make every
+    // untouched project grow an akathavae block it never asked for.
+    ...(c.zoneCompletionGoldPerZoneLevel == null
+      ? {}
+      : { zoneCompletionGoldPerZoneLevel: c.zoneCompletionGoldPerZoneLevel }),
     unpledgedSuccessMultiplier: c.unpledgedSuccessMultiplier,
     unpledgedXpMultiplier: c.unpledgedXpMultiplier,
     sketchMsPerEstimatedRound: c.sketchMsPerEstimatedRound,

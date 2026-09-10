@@ -523,6 +523,13 @@ export const QUEST_DIFFICULTY_DESCRIPTIONS: Record<QuestDifficulty, string> = {
 export interface QuestBaselineConfig {
   baseXp: number;
   xpPerLevel: number;
+  /**
+   * Engine-computed quest gold, the mirror of the XP baseline: a quest that authors no `rewards.gold`
+   * is paid `goldBase + goldPerLevel * (level - 1)` times its difficulty tier. 0 leaves quests paying
+   * only what content authored.
+   */
+  goldBase?: number;
+  goldPerLevel?: number;
 }
 
 export interface QuestXpConfig {
@@ -1559,6 +1566,8 @@ export interface AkathavaeConfig {
   zoneCompletionXpPerRoom: number;
   /** One-time gold paid on zone completion — the Akathavae's gold faucet. */
   zoneCompletionGold: number;
+  /** Added to zoneCompletionGold per level of the completed zone, so the award tracks the curve. */
+  zoneCompletionGoldPerZoneLevel?: number;
   /** Multiplier (0..1) on illumination success odds for unpledged players — anyone may keep a field journal. */
   unpledgedSuccessMultiplier: number;
   /** Multiplier (0..1) on discovery XP for unpledged players. 0 turns their journaling into pure record-keeping. */

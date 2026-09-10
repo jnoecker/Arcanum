@@ -964,6 +964,30 @@ ambonmud:
     expect(runtime.engine.mob.tiers.standard.levelAnchors["30"]).not.toHaveProperty("goldMax");
   });
 
+  it("carries the quest gold baseline and the level-scaled zone completion award", () => {
+    const config = parseAppConfigYaml(yaml);
+    config.progression.quests = {
+      baseline: { baseXp: 338, xpPerLevel: 450, goldBase: 2, goldPerLevel: 9 },
+      tiers: { standard: 1.0 },
+    };
+    config.akathavae.zoneCompletionGoldPerZoneLevel = 4;
+    const runtime = buildMonolithicConfigObject(config) as any;
+    expect(runtime.progression.quests.baseline.goldPerLevel).toBe(9);
+    expect(runtime.engine.akathavae.zoneCompletionGoldPerZoneLevel).toBe(4);
+    const round = parseAppConfigYaml(stringify({ ambonmud: runtime }));
+    expect(round.progression.quests?.baseline.goldBase).toBe(2);
+    expect(round.progression.quests?.baseline.goldPerLevel).toBe(9);
+    expect(round.akathavae.zoneCompletionGoldPerZoneLevel).toBe(4);
+  });
+
+  it("leaves the gold faucet keys absent when the source never set them", () => {
+    const config = parseAppConfigYaml(yaml);
+    const runtime = buildMonolithicConfigObject(config) as any;
+    // An untouched project emits no akathavae block at all, which is the strongest form of "absent".
+    expect(runtime.engine.akathavae?.zoneCompletionGoldPerZoneLevel).toBeUndefined();
+    expect(runtime.progression.quests?.baseline ?? {}).not.toHaveProperty("goldBase");
+  });
+
   it("keeps class base multipliers, tier levelAnchors, shield bindings, and xpBonusCap", () => {
     const config = parseAppConfigYaml(yaml);
     expect(config.classes.bulwark.baseHpMultiplier).toBe(1.362);

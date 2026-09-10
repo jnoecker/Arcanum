@@ -946,6 +946,24 @@ ambonmud:
     expect(runtime.engine.mob.tiers.standard.levelAnchors["30"]).not.toHaveProperty("xpReward");
   });
 
+  it("carries anchored goldMin and goldMax through parse and export", () => {
+    const config = parseAppConfigYaml(yaml);
+    const anchors = config.mobTiers.standard.levelAnchors!;
+    anchors["1"] = { ...anchors["1"], goldMin: 1, goldMax: 2 };
+    anchors["30"] = { ...anchors["30"], goldMin: 7, goldMax: 14 };
+    const runtime = buildMonolithicConfigObject(config) as any;
+    expect(runtime.engine.mob.tiers.standard.levelAnchors["30"].goldMax).toBe(14);
+    const round = parseAppConfigYaml(stringify({ ambonmud: runtime }));
+    expect(round.mobTiers.standard.levelAnchors?.["1"]?.goldMin).toBe(1);
+    expect(round.mobTiers.standard.levelAnchors?.["30"]).toEqual({ hp: 9258, minDamage: 676, maxDamage: 914, goldMin: 7, goldMax: 14 });
+  });
+
+  it("leaves gold anchors off anchors whose source never set them", () => {
+    const config = parseAppConfigYaml(yaml);
+    const runtime = buildMonolithicConfigObject(config) as any;
+    expect(runtime.engine.mob.tiers.standard.levelAnchors["30"]).not.toHaveProperty("goldMax");
+  });
+
   it("keeps class base multipliers, tier levelAnchors, shield bindings, and xpBonusCap", () => {
     const config = parseAppConfigYaml(yaml);
     expect(config.classes.bulwark.baseHpMultiplier).toBe(1.362);

@@ -409,6 +409,13 @@ export interface MobTierAnchor {
    * `baseXpReward * xpScalingRate^(level-1)`. A tier must declare it on all anchors or none.
    */
   xpReward?: number;
+  /**
+   * Optional per-level gold range, interpolated like xpReward. All-or-none per tier, keyed on
+   * `goldMax` so a floor of zero stays legal; when absent gold stays on
+   * `baseGoldMin/Max * goldScalingRate^(level-1)`.
+   */
+  goldMin?: number;
+  goldMax?: number;
 }
 
 export interface MobTiersConfig {

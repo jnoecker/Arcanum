@@ -938,6 +938,19 @@ ambonmud:
     // absent stays absent
     expect(parseAppConfigYaml(yaml).progression.repeatableGold).toBeUndefined();
   });
+  it("carries progression.quests.xpAnchors through parse and export, absent staying absent", () => {
+    const config = parseAppConfigYaml(yaml);
+    config.progression.quests = {
+      baseline: { baseXp: 338, xpPerLevel: 450 },
+      tiers: { standard: 1.0 },
+      xpAnchors: { "1": 681, "5": 2962, "10": 4388, "30": 6913 },
+    };
+    const runtime = buildMonolithicConfigObject(config) as any;
+    expect(runtime.progression.quests.xpAnchors["10"]).toBe(4388);
+    const round = parseAppConfigYaml(stringify({ ambonmud: runtime }));
+    expect(round.progression.quests?.xpAnchors?.["30"]).toBe(6913);
+    expect(parseAppConfigYaml(yaml).progression.quests?.xpAnchors).toBeUndefined();
+  });
   it("leaves repeatableXp absent when the source never set it", () => {
     const config = parseAppConfigYaml(yaml);
     expect(config.progression.repeatableXp).toBeUndefined();

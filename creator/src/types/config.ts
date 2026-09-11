@@ -552,6 +552,12 @@ export interface QuestXpConfig {
   baseline: QuestBaselineConfig;
   /** Per-tier XP multiplier applied on top of the baseline. */
   tiers: Partial<Record<QuestDifficulty, number>>;
+  /**
+   * Quest XP anchors (D-33): the standard-tier award at anchor levels, keyed by level like a mob tier's
+   * `levelAnchors` and interpolated the same way (geometrically between anchors, the last segment's ratio
+   * beyond the ends). When present the engine uses them in place of the linear baseline; absent keeps it.
+   */
+  xpAnchors?: Record<string, number>;
 }
 
 // ─── Economy ────────────────────────────────────────────────────────

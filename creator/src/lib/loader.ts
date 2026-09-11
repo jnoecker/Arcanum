@@ -719,6 +719,15 @@ function parseQuestXpConfig(raw: unknown): AppConfig["progression"]["quests"] {
       tiers[normalized] = value;
     }
   }
+  // xpAnchors: absent stays absent; keys are levels (numbers or numeric strings), values XP
+  const anchorsRaw = s.xpAnchors;
+  const xpAnchors: Record<string, number> = {};
+  if (anchorsRaw != null && typeof anchorsRaw === "object") {
+    for (const [key, value] of Object.entries(anchorsRaw as Record<string, unknown>)) {
+      const level = Number.parseInt(String(key).trim(), 10);
+      if (Number.isFinite(level) && level >= 1 && typeof value === "number") xpAnchors[String(level)] = value;
+    }
+  }
   return {
     baseline: {
       baseXp: asNumber(baseline.baseXp, 50),
@@ -727,6 +736,7 @@ function parseQuestXpConfig(raw: unknown): AppConfig["progression"]["quests"] {
       ...(baseline.goldPerLevel == null ? {} : { goldPerLevel: asNumber(baseline.goldPerLevel, 0) }),
     },
     tiers,
+    ...(Object.keys(xpAnchors).length ? { xpAnchors } : {}),
   };
 }
 

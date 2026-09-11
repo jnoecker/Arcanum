@@ -12,6 +12,30 @@ function quest(overrides: Partial<QuestFile> = {}): QuestFile {
   return { name: "Test", giver: "giver", ...overrides };
 }
 
+const ANCHORED_CONFIG: QuestXpConfig = {
+  baseline: { baseXp: 338, xpPerLevel: 450 },
+  tiers: { trivial: 0.5, standard: 1.0 },
+  xpAnchors: { "1": 100, "5": 1600, "10": 3200 },
+};
+
+describe("resolveQuestXp with xpAnchors", () => {
+  it("pays the anchor on an anchor level and scales it by the tier", () => {
+    expect(resolveQuestXp(quest({ difficulty: "standard", level: 5 }), ANCHORED_CONFIG).computed).toBe(1600);
+    expect(resolveQuestXp(quest({ difficulty: "trivial", level: 5 }), ANCHORED_CONFIG).computed).toBe(800);
+  });
+
+  it("interpolates geometrically between anchors and extrapolates along the last segment", () => {
+    // 100 -> 1600 over 1 -> 5: level 3 is 100 x 16^0.5 = 400
+    expect(resolveQuestXp(quest({ difficulty: "standard", level: 3 }), ANCHORED_CONFIG).computed).toBe(400);
+    // 1600 -> 3200 over 5 -> 10: level 15 continues the x2 per five levels
+    expect(resolveQuestXp(quest({ difficulty: "standard", level: 15 }), ANCHORED_CONFIG).computed).toBe(6400);
+  });
+
+  it("falls back to the linear baseline without anchors", () => {
+    const linear: QuestXpConfig = { ...ANCHORED_CONFIG, xpAnchors: undefined };
+    expect(resolveQuestXp(quest({ difficulty: "standard", level: 10 }), linear).computed).toBe(338 + 450 * 9);
+  });
+});
 describe("resolveQuestXp", () => {
   it("returns zero with no data when neither difficulty nor authored xp are set", () => {
     const result = resolveQuestXp(quest(), DEFAULT_CONFIG);

@@ -2,7 +2,10 @@ import { readDir, readTextFile } from "@tauri-apps/plugin-fs";
 import { exists } from "@tauri-apps/plugin-fs";
 import { parseDocument } from "yaml";
 import type { WorldFile } from "@/types/world";
-import type { AppConfig, AbilityTargetTypeDefinition, RaceDefinitionConfig } from "@/types/config";
+import type {
+  AppConfig, AbilityTargetTypeDefinition, RaceDefinitionConfig, QuestDifficulty, RepeatableGoldConfig,
+} from "@/types/config";
+import { QUEST_DIFFICULTIES } from "@/types/config";
 import type { Project } from "@/types/project";
 import { normalizeExitDirections, normalizeMobSpawns, mergeTrainersIntoMobs } from "@/lib/zoneEdits";
 import {
@@ -664,7 +667,27 @@ function parseProgressionConfig(raw: unknown): AppConfig["progression"] {
     },
     quests: parseQuestXpConfig(s.quests),
     repeatableXp: parseRepeatableXpConfig(s.repeatableXp),
+    ...(s.repeatableGold == null ? {} : { repeatableGold: parseRepeatableGoldConfig(s.repeatableGold) }),
   };
+}
+
+/**
+ * Per-source quest difficulty tiers for repeatable gold (D-32). Absent stays absent, and a tier that is not a
+ * known difficulty is dropped rather than sent to the engine, which would refuse the whole config.
+ */
+function parseRepeatableGoldConfig(raw: unknown): RepeatableGoldConfig {
+  const s = (raw ?? {}) as Record<string, unknown>;
+  const out: RepeatableGoldConfig = {};
+  const keys: (keyof RepeatableGoldConfig)[] = [
+    "dailyTier", "weeklyTier", "autoQuestTier", "globalFirstTier", "globalSecondTier", "globalThirdTier",
+  ];
+  for (const key of keys) {
+    const v = s[key as string];
+    if (typeof v !== "string") continue;
+    const tier = v.trim().toLowerCase() as QuestDifficulty;
+    if ((QUEST_DIFFICULTIES as string[]).includes(tier)) out[key] = tier;
+  }
+  return out;
 }
 
 /**

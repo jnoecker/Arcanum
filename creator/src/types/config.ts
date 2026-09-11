@@ -484,6 +484,8 @@ export interface ProgressionConfig {
   quests?: QuestXpConfig;
   /** Claim-time scaling for repeatable rewards; omitted or 0 keeps each source's authored flat award. */
   repeatableXp?: RepeatableXpConfig;
+  /** Claim-time gold for repeatable rewards through a quest difficulty tier per source (D-32); omitted keeps the flat award. */
+  repeatableGold?: RepeatableGoldConfig;
 }
 
 /**
@@ -498,6 +500,20 @@ export interface RepeatableXpConfig {
   globalFirstFractionOfLevel: number;
   globalSecondFractionOfLevel: number;
   globalThirdFractionOfLevel: number;
+}
+
+/**
+ * A repeatable reward's gold can be what an authored quest of a difficulty tier would pay at the claimant's
+ * level (the quest gold baseline times the tier multiplier) instead of a flat number. A source without a
+ * tier keeps its authored flat gold.
+ */
+export interface RepeatableGoldConfig {
+  dailyTier?: QuestDifficulty;
+  weeklyTier?: QuestDifficulty;
+  autoQuestTier?: QuestDifficulty;
+  globalFirstTier?: QuestDifficulty;
+  globalSecondTier?: QuestDifficulty;
+  globalThirdTier?: QuestDifficulty;
 }
 
 export type QuestDifficulty = "trivial" | "easy" | "standard" | "hard" | "epic";

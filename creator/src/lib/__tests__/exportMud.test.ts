@@ -922,6 +922,22 @@ ambonmud:
     expect(round.progression.repeatableXp?.globalThirdFractionOfLevel).toBe(0.05);
   });
 
+  it("carries progression.repeatableGold tiers through parse and export, dropping unknown tiers", () => {
+    const config = parseAppConfigYaml(yaml);
+    config.progression.repeatableGold = { dailyTier: "standard", weeklyTier: "epic", autoQuestTier: "trivial" };
+    const runtime = buildMonolithicConfigObject(config) as any;
+    expect(runtime.progression.repeatableGold.weeklyTier).toBe("epic");
+    const round = parseAppConfigYaml(stringify({ ambonmud: runtime }));
+    expect(round.progression.repeatableGold?.dailyTier).toBe("standard");
+    expect(round.progression.repeatableGold?.autoQuestTier).toBe("trivial");
+    expect(round.progression.repeatableGold).not.toHaveProperty("globalFirstTier");
+    // a tier the engine would not accept is dropped on load
+    const loose = parseAppConfigYaml(yaml.replace("progression:", "progression:\n    repeatableGold:\n      dailyTier: Standard\n      weeklyTier: legendary"));
+    expect(loose.progression.repeatableGold?.dailyTier).toBe("standard");
+    expect(loose.progression.repeatableGold).not.toHaveProperty("weeklyTier");
+    // absent stays absent
+    expect(parseAppConfigYaml(yaml).progression.repeatableGold).toBeUndefined();
+  });
   it("leaves repeatableXp absent when the source never set it", () => {
     const config = parseAppConfigYaml(yaml);
     expect(config.progression.repeatableXp).toBeUndefined();

@@ -988,6 +988,19 @@ ambonmud:
     expect(runtime.progression.quests?.baseline ?? {}).not.toHaveProperty("goldBase");
   });
 
+  it("carries group.xpBonusLevelGap through the loader and the exporter", () => {
+    const config = parseAppConfigYaml(yaml);
+    config.group = { ...config.group, xpBonusPerMember: 0.6, xpBonusLevelGap: 4 };
+    const runtime = buildMonolithicConfigObject(config) as any;
+    expect(runtime.engine.group.xpBonusPerMember).toBe(0.6);
+    expect(runtime.engine.group.xpBonusLevelGap).toBe(4);
+    const round = parseAppConfigYaml(stringify({ ambonmud: runtime }));
+    expect(round.group.xpBonusLevelGap).toBe(4);
+    // absent stays absent: a project that never set it gains no zero on export
+    const clean = buildMonolithicConfigObject(parseAppConfigYaml(yaml)) as any;
+    expect(clean.engine.group).not.toHaveProperty("xpBonusLevelGap");
+  });
+
   it("keeps class base multipliers, tier levelAnchors, shield bindings, and xpBonusCap", () => {
     const config = parseAppConfigYaml(yaml);
     expect(config.classes.bulwark.baseHpMultiplier).toBe(1.362);

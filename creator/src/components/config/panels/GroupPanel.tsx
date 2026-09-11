@@ -112,6 +112,13 @@ export function GroupPanel({ config, onChange }: ConfigPanelProps) {
               step={0.01}
             />
           </FieldRow>
+          <FieldRow label="XP Bonus Level Gap" hint="A member more than this many levels below the mob still divides the kill's XP but takes its share without the group bonus, so a high-level party cannot carry a low-level passenger at bonus rates. 0 = no limit.">
+            <NumberInput
+              value={g.xpBonusLevelGap ?? 0}
+              onCommit={(v) => patch({ xpBonusLevelGap: v ?? 0 })}
+              min={0}
+            />
+          </FieldRow>
         </div>
       </Section>
 

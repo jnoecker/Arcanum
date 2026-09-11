@@ -869,6 +869,11 @@ export interface GroupConfig {
   maxSize: number;
   inviteTimeoutMs: number;
   xpBonusPerMember: number;
+  /**
+   * A member more than this many levels below the mob takes its split share without the group bonus
+   * (D-31): the bonus pays for fighting alongside peers, not for being carried. 0 or absent = no limit.
+   */
+  xpBonusLevelGap?: number;
 }
 
 // ─── Equipment Slots ────────────────────────────────────────────────

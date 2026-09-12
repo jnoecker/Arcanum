@@ -111,6 +111,16 @@ export function AkathavaePanel({ config, onChange }: ConfigPanelProps) {
         <FieldRow label="Room XP per zone level" hint="Extra room XP per average mob level of the zone — dangerous zones pay like the zone.">
           {num(a.roomDiscoveryXpPerZoneLevel, (v) => patch({ roomDiscoveryXpPerZoneLevel: v }), { min: 0 })}
         </FieldRow>
+        <FieldRow
+          label="Room XP at the visitor's level"
+          hint="When on, the per-level part of a room's XP uses the zone's level or the visitor's, whichever is lower — a fresh pledge in a deep zone is paid at their own level."
+        >
+          <CheckboxInput
+            checked={a.roomDiscoveryAtVisitorLevel ?? false}
+            onCommit={(v) => patch({ roomDiscoveryAtVisitorLevel: v })}
+            label={a.roomDiscoveryAtVisitorLevel ? "Capped at the visitor's level" : "Zone level, whoever walks in"}
+          />
+        </FieldRow>
         <FieldRow label="Item discovery XP" hint="XP for recording a never-before-seen item.">
           {num(a.itemDiscoveryXp, (v) => patch({ itemDiscoveryXp: v }), { min: 0 })}
         </FieldRow>

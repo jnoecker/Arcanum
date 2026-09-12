@@ -1009,6 +1009,17 @@ ambonmud:
     expect(round.akathavae.zoneCompletionGoldPerZoneLevel).toBe(4);
   });
 
+  it("carries akathavae.roomDiscoveryAtVisitorLevel through parse and export, absent staying absent", () => {
+    const config = parseAppConfigYaml(yaml);
+    expect(config.akathavae.roomDiscoveryAtVisitorLevel).toBeUndefined();
+    config.akathavae.roomDiscoveryAtVisitorLevel = true;
+    const runtime = buildMonolithicConfigObject(config) as any;
+    expect(runtime.engine.akathavae.roomDiscoveryAtVisitorLevel).toBe(true);
+    const round = parseAppConfigYaml(stringify({ ambonmud: runtime }));
+    expect(round.akathavae.roomDiscoveryAtVisitorLevel).toBe(true);
+    const untouched = buildMonolithicConfigObject(parseAppConfigYaml(yaml)) as any;
+    expect(untouched.engine.akathavae?.roomDiscoveryAtVisitorLevel).toBeUndefined();
+  });
   it("leaves the gold faucet keys absent when the source never set them", () => {
     const config = parseAppConfigYaml(yaml);
     const runtime = buildMonolithicConfigObject(config) as any;

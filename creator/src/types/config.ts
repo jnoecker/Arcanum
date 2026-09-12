@@ -1589,6 +1589,12 @@ export interface AkathavaeConfig {
   discoveryXpThrottleMs: number;
   /** Extra room-discovery XP per average mob level of the zone — dangerous zones pay like the zone. */
   roomDiscoveryXpPerZoneLevel: number;
+  /**
+   * When true, the per-level part of a room's XP uses the zone's average mob level or the visitor's
+   * level, whichever is lower, so a fresh pledge in a deep zone is paid at their own level (D-35).
+   * Optional: absent keeps the engine default (false, the zone's level).
+   */
+  roomDiscoveryAtVisitorLevel?: boolean;
   /** One-time XP per room in a zone, paid when its Arcanum record reaches 100%. */
   zoneCompletionXpPerRoom: number;
   /** One-time gold paid on zone completion — the Akathavae's gold faucet. */

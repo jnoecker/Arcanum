@@ -876,6 +876,10 @@ function parseAkathavaeConfig(raw: unknown): AppConfig["akathavae"] {
     observeNpcXp: asNumber(s.observeNpcXp, d.observeNpcXp),
     discoveryXpThrottleMs: asNumber(s.discoveryXpThrottleMs, d.discoveryXpThrottleMs),
     roomDiscoveryXpPerZoneLevel: asNumber(s.roomDiscoveryXpPerZoneLevel, d.roomDiscoveryXpPerZoneLevel),
+    // Absent stays absent, so a project that never set it round-trips without gaining a false.
+    ...(s.roomDiscoveryAtVisitorLevel == null
+      ? {}
+      : { roomDiscoveryAtVisitorLevel: asBool(s.roomDiscoveryAtVisitorLevel, false) }),
     zoneCompletionXpPerRoom: asNumber(s.zoneCompletionXpPerRoom, d.zoneCompletionXpPerRoom),
     zoneCompletionGold: asNumber(s.zoneCompletionGold, d.zoneCompletionGold),
     // Absent stays absent, so a project that never set it round-trips without gaining a zero.

@@ -227,6 +227,7 @@ export function normalizeAkathavaeConfig(config?: AppConfig["akathavae"]): AppCo
     repeatXpCooldownMs: c.repeatXpCooldownMs,
     roomDiscoveryXp: c.roomDiscoveryXp,
     roomDiscoveryXpPerZoneLevel: c.roomDiscoveryXpPerZoneLevel,
+    ...(c.roomDiscoveryAtVisitorLevel == null ? {} : { roomDiscoveryAtVisitorLevel: c.roomDiscoveryAtVisitorLevel }),
     itemDiscoveryXp: c.itemDiscoveryXp,
     observeNpcXp: c.observeNpcXp,
     discoveryXpThrottleMs: c.discoveryXpThrottleMs,

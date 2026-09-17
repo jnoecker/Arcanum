@@ -51,6 +51,12 @@ export interface ZoneScaling {
 
 export interface WorldFile {
   zone: string;
+  /**
+   * The publish this file belongs to, stamped at export and publish time only
+   * (never stored in the project's zone files); the server refuses zones whose
+   * bundle differs from the config's.
+   */
+  bundle?: string;
   lifespan?: number;
   startRoom: string;
   terrain?: string;

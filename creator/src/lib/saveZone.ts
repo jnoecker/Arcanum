@@ -2,6 +2,7 @@ import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { stringify } from "yaml";
 import { normalizeWorldAssetRefs } from "@/lib/assetRefs";
 import { buildAudioMetaIndex, enrichJukeboxSongs } from "@/lib/audioLibrary";
+import { stampZoneDoc } from "@/lib/bundle";
 import { sanitizeZone } from "@/lib/sanitizeZone";
 import { validateZone } from "@/lib/validateZone";
 import { useAssetStore } from "@/stores/assetStore";
@@ -14,7 +15,7 @@ import { YAML_OPTS } from "@/lib/yamlOpts";
  * Serialize a zone's data to YAML without writing to disk.
  * Sanitizes the data first so Arcanum never writes invalid YAML.
  */
-export function serializeZone(zoneId: string): string {
+export function serializeZone(zoneId: string, bundleId?: string): string {
   const zone = useZoneStore.getState().zones.get(zoneId);
   if (!zone) throw new Error(`Zone "${zoneId}" not found`);
   // Strip `@reference` sigils so the game text the server reads stays clean;
@@ -55,7 +56,7 @@ export function serializeZone(zoneId: string): string {
     const summary = errors.slice(0, 5).map((issue) => `${issue.entity}: ${issue.message}`).join("; ");
     throw new Error(`Zone validation failed: ${summary}`);
   }
-  return stringify(sanitized, YAML_OPTS);
+  return stringify(bundleId ? stampZoneDoc(sanitized, bundleId) : sanitized, YAML_OPTS);
 }
 
 /**

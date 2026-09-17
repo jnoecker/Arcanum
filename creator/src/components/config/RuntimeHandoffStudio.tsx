@@ -307,7 +307,7 @@ export function RuntimeHandoffStudio() {
       errors: [],
     });
     try {
-      const result = await exportRuntimeBundle(exportDir);
+      const result = await exportRuntimeBundle(exportDir, project ?? undefined);
       setStepState("export", {
         status: result.errors.length > 0 ? "warning" : "success",
         detail: `Exported config + ${result.zonesExported} zone${result.zonesExported !== 1 ? "s" : ""} to ${result.outputDir}`,

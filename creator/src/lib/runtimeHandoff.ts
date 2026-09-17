@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { exportMudFormat, buildMonolithicConfig, generateSpritesYaml } from "@/lib/exportMud";
+import { exportMudFormat, buildMonolithicConfig, generateSpritesYaml, serializeAllZones } from "@/lib/exportMud";
+import { computeBundleStamp, type BundleStamp } from "@/lib/bundle";
 import { YAML_OPTS } from "@/lib/yamlOpts";
 import { saveProjectConfig } from "@/lib/saveConfig";
 import { saveAllZones } from "@/lib/saveZone";
@@ -146,8 +147,8 @@ export function openValidationResults(): void {
   useValidationStore.getState().openPanel();
 }
 
-export async function exportRuntimeBundle(outputDir: string) {
-  return exportMudFormat(outputDir);
+export async function exportRuntimeBundle(outputDir: string, project?: Project) {
+  return exportMudFormat(outputDir, project);
 }
 
 export async function publishCuratedAssets(
@@ -185,10 +186,16 @@ export async function deployRuntimeAchievements(): Promise<string> {
   return invoke<string>("deploy_achievements_to_r2", { achievementsContent: content });
 }
 
+/** The stamp of the current in-memory world and config; the same for both publish actions while nothing changes between them. */
+async function currentBundleStamp(project: Project): Promise<BundleStamp> {
+  return computeBundleStamp(project, serializeAllZones(), buildMonolithicConfig());
+}
+
 export async function deployRuntimeConfig(project: Project): Promise<string> {
+  const stamp = await currentBundleStamp(project);
   return invoke<string>("deploy_config_to_r2", {
     mudDir: project.mudDir,
-    configContent: buildMonolithicConfig(),
+    configContent: buildMonolithicConfig(undefined, stamp),
   });
 }
 
@@ -199,8 +206,10 @@ export async function deployRuntimeZones(project: Project): Promise<SyncProgress
     await saveProjectConfig(project);
   }
 
+  const stamp = await currentBundleStamp(project);
   return invoke<SyncProgress>("deploy_zones_to_r2", {
     mudDir: project.mudDir,
     format: project.format,
+    bundleId: stamp.id,
   });
 }

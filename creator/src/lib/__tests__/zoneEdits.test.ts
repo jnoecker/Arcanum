@@ -798,5 +798,21 @@ describe("mergeTrainersIntoMobs", () => {
     expect(synthesized.role).toBe("trainer");
     expect(synthesized.trainerClasses).toEqual(["RANGER"]);
     expect(synthesized.spawns).toEqual([{ room: "room2" }]);
+    expect(synthesized.trainerBaseRole).toBeUndefined();
+  });
+
+  it("keeps the role a promoted mob carried so the save can write it back", () => {
+    const world = withLegacyTrainers(
+      { warrior_trainer: { name: "Captain Varek", class: "WARRIOR", room: "room1" } },
+      { captain_varek: { name: "Captain Varek", spawns: [{ room: "room1" }], role: "dialog" } },
+    );
+    const result = mergeTrainersIntoMobs(world);
+    expect(result.mobs!.captain_varek!.role).toBe("trainer");
+    expect(result.mobs!.captain_varek!.trainerBaseRole).toBe("dialog");
+    // A second load of the saved file finds the mob already a trainer and
+    // leaves the recorded base role alone.
+    (result as { trainers?: unknown }).trainers = { warrior_trainer: { name: "Captain Varek", class: "WARRIOR", room: "room1" } };
+    mergeTrainersIntoMobs(result);
+    expect(result.mobs!.captain_varek!.trainerBaseRole).toBe("dialog");
   });
 });

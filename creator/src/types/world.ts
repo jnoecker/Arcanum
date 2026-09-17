@@ -485,6 +485,13 @@ export interface MobFile {
    * non-trainer mobs.
    */
   trainerClasses?: string[];
+  /**
+   * When `role === "trainer"`, the server-facing role this mob carried before
+   * it became a trainer. Written back as the mob's `role` on save (the server
+   * has no trainer role and treats a missing one as combat); missing means
+   * `dialog`.
+   */
+  trainerBaseRole?: Exclude<MobRole, "trainer">;
 }
 
 export interface MobSpellFile {

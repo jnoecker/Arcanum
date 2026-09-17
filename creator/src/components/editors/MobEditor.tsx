@@ -274,12 +274,15 @@ function MobEditorContent({
   );
 
   // Switching role away from trainer would leave dead trainerClasses behind;
-  // clear them at the same time so the YAML stays clean.
+  // clear them at the same time so the YAML stays clean. Switching into
+  // trainer keeps the previous role for the save.
   const handleRoleChange = useCallback(
     (next: MobRole | undefined) => {
       const wasTrainer = mob.role === "trainer";
       if (wasTrainer && next !== "trainer") {
-        patch({ role: next, trainerClasses: undefined });
+        patch({ role: next, trainerClasses: undefined, trainerBaseRole: undefined });
+      } else if (!wasTrainer && next === "trainer") {
+        patch({ role: next, trainerBaseRole: mob.role === "trainer" ? undefined : mob.role });
       } else {
         patch({ role: next });
       }

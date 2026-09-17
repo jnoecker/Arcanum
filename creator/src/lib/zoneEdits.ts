@@ -137,6 +137,7 @@ export function mergeTrainersIntoMobs(world: WorldFile): WorldFile {
 
     if (match) {
       const [, mob] = match;
+      if (mob.role && mob.role !== "trainer" && !mob.trainerBaseRole) mob.trainerBaseRole = mob.role;
       mob.role = "trainer";
       if (classList.length > 0) mob.trainerClasses = classList;
       if (trainer.image && !mob.image) mob.image = trainer.image;

@@ -31,6 +31,7 @@ The work since `v3.17.0` is a major release cycle: a full visual redesign around
 
 ### Fixed
 - Swept AI-slop / SaaS-dashboard tells and mojibake from visible surfaces across the creator.
+- Trainer mobs save and export with a role the server knows — the one they carried before becoming trainers, `dialog` by default — instead of none. A mob without a role loads as combat, so every trainer NPC was attackable and paid XP on the live server.
 - ElevenLabs: retry transient 429/5xx, parse snake_case responses, survive deleted voices, restore generation status across restart.
 - Editor state no longer leaks across entities (RoomPanel/EntityPanel keyed by selection); atomic-write rename retries transient Windows `ERROR_ACCESS_DENIED`; R2 uploads retry with exponential backoff; vision calls compress images first (fixes >5 MB hub rejection).
 

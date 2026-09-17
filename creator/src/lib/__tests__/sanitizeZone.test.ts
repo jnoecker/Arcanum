@@ -761,10 +761,38 @@ describe("sanitizeZone — output cleanup", () => {
       room: "room_b",
     });
     expect(result.trainers!.academy_master).not.toHaveProperty("class");
-    // Mob output strips the Arcanum-only role and trainerClasses so the
-    // server's MobRole parser doesn't choke on `trainer`.
-    expect(result.mobs!.warrior_trainer!.role).toBeUndefined();
+    // Mob output replaces the Arcanum-only `trainer` role with a role the
+    // server knows and strips trainerClasses. A missing role would load as
+    // COMBAT, so the default is `dialog`.
+    expect(result.mobs!.warrior_trainer!.role).toBe("dialog");
     expect(result.mobs!.warrior_trainer!.trainerClasses).toBeUndefined();
+    expect(result.mobs!.warrior_trainer!).not.toHaveProperty("trainerBaseRole");
+  });
+
+  it("writes a trainer back with the role it carried before it became one", () => {
+    const result = sanitizeZone(makeWorld({
+      mobs: {
+        quartermaster: {
+          name: "Quartermaster",
+          spawns: [{ room: "room_a" }],
+          role: "trainer",
+          trainerBaseRole: "vendor",
+          trainerClasses: ["WARRIOR"],
+        },
+        retired: {
+          name: "Retired",
+          spawns: [{ room: "room_b" }],
+          role: "dialog",
+          trainerBaseRole: "vendor",
+        },
+      },
+    })) as WorldFile & { trainers?: Record<string, { room: string }> };
+    expect(result.mobs!.quartermaster!.role).toBe("vendor");
+    expect(result.mobs!.quartermaster!).not.toHaveProperty("trainerBaseRole");
+    expect(result.trainers!.quartermaster!.room).toBe("room_a");
+    // A stale base role on a non-trainer is dropped without touching its role.
+    expect(result.mobs!.retired!.role).toBe("dialog");
+    expect(result.mobs!.retired!).not.toHaveProperty("trainerBaseRole");
   });
 
   it("emits one trainers entry per spawn room and skips duplicates", () => {

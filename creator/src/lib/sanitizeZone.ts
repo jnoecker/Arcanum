@@ -875,17 +875,20 @@ function cleanOutput(world: WorldFile): WorldFile {
 
   // Strip Arcanum-only trainer fields from mob output. The server's MobRole
   // enum doesn't include TRAINER, so emitting `role: trainer` crashes the
-  // loader; `trainerClasses` is likewise unknown server-side. The training
-  // binding lives entirely in the synthesized `trainers:` map below.
+  // loader, and a mob with no role at all loads as COMBAT — attackable and
+  // paying XP — so a trainer is written with the role it carried before it
+  // became one, `dialog` by default. `trainerClasses` is likewise unknown
+  // server-side; the training binding lives entirely in the synthesized
+  // `trainers:` map below.
   let mobsOut = world.mobs;
   if (mobsOut) {
     let touched = false;
     const next: Record<string, MobFile> = {};
     for (const [id, mob] of Object.entries(mobsOut)) {
-      if (mob.role === "trainer" || mob.trainerClasses) {
+      if (mob.role === "trainer" || mob.trainerClasses || mob.trainerBaseRole) {
         touched = true;
-        const { trainerClasses: _tc, ...rest } = mob;
-        next[id] = mob.role === "trainer" ? { ...rest, role: undefined } : rest;
+        const { trainerClasses: _tc, trainerBaseRole, ...rest } = mob;
+        next[id] = mob.role === "trainer" ? { ...rest, role: trainerBaseRole ?? "dialog" } : rest;
       } else {
         next[id] = mob;
       }

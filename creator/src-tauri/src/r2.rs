@@ -1113,6 +1113,29 @@ fn strip_zone_map_field(body: &[u8]) -> Vec<u8> {
     filtered.join("\n").into_bytes()
 }
 
+/// Stamp the publish id into zone YAML bytes as a top-level `bundle:` line right
+/// after `zone:`, replacing any stamp already there. The server compares it with
+/// the config's `ambonmud.bundle.id` and refuses a mixed pair.
+fn stamp_bundle_field(body: &[u8], bundle_id: &str) -> Vec<u8> {
+    let text = String::from_utf8_lossy(body);
+    let mut out: Vec<String> = Vec::new();
+    let mut stamped = false;
+    for line in text.lines() {
+        if line.starts_with("bundle:") {
+            continue;
+        }
+        out.push(line.to_string());
+        if !stamped && line.starts_with("zone:") {
+            out.push(format!("bundle: {bundle_id}"));
+            stamped = true;
+        }
+    }
+    if !stamped {
+        out.insert(0, format!("bundle: {bundle_id}"));
+    }
+    out.join("\n").into_bytes()
+}
+
 /// Collect zone YAML files from a project directory.
 /// For legacy: reads from src/main/resources/world/*.yaml
 /// For standalone: reads from zones/*/zone.yaml, naming each as {zone_id}.yaml
@@ -1157,6 +1180,7 @@ pub async fn deploy_zones_to_r2(
     app: AppHandle,
     mud_dir: String,
     format: Option<String>,
+    bundle_id: Option<String>,
 ) -> Result<SyncProgress, String> {
     let s = settings::get_settings(app).await?;
     if s.r2_account_id.is_empty()
@@ -1195,6 +1219,10 @@ pub async fn deploy_zones_to_r2(
         // Strip `zoneMap` from the image defaults — the MUD server's
         // ZoneImageDefaults DTO doesn't recognize it and will crash.
         let body = strip_zone_map_field(&body);
+        let body = match bundle_id.as_deref() {
+            Some(id) if !id.is_empty() => stamp_bundle_field(&body, id),
+            _ => body,
+        };
 
         let object_key = format!("world/{name}");
         match upload_object(
@@ -1542,6 +1570,23 @@ pub async fn deploy_showcase_to_r2(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stamp_bundle_field_follows_the_zone_line_and_replaces_an_old_stamp() {
+        let stamped = stamp_bundle_field(b"zone: caldera\r\nstartRoom: gate\r\nrooms: {}\r\n", "rc-1");
+        assert_eq!(
+            String::from_utf8(stamped).unwrap(),
+            "zone: caldera\nbundle: rc-1\nstartRoom: gate\nrooms: {}"
+        );
+        let restamped = stamp_bundle_field(b"zone: caldera\nbundle: old\nstartRoom: gate\n", "rc-2");
+        assert_eq!(String::from_utf8(restamped).unwrap(), "zone: caldera\nbundle: rc-2\nstartRoom: gate");
+    }
+
+    #[test]
+    fn stamp_bundle_field_leads_when_no_zone_line_exists() {
+        let stamped = stamp_bundle_field(b"startRoom: gate\n", "rc-1");
+        assert_eq!(String::from_utf8(stamped).unwrap(), "bundle: rc-1\nstartRoom: gate");
+    }
 
     #[test]
     fn voice_object_key_matches_contract_template() {

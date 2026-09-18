@@ -5,6 +5,8 @@ import { normalizeAssetRef, normalizeConfigAssetRefs, normalizeGlobalAssetMap } 
 import { useConfigStore } from "@/stores/configStore";
 import { useZoneStore, type ZoneState } from "@/stores/zoneStore";
 import { serializeZone } from "@/lib/saveZone";
+import { bundleConfigBlock, computeBundleStamp, type BundleStamp } from "@/lib/bundle";
+import type { Project } from "@/types/project";
 import { useSpriteDefinitionStore } from "@/stores/spriteDefinitionStore";
 import type { AbilityEffectConfig, AppConfig } from "@/types/config";
 import {
@@ -691,15 +693,16 @@ export function buildMonolithicConfigObject(
  * Wraps everything under the `ambonmud` root key with the `engine` sub-tree,
  * matching the structure that AmbonMUD server expects.
  */
-export function buildMonolithicConfig(config?: AppConfig | null): string {
-  return stringify({ ambonmud: buildMonolithicConfigObject(config) }, YAML_OPTS);
+export function buildMonolithicConfig(config?: AppConfig | null, stamp?: BundleStamp): string {
+  const ambonmud = buildMonolithicConfigObject(config);
+  return stringify({ ambonmud: stamp ? { ...ambonmud, bundle: bundleConfigBlock(stamp) } : ambonmud }, YAML_OPTS);
 }
 
 /**
  * Export the current project to MUD server format.
  * Writes application.yaml + world/*.yaml to the output directory.
  */
-export async function exportMudFormat(outputDir: string): Promise<ExportResult> {
+export async function exportMudFormat(outputDir: string, project?: Project): Promise<ExportResult> {
   const config = useConfigStore.getState().config;
   const zones = useZoneStore.getState().zones;
 
@@ -711,8 +714,12 @@ export async function exportMudFormat(outputDir: string): Promise<ExportResult> 
   // Create directory structure
   await mkdir(worldDir, { recursive: true });
 
+  // The publish stamp: one id over the unstamped zones and config, written
+  // into both so the server can tell a matched pair from a mixed one.
+  const stamp = project ? await computeBundleStamp(project, serializeAllZones(), buildMonolithicConfig(config)) : undefined;
+
   // Write monolithic config
-  const configYaml = buildMonolithicConfig(config);
+  const configYaml = buildMonolithicConfig(config, stamp);
   await writeTextFile(`${resourcesDir}/application.yaml`, configYaml);
 
   // Write sprites manifest
@@ -735,7 +742,7 @@ export async function exportMudFormat(outputDir: string): Promise<ExportResult> 
 
   for (const [zoneId] of zones) {
     try {
-      const yaml = serializeZone(zoneId);
+      const yaml = serializeZone(zoneId, stamp?.id);
       await writeTextFile(`${worldDir}/${zoneId}.yaml`, yaml);
       zonesExported++;
     } catch (err) {
@@ -748,6 +755,7 @@ export async function exportMudFormat(outputDir: string): Promise<ExportResult> 
     zonesExported,
     outputDir,
     errors,
+    bundleId: stamp?.id,
   };
 }
 
@@ -756,6 +764,21 @@ export interface ExportResult {
   zonesExported: number;
   outputDir: string;
   errors: string[];
+  /** The publish id stamped into the config and every zone; absent when no project was given. */
+  bundleId?: string;
+}
+
+/** Every loaded zone serialized without a stamp, the input to the bundle digest. */
+export function serializeAllZones(): Array<[string, string]> {
+  const out: Array<[string, string]> = [];
+  for (const [zoneId] of useZoneStore.getState().zones) {
+    try {
+      out.push([zoneId, serializeZone(zoneId)]);
+    } catch {
+      // a zone that fails validation is reported by the export loop; it is left out of the digest
+    }
+  }
+  return out;
 }
 
 // ─── Sprites YAML generation ────────────────────────────────────────
